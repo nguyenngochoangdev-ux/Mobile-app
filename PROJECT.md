@@ -262,6 +262,8 @@ Flyway 12 bảng · auth JWT · CRUD tổ chức/sự kiện · seed 500 sinh vi
 **+ Spike nửa ngày:** deploy một contract `Hello` lên Amoy, verify trên PolygonScan, gọi từ Java bằng web3j.
 
 > **Mốc:** Swagger ≥30 endpoint, lệnh sinh client chạy được, **và một tx của mình đã hiện trên Amoy explorer**.
+>
+> **Trạng thái 2026-08-05:** ✅ 30 endpoint · ✅ sinh client (`scripts/gen-api-client.ps1`, 7 service / 23 model) · ❌ spike chuỗi **chưa làm** — chờ tài khoản Alchemy và POL từ faucet.
 
 ### Tuần 2 — Điểm danh (khối giá trị nhất)
 QR động HMAC 10s · màn hình presenter · check-in/out · device binding · geofence cảnh báo mềm · hàng đợi offline IndexedDB.
