@@ -28,7 +28,7 @@ Nếu đề xuất chạm vào bất kỳ mục nào dưới đây, **từ chố
 ### 3. Đối chiếu khối chức năng
 
 **Lõi — không đụng tới, không cắt:**
-điểm danh chống gian lận · neo Merkle + AnchorRegistry · verifier độc lập · rule engine + `evidence_hash` · IssuerRegistry
+điểm danh nhiều lớp kiểm tra · neo Merkle + AnchorRegistry · verifier độc lập · rule engine + `evidence_hash` · IssuerRegistry
 
 **Đã cắt ở tuần 0 — không được thêm lại:**
 courses + enrollments · appeals + rewards · MinIO · HD wallet per-student

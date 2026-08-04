@@ -11,7 +11,7 @@ Sau khi cắt `courses`, `enrollments`, `appeals`, `rewards` (xem `scope.md`).
 > một device fingerprint duy nhất, đổi thiết bị phải qua duyệt của cán bộ, có ghi nhật ký"
 > — nhưng danh sách bảng của tài liệu chỉ có `attendances.device_fp`, không đủ để lưu
 > trạng thái đăng ký/duyệt/thu hồi thiết bị. Đây là **sửa thiếu sót của tài liệu**, không
-> phải phình phạm vi: device binding nằm trong khối lõi "điểm danh chống gian lận"
+> phải phình phạm vi: device binding nằm trong khối lõi "điểm danh nhiều lớp kiểm tra"
 > (`scope.md`), và thiếu nó thì toàn bộ cơ chế QR động vô nghĩa.
 >
 > Đã áp dụng thật: Flyway `V1__init` chạy thành công, 14 bảng + `flyway_schema_history`.

@@ -11,8 +11,12 @@ import org.junit.jupiter.api.Test;
 import vn.ptit.drl.common.config.DrlProperties;
 
 /**
- * Cơ chế QR động là lõi chống gian lận của đề tài. Mỗi khẳng định ở đây tương ứng
- * một dòng trong bảng mô hình đe dọa (chương 11.2 báo cáo).
+ * Cơ chế QR động là lớp kiểm tra thứ nhất trong năm bước check-in. Mỗi khẳng định ở đây
+ * tương ứng một dòng trong bảng mô hình đe dọa (chương 11.2 báo cáo).
+ * <p>
+ * Lưu ý phạm vi: các test này chứng minh token cũ và token bịa bị từ chối. Chúng KHÔNG
+ * chứng minh hệ thống chống được điểm danh hộ nói chung — chuyển tiếp mã QR trong vòng
+ * dung sai slot vẫn qua được, và đó là hạn chế đã ghi trong bảng threat model.
  */
 class QrTokenServiceTest {
 

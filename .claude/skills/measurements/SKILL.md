@@ -15,7 +15,7 @@ description: Ghi lại số liệu đo cho chương 11 báo cáo NCKH vào docs/
 |---|---|---|---|
 | 1 | Gas theo kích thước lô Merkle (N = 10/100/1000/5000) | Đồ thị gas/bản ghi → chi phí/sinh viên/kỳ | 3 |
 | 2 | Gas thu hồi: bitmap vs mapping-per-credential | Đồ thị so sánh | 4 (hoặc Hardhat local) |
-| 3 | Bảng threat model, 7 dòng | Bảng đối chiếu CSDL truyền thống vs thiết kế đề xuất | 2 |
+| 3 | Bảng threat model, 11 dòng | Đối chiếu CSDL truyền thống vs thiết kế đề xuất, phân **ba mức** | 2 |
 | 4 | Thời gian tổng hợp điểm: tự động (giây) vs thủ công | So sánh định lượng | 5 |
 | 5 | Khảo sát SUS, 20–30 sinh viên | Điểm SUS + phân tích | 7, nếu kịp |
 
@@ -34,6 +34,8 @@ description: Ghi lại số liệu đo cho chương 11 báo cáo NCKH vào docs/
 **Không thổi phồng.** Phép đo #4 lấy con số thủ công từ phỏng vấn 1–2 cán bộ CTSV — đó là bằng chứng yếu. Phải ghi rõ là ước lượng và nêu cỡ mẫu. Đừng trình bày như kết quả đo có kiểm soát. Hội đồng bắt được chỗ thổi phồng rất nhanh, và mất một chỗ là mất niềm tin vào cả bảng.
 
 **Không giấu chỗ thua.** Dòng cuối bảng threat model — *"cán bộ nhập liệu sai từ đầu → cả hai thiết kế đều không chặn (vấn đề oracle)"* — là dòng quan trọng nhất của cả chương. Giữ nguyên. Sự trung thực này **tăng** điểm bảo vệ: nó chứng minh hiểu công cụ mình dùng thay vì tin mù quáng. Hội đồng phân biệt được hai thứ đó.
+
+**Dùng ba mức, không dùng nhị phân.** Cột "thiết kế đề xuất" phải phân **Ngăn** / **Tăng chi phí** / **Phát hiện**, không ghi "chặn" cho mọi thứ. Ví dụ cụ thể: device binding **ngăn** được chia sẻ mật khẩu, nhưng **không ngăn** được việc đưa thẳng điện thoại đã đăng nhập cho bạn, và `deviceFp` chỉ là UUID trong `localStorage` nên sao chép được. Ghi "chặn bằng device binding" là nói quá và sẽ bị bắt bẻ. Khi thêm dòng mới vào bảng, luôn hỏi: *kẻ tấn công có động lực và có mặt tại chỗ thì có làm được không?*
 
 Tương tự với các hạn chế đã biết: mô hình custodial, PWA không có push thật, contract không upgradeable, camera iOS. Ghi hết vào phần hạn chế. Mỗi hạn chế được nêu chủ động là một câu hỏi khó bị vô hiệu hóa trước khi được hỏi.
 

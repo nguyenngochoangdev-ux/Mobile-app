@@ -13,11 +13,17 @@
 
 | Khối | Luận điểm phục vụ | Ghi chú |
 |---|---|---|
-| Điểm danh chống gian lận (QR động HMAC, device binding, offline queue) | Tầng oracle — làm cho phần chuỗi có nghĩa | 80% giá trị thực tiễn |
+| Điểm danh nhiều lớp kiểm tra (QR động HMAC, device binding, offline queue) | Tầng oracle — làm cho phần chuỗi có nghĩa | 80% giá trị thực tiễn |
 | Neo Merkle + `AnchorRegistry` | 2.2a — chống sửa hồi tố | Lý do tồn tại của đề tài |
 | Verifier độc lập | 2.2b — xác minh sau tốt nghiệp | Bằng chứng trực quan nhất khi demo |
 | Rule engine SpEL + `evidence_hash` | Đóng góp học thuật rõ nhất | Verifiable computation bản nhẹ |
 | `IssuerRegistry` | 2.2c — nhiều bên cấp phát | ~40 dòng Solidity, rẻ |
+
+> **Không gọi khối này là "điểm danh chống gian lận".** Nó **ngăn** được chia sẻ mật khẩu
+> và ảnh chụp QR gửi sau, **tăng chi phí** của quét hộ lâu dài, nhưng **không ngăn** được
+> việc đưa thẳng điện thoại đã đăng nhập cho bạn, cũng không ngăn được việc sao chép
+> `deviceFp` (chỉ là UUID trong `localStorage`). "Chống gian lận" là lời hứa tuyệt đối và
+> sẽ bị hội đồng bắt bẻ. Bảng đầy đủ: `docs/measurements.md` §11.2.
 
 ## Đã cắt ở tuần 0 — không được thêm lại
 

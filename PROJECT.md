@@ -127,11 +127,17 @@ Bảy khối chức năng gốc (ch.1.1), phân loại lại theo giá trị ngh
 
 | Khối | Vì sao giữ |
 |---|---|
-| Điểm danh chống gian lận (QR động, device binding, offline) | 80% giá trị thực tiễn; là tầng oracle làm cho phần chuỗi có nghĩa |
+| Điểm danh nhiều lớp kiểm tra (QR động, device binding, offline) | 80% giá trị thực tiễn; là tầng oracle làm cho phần chuỗi có nghĩa |
 | Neo Merkle + AnchorRegistry | Hiện thực hóa luận điểm 2.2a — lý do tồn tại của đề tài |
 | Verifier độc lập | Hiện thực hóa luận điểm 2.2b; bằng chứng trực quan nhất khi demo |
 | Rule engine chấm điểm (SpEL) + evidence_hash | Là thứ đề tài hứa giải quyết; `evidence_hash` là đóng góp học thuật rõ nhất |
 | IssuerRegistry | Rẻ (~40 dòng Solidity), chống lưng luận điểm 2.2c |
+
+> **Về tên gọi khối điểm danh.** Trong báo cáo dùng "điểm danh **nhiều lớp kiểm tra**",
+> không dùng "điểm danh **chống gian lận**". Cơ chế này **ngăn** được chia sẻ mật khẩu và
+> ảnh chụp QR gửi sau, **tăng chi phí** của quét hộ lâu dài, nhưng **không ngăn** được
+> việc sinh viên đưa thẳng điện thoại đã đăng nhập cho bạn. "Chống gian lận" đọc như một
+> lời hứa tuyệt đối và sẽ bị hội đồng bắt bẻ. Xem bảng đầy đủ ở `docs/measurements.md` §11.2.
 
 ### Cắt ngay tuần 0
 
@@ -268,7 +274,23 @@ Flyway 12 bảng · auth JWT · CRUD tổ chức/sự kiện · seed 500 sinh vi
 ### Tuần 2 — Điểm danh (khối giá trị nhất)
 QR động HMAC 10s · màn hình presenter · check-in/out · device binding · geofence cảnh báo mềm · hàng đợi offline IndexedDB.
 
-> **Mốc:** demo thật với 5 người, **có người được giao nhiệm vụ thử gian lận** (chụp màn hình QR gửi bạn, mượn tài khoản). Ghi lại kết quả — đây là dữ liệu cho bảng threat model.
+> **Mốc:** demo thật với 5 người, **có người được giao nhiệm vụ thử gian lận**. Ghi lại
+> kết quả — đây là dữ liệu cho bảng threat model.
+>
+> **Sáu kịch bản phải thử, kể cả những cái biết trước là sẽ qua được:**
+>
+> | # | Kịch bản | Dự kiến |
+> |---|---|---|
+> | 1 | Chụp màn hình QR gửi bạn ở nhà (quá 20 giây) | 🛡️ chặn |
+> | 2 | Mượn tài khoản, quét bằng máy chưa duyệt | 🛡️ chặn |
+> | 3 | Đứng ngoài khu vực nhưng token và máy đúng | ✅ qua, bị đánh dấu |
+> | 4 | **Đưa chính điện thoại đã đăng nhập cho bạn quét** | ❌ **qua được** |
+> | 5 | **Sao chép `localStorage['drl.deviceFp']` sang máy khác** | ❌ **qua được** |
+> | 6 | **Chuyển tiếp ảnh QR ngay trong 20 giây** | ❌ **qua được** |
+>
+> Kịch bản 4–6 quan trọng ngang kịch bản 1–2. Một bảng threat model có ô "qua được"
+> đáng tin hơn nhiều so với bảng toàn ô "chặn" — hội đồng biết không hệ thống nào chặn
+> được tất cả.
 
 ### Tuần 3 — Chuỗi + Merkle
 3 contract + test Hardhat · deploy Amoy · verify · wrapper web3j · `MerkleService`.
@@ -323,7 +345,7 @@ Ghi vào `docs/measurements.md` **ngay khi đo được**, không dồn.
 |---|---|---|---|
 | 1 | Gas theo kích thước lô Merkle (N = 10/100/1000/5000) | Đồ thị gas/bản ghi → chi phí/sinh viên/kỳ | 3 |
 | 2 | Gas thu hồi: bitmap vs mapping-per-credential | Đồ thị thứ hai | 4 (hoặc Hardhat local nếu cắt) |
-| 3 | Bảng threat model (7 dòng, ch.11.2) | Bảng đối chiếu CSDL vs thiết kế đề xuất | 2 |
+| 3 | Bảng threat model (11 dòng, ch.11.2) | Đối chiếu CSDL vs thiết kế đề xuất, phân **ba mức** Ngăn / Tăng chi phí / Phát hiện | 2 |
 | 4 | Thời gian tổng hợp điểm: tự động (giây) vs thủ công | So sánh định lượng | 5 |
 | 5 | Khảo sát SUS 20–30 sinh viên | Điểm SUS + phân tích | 7, nếu kịp |
 
@@ -375,7 +397,9 @@ Ba luận điểm blockchain **thật sự** bảo vệ được (ch.2.2) — ch
 
 **Trích dẫn nền:** W3C Verifiable Credentials Data Model · W3C DID · W3C Status List · Blockcerts (MIT Media Lab) · Turkanović et al., *EduCTX*, IEEE Access 2018.
 
-Khác biệt với EduCTX cần nêu rõ: EduCTX tập trung **tín chỉ học thuật liên trường**; đề tài này tập trung **hoạt động ngoại khóa và điểm rèn luyện**, đóng góp thêm ở **tầng thu thập dữ liệu chống gian lận** — chính là chỗ EduCTX bỏ ngỏ.
+Khác biệt với EduCTX cần nêu rõ: EduCTX tập trung **tín chỉ học thuật liên trường**; đề tài này tập trung **hoạt động ngoại khóa và điểm rèn luyện**, đóng góp thêm ở **tầng thu thập dữ liệu** — chính là chỗ EduCTX bỏ ngỏ.
+
+Phát biểu đóng góp cho đúng mức: đề tài **không** tuyên bố giải quyết được bài toán oracle. Đóng góp là *đo được* và *phân loại được* chất lượng dữ liệu đầu vào — mỗi bản ghi điểm danh mang theo `verified` và `geofenceOk`, nên biết chính xác bao nhiêu phần trăm dữ liệu được xác thực bằng máy và bao nhiêu do cán bộ nhập tay. Đó là thứ EduCTX và phần lớn đề tài blockchain giáo dục không có.
 
 ---
 

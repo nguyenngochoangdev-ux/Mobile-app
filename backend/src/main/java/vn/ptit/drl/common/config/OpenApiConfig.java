@@ -27,7 +27,7 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("DRL API — Sổ tay hoạt động sinh viên")
                         .version("v1")
-                        .description("Điểm danh chống gian lận, chấm điểm rèn luyện, "
+                        .description("Điểm danh nhiều lớp kiểm tra, chấm điểm rèn luyện, "
                                 + "neo dữ liệu lên Polygon Amoy."))
                 .components(new Components().addSecuritySchemes(BEARER,
                         new SecurityScheme()

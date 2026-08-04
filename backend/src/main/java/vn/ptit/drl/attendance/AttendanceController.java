@@ -29,7 +29,7 @@ import vn.ptit.drl.identity.jwt.AuthPrincipal;
 @RequestMapping("/api/attendance")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "Attendance", description = "Điểm danh chống gian lận")
+@Tag(name = "Attendance", description = "Điểm danh nhiều lớp kiểm tra")
 public class AttendanceController {
 
     private final AttendanceService service;
