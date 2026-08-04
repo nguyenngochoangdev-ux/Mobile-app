@@ -17,9 +17,22 @@ public record DrlProperties(Jwt jwt, Attendance attendance, Anchor anchor, Stora
      * @param geofenceBlocking Để {@code false}. GPS trong nhà rất kém chính xác — geofence
      *                         là tín hiệu phụ đánh dấu bản ghi cần xem lại, không dùng để
      *                         từ chối check-in.
+     * @param autoApproveFirstDevice Thiết bị ĐẦU TIÊN của sinh viên được duyệt tự động;
+     *                         mọi thiết bị sau đó phải qua cán bộ duyệt.
+     *                         <p>
+     *                         Đánh đổi có chủ ý: bắt duyệt cả thiết bị đầu tiên nghĩa là
+     *                         cán bộ phải duyệt tay 500 sinh viên trước khi hệ thống dùng
+     *                         được. Rủi ro còn lại — sinh viên chưa từng đăng nhập bị người
+     *                         khác chiếm tài khoản và đăng ký thiết bị đầu tiên — phải ghi
+     *                         vào phần hạn chế của báo cáo.
+     *                         <p>
+     *                         Luận điểm "device binding chống điểm danh hộ" vẫn đứng vững:
+     *                         mượn tài khoản để bạn quét hộ đòi hỏi ĐỔI thiết bị, và việc
+     *                         đó luôn cần duyệt.
      */
     public record Attendance(int qrSlotSeconds, int qrSlotTolerance,
-                             int offlineWindowHours, boolean geofenceBlocking) {}
+                             int offlineWindowHours, boolean geofenceBlocking,
+                             boolean autoApproveFirstDevice) {}
 
     public record Anchor(String cron, boolean enabled, String rpcUrl, String rpcUrlFallback,
                          long chainId, String issuerRegistryAddress,

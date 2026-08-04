@@ -72,6 +72,9 @@ drl:
     # GPS trong nhà rất kém chính xác — dùng làm tín hiệu phụ để đánh dấu
     # bản ghi cần xem lại, không dùng để từ chối.
     geofence-blocking: false
+    # Thiết bị đầu tiên duyệt tự động, đổi thiết bị phải qua cán bộ.
+    # Đặt false thì cán bộ phải duyệt tay toàn bộ 500 sinh viên trước khi dùng được.
+    auto-approve-first-device: true
 
   anchor:
     # Job neo chạy 02:00 mỗi đêm. Hệ chạy một instance nên @Scheduled là đủ,
