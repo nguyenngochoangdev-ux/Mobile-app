@@ -32,18 +32,42 @@ Cập nhật bằng `/measurements`.
 
 ## 11.2. Bảng mô hình đe dọa
 
-**Trạng thái:** ☐ chưa hoàn thiện — làm được từ tuần 2
-**Nguồn dữ liệu cột 3:** buổi demo điểm danh thật cuối tuần 2, có người được giao thử gian lận.
+**Trạng thái:** ◐ đã kiểm chứng bằng API, **chưa** kiểm chứng bằng người thật
+**Nguồn dữ liệu cột 4:** hiện là test tự động qua HTTP (2026-08-05). Buổi demo điểm danh
+thật với 5 người ở cuối tuần 2 sẽ thay thế/bổ sung.
 
-| Mối đe dọa | CSDL truyền thống | Thiết kế đề xuất | Đã kiểm chứng thực tế? |
+| Mối đe dọa | CSDL truyền thống | Thiết kế đề xuất | Kiểm chứng |
 |---|---|---|---|
-| Quản trị viên sửa dữ liệu quá khứ | Không phát hiện được | Phát hiện qua neo + hash chain | ☐ |
-| Điểm danh hộ bằng tài khoản mượn | Không chặn | Chặn bằng device binding | ☐ |
-| Chia sẻ ảnh chụp mã QR | Không chặn | Chặn bằng QR động 10s | ☐ |
-| Giả mạo chứng chỉ khi xin việc | Phải xin xác nhận từ trường | Verify độc lập, không cần trường | ☐ |
-| Chối bỏ dữ liệu khi khiếu nại | Phụ thuộc nhật ký nội bộ | Có bằng chứng thời điểm on-chain | ☐ |
-| Máy chủ trường ngừng hoạt động | Mất khả năng xác minh | Verifier vẫn chạy | ☐ |
+| Quản trị viên sửa dữ liệu quá khứ | Không phát hiện được | Phát hiện qua neo + hash chain | ☐ tuần 4 |
+| Điểm danh hộ bằng tài khoản mượn | Không chặn | Chặn bằng device binding | ✅ API |
+| Chia sẻ ảnh chụp mã QR | Không chặn | Chặn bằng QR động 10s | ✅ API |
+| Giả mạo chứng chỉ khi xin việc | Phải xin xác nhận từ trường | Verify độc lập, không cần trường | ☐ tuần 6 |
+| Chối bỏ dữ liệu khi khiếu nại | Phụ thuộc nhật ký nội bộ | Có bằng chứng thời điểm on-chain | ☐ tuần 4 |
+| Máy chủ trường ngừng hoạt động | Mất khả năng xác minh | Verifier vẫn chạy | ☐ tuần 6 |
 | **Cán bộ nhập liệu sai từ đầu** | **Không chặn** | **Không chặn (vấn đề oracle)** | — |
+
+### Kết quả kiểm chứng cơ chế điểm danh — 2026-08-05
+
+Đo qua HTTP trên máy dev, MySQL 8.4 container, `qr-slot-seconds=10`, `tolerance=1`.
+
+| # | Kịch bản tấn công | Kết quả | Bước chặn |
+|---|---|---|---|
+| 1 | Gửi ảnh chụp QR (slot cũ 5 nhịp = 50 giây) | 🛡️ chặn | Bước 1 — HMAC/slot |
+| 2 | Mượn tài khoản, quét bằng máy chưa duyệt | 🛡️ chặn | Bước 2 — device binding |
+| 3 | Bịa token | 🛡️ chặn | Bước 1 |
+| 4 | Dùng token của sự kiện khác cùng thời điểm | 🛡️ chặn | Bước 1 — token gắn `eventId` |
+| 5 | Sinh viên chưa đăng ký thiết bị nào | 🛡️ chặn | Bước 2 |
+| 6 | Token + thiết bị đúng, nhưng ở cách 1.100 km | ✅ **cho qua**, `geofenceOk=false` | Bước 4 — cảnh báo mềm, đúng thiết kế |
+| 7 | Đồng bộ offline: 1 bản hợp lệ + 1 bản token sai | 1 nhận / 1 từ chối | Xử lý từng bản độc lập |
+| 8 | Cán bộ điểm danh tay | ✅ cho qua, `verified=false` | **Vấn đề oracle — không chặn được** |
+
+**Kịch bản 6 và 8 là hai dòng quan trọng nhất khi trình bày.** Chúng cho thấy hệ thống
+phân biệt được "chặn" và "đánh dấu để xem lại", và thừa nhận thẳng giới hạn của tầng
+thu thập dữ liệu. Số bản ghi `verified=false` và `geofenceOk=false` truy được qua
+`GET /api/attendance/event/{id}/stats` — đưa vào báo cáo như một chỉ số chất lượng dữ liệu.
+
+**Unit test:** `QrTokenServiceTest`, 8/8 đạt — phủ dung sai slot, slot tương lai, secret
+riêng từng sự kiện, token gắn `eventId`, cửa sổ offline 24 giờ.
 
 > ⚠️ **Dòng cuối là dòng quan trọng nhất của cả chương — giữ nguyên, không xóa.**
 > Trung thực ở đây **tăng** điểm bảo vệ: nó chứng minh hiểu công cụ mình dùng thay vì

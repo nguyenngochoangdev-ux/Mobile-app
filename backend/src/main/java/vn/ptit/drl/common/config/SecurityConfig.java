@@ -60,6 +60,10 @@ public class SecurityConfig {
                     .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
                         .permitAll()
                     .requestMatchers("/actuator/health").permitAll()
+                    // BẮT BUỘC permit /error. Khi một exception thoát khỏi controller,
+                    // Spring forward sang /error; nếu đường này bị chặn thì mọi lỗi 500
+                    // biến thành 401 và che mất nguyên nhân thật — cực kỳ khó debug.
+                    .requestMatchers("/error").permitAll()
                     .anyRequest().authenticated())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
