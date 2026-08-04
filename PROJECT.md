@@ -63,6 +63,31 @@ Bổ sung: các namespace `erigon_*` và `trace_*` đã bị bỏ trên Amoy t�
 
 web3j hiện ở **5.0.3** (phát hành 21/01/2026), đã chuyển về Linux Foundation Decentralized Trust, **yêu cầu Java 21+** — khớp với lựa chọn Java 21 của tài liệu.
 
+#### Kiểm chứng thực tế 2026-08-05 — và một ràng buộc nó đặt lên thiết kế contract
+
+`AMOY_RPC_URL` hiện trỏ tới **PublicNode** (`polygon-amoy-bor-rpc.publicnode.com`), không
+phải Alchemy. Endpoint không cần key, đã đo chạy được: `eth_chainId` = `0x13882`,
+`eth_gasPrice`, `eth_estimateGas`, `eth_getTransactionCount`, `eth_getBlockByNumber` đều
+OK ở 170–350 ms. Tải của đề tài (3 tx deploy, 5 tx/đêm, vài chục lần đọc receipt) nằm
+thừa trong khả năng của nó.
+
+**Nhưng `eth_getLogs` bị giới hạn hai tầng:** bắt buộc có bộ lọc `address`, và tối đa
+**10.000 block mỗi lần gọi** (≈ 5,6 giờ lịch sử trên Amoy).
+
+→ **Hệ quả thiết kế, quyết ngay từ khi viết contract:** `AnchorRegistry` phải có hàm đọc
+`(domain, batchId) → root`, và bundle của sinh viên mang sẵn `batchId`. Verifier khi đó
+chỉ cần **một `eth_call`**, không quét lịch sử, không đụng `eth_getLogs`. Nếu để verifier
+đi dò sự kiện thì nó phải phân trang hàng trăm lần và sẽ chết trên bất kỳ endpoint công
+cộng nào.
+
+Điều này còn **củng cố luận điểm 2.2b**: verifier là trang tĩnh chạy trong trình duyệt,
+nên không giấu được API key. Việc nó chỉ cần một endpoint công cộng không key nghĩa là nó
+vẫn xác minh được kể cả khi trường đã ngừng trả tiền cho mọi dịch vụ. Nên viết hẳn ý này
+vào báo cáo thay vì coi là hạn chế.
+
+Alchemy vẫn nên lấy làm endpoint **chính cho backend** (`AMOY_RPC_URL_FALLBACK` đang trống)
+— lý do là bảo hiểm cho buổi nghiệm thu, không phải vì thiếu năng lực.
+
 ### 2.3. ⚠️ Lỗ hổng thiết kế: leaf hash không có nonce
 
 Tài liệu (ch.3, ch.6.4) khẳng định "chỉ lưu hash, không lưu dữ liệu cá nhân" và dùng:
