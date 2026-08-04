@@ -1,0 +1,16 @@
+{
+  "name": "drl-verifier",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Verifier doc lap — doc thang Polygon Amoy, KHONG goi backend mot dong nao",
+  "scripts": {
+    "test": "node --test",
+    "gen-vectors": "node scripts/gen-vectors.mjs"
+  },
+  "//": "RANG BUOC CUNG (PROJECT.md §4): chi duoc co ethers va merkletreejs. Khong them dependency nao khac, ke ca devDependency — test chay bang node:test co san cua Node.",
+  "dependencies": {
+    "ethers": "^6.17.0",
+    "merkletreejs": "^0.5.2"
+  }
+}

@@ -1,0 +1,223 @@
+{
+  "$schema": "khong-phai-JSON-Schema — day la bo test vector, doc docs/canonicalization.md truoc khi sua",
+  "spec": "docs/canonicalization.md",
+  "formula": "leaf = keccak256( bytes8(domain) || 0x3A || UTF-8(JCS(payload)) )",
+  "warning": "File nay la HOP DONG giua backend Java va verifier JS. Test do = mot trong hai phia sai, KHONG phai file nay sai. Chi sinh lai bang `npm run gen-vectors` khi co y doi dac ta.",
+  "generatedBy": "verifier/scripts/gen-vectors.mjs",
+  "vectors": [
+    {
+      "id": "attend-basic",
+      "why": "Bản ghi điểm danh điển hình: số nguyên + số thực + timestamp + boolean trong cùng payload.",
+      "domain": "ATTEND",
+      "payload": {
+        "studentCode": "B21DCCN123",
+        "eventId": 128,
+        "checkInAt": "2026-08-05T09:30:00Z",
+        "lat": 21.0285,
+        "lng": 105.8542,
+        "verified": true,
+        "geofenceOk": false,
+        "deviceFp": "6f1c2a90-3b4d-4e5f-8a91-2c3d4e5f6a7b",
+        "nonce": "0x9f86d081884c7d659a2feaa0c55ad015"
+      },
+      "expected": {
+        "domainBytes8": "0x415454454e440000",
+        "jcs": "{\"checkInAt\":\"2026-08-05T09:30:00Z\",\"deviceFp\":\"6f1c2a90-3b4d-4e5f-8a91-2c3d4e5f6a7b\",\"eventId\":128,\"geofenceOk\":false,\"lat\":21.0285,\"lng\":105.8542,\"nonce\":\"0x9f86d081884c7d659a2feaa0c55ad015\",\"studentCode\":\"B21DCCN123\",\"verified\":true}",
+        "preimageBytes": 245,
+        "leaf": "0xc3499cc6b063d2a70482febcff04ef852eda3b4e18915026abe1af371473bf5c"
+      }
+    },
+    {
+      "id": "attend-tieng-viet",
+      "why": "Tiếng Việt có dấu giữ nguyên UTF-8 (không escape \\uXXXX); dấu nháy kép, xuống dòng, tab phải escape; ký tự ngoài BMP (emoji) đi bằng cặp thay thế.",
+      "domain": "ATTEND",
+      "payload": {
+        "fullName": "Nguyễn Ngọc Hoàng",
+        "note": "Điểm danh \"muộn\"\n\tlý do: kẹt xe — đã xác nhận 🎓",
+        "unit": "Đoàn Thanh niên · Khoa CNTT1",
+        "studentCode": "B21DCCN123",
+        "nonce": "0x3b8c1f42a7d90e5643f1c2b8a90d7e64"
+      },
+      "expected": {
+        "domainBytes8": "0x415454454e440000",
+        "jcs": "{\"fullName\":\"Nguyễn Ngọc Hoàng\",\"nonce\":\"0x3b8c1f42a7d90e5643f1c2b8a90d7e64\",\"note\":\"Điểm danh \\\"muộn\\\"\\n\\tlý do: kẹt xe — đã xác nhận 🎓\",\"studentCode\":\"B21DCCN123\",\"unit\":\"Đoàn Thanh niên · Khoa CNTT1\"}",
+        "preimageBytes": 239,
+        "leaf": "0xc46ece951ab6ce5b9865b9206525e16bdfcedac3f5515f43fd61c64beada9fa0"
+      }
+    },
+    {
+      "id": "score-nested",
+      "why": "Object lồng nhau — chứng minh sắp xếp khóa là ĐỆ QUY, không chỉ ở cấp ngoài cùng. Thang 20/25/20/25/10 của Thông tư 16/2015/TT-BGDĐT.",
+      "domain": "SCORE",
+      "payload": {
+        "total": 87.5,
+        "semester": "2026-1",
+        "studentCode": "B21DCCN123",
+        "rulesetVersion": 3,
+        "criteria": {
+          "ynThucHocTap": 18.5,
+          "chapHanhNoiQuy": 24,
+          "hoatDongXaHoi": 17,
+          "quanHeCongDong": 20,
+          "congTacCanBo": 8
+        },
+        "nonce": "0xa1b2c3d4e5f60718293a4b5c6d7e8f90"
+      },
+      "expected": {
+        "domainBytes8": "0x53434f5245000000",
+        "jcs": "{\"criteria\":{\"chapHanhNoiQuy\":24,\"congTacCanBo\":8,\"hoatDongXaHoi\":17,\"quanHeCongDong\":20,\"ynThucHocTap\":18.5},\"nonce\":\"0xa1b2c3d4e5f60718293a4b5c6d7e8f90\",\"rulesetVersion\":3,\"semester\":\"2026-1\",\"studentCode\":\"B21DCCN123\",\"total\":87.5}",
+        "preimageBytes": 243,
+        "leaf": "0x193c733442506498ee9a2e073605ff5e82dc3e790e1228e230c40e19a21a4fc3"
+      }
+    },
+    {
+      "id": "cred-null-va-mang",
+      "why": "Trường null giữ nguyên literal `null` (KHÔNG bị lược bỏ); mảng giữ nguyên thứ tự phần tử (không sắp xếp); mảng object cũng sắp xếp khóa đệ quy.",
+      "domain": "CRED",
+      "payload": {
+        "subject": "B21DCCN123",
+        "expiresAt": null,
+        "issuedAt": "2026-08-05T00:00:00Z",
+        "revokedAt": null,
+        "scopes": [
+          "SCORE",
+          "ATTEND",
+          "CRED"
+        ],
+        "evidence": [
+          {
+            "weight": 2,
+            "kind": "attendance"
+          },
+          {
+            "weight": 1,
+            "kind": "award"
+          }
+        ],
+        "statusListIndex": 40317,
+        "nonce": "0x0011223344556677889900aabbccddee"
+      },
+      "expected": {
+        "domainBytes8": "0x4352454400000000",
+        "jcs": "{\"evidence\":[{\"kind\":\"attendance\",\"weight\":2},{\"kind\":\"award\",\"weight\":1}],\"expiresAt\":null,\"issuedAt\":\"2026-08-05T00:00:00Z\",\"nonce\":\"0x0011223344556677889900aabbccddee\",\"revokedAt\":null,\"scopes\":[\"SCORE\",\"ATTEND\",\"CRED\"],\"statusListIndex\":40317,\"subject\":\"B21DCCN123\"}",
+        "preimageBytes": 279,
+        "leaf": "0xf8151c000d63ae8d105bf6895630ab4fe6377a9db0a74ef84b09bbd73b9e6412"
+      }
+    },
+    {
+      "id": "audit-bien",
+      "why": "Các giá trị biên: 0, số âm, object rỗng, mảng rỗng, chuỗi rỗng, số nguyên lớn sát MAX_SAFE_INTEGER, và số thực ở hai đầu vùng an toàn [1e-3, 1e7).",
+      "domain": "AUDIT",
+      "payload": {
+        "seq": 0,
+        "delta": -3,
+        "meta": {},
+        "changes": [],
+        "reason": "",
+        "prevHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "bigCounter": 9007199254740991,
+        "nearZero": 0.001,
+        "nearMax": 9999999.5,
+        "nonce": "0xdeadbeefcafebabe0123456789abcdef"
+      },
+      "expected": {
+        "domainBytes8": "0x4155444954000000",
+        "jcs": "{\"bigCounter\":9007199254740991,\"changes\":[],\"delta\":-3,\"meta\":{},\"nearMax\":9999999.5,\"nearZero\":0.001,\"nonce\":\"0xdeadbeefcafebabe0123456789abcdef\",\"prevHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"reason\":\"\",\"seq\":0}",
+        "preimageBytes": 256,
+        "leaf": "0x92f75f606289e45702918571cbd4b08290610cfbe449dcee6c01c4b46a752539"
+      }
+    },
+    {
+      "id": "ruleset-sap-xep-khoa",
+      "why": "Tra tấn thứ tự khóa theo ĐƠN VỊ MÃ UTF-16: chữ số < chữ hoa < chữ thường < ký tự có dấu. Java String.compareTo và JS Array.sort() đều dùng đúng thứ tự này.",
+      "domain": "RULESET",
+      "payload": {
+        "1": 7,
+        "b": 1,
+        "á": 2,
+        "A": 3,
+        "ab": 4,
+        "a": 5,
+        "Z": 6,
+        "nonce": "0xfedcba98765432100123456789abcdef"
+      },
+      "expected": {
+        "domainBytes8": "0x52554c4553455400",
+        "jcs": "{\"1\":7,\"A\":3,\"Z\":6,\"a\":5,\"ab\":4,\"b\":1,\"nonce\":\"0xfedcba98765432100123456789abcdef\",\"á\":2}",
+        "preimageBytes": 99,
+        "leaf": "0x99468eeb621e536cdbef6ce05ed878e0159ee96963573be36675c7cfd0f9c3cd"
+      }
+    }
+  ],
+  "rejects": [
+    {
+      "id": "thieu-nonce",
+      "why": "Không có nonce → payload vét cạn được từ leaf hash (PROJECT.md §2.3).",
+      "domain": "ATTEND",
+      "payload": {
+        "studentCode": "B21DCCN123",
+        "eventId": 1
+      },
+      "expectedError": "nonce"
+    },
+    {
+      "id": "nonce-sai-do-dai",
+      "why": "Nonce 8 byte thay vì 16 byte.",
+      "domain": "ATTEND",
+      "payload": {
+        "studentCode": "B21DCCN123",
+        "nonce": "0x0011223344556677"
+      },
+      "expectedError": "nonce"
+    },
+    {
+      "id": "nonce-chu-hoa",
+      "why": "Hex chữ hoa — hai phía dễ chuẩn hóa khác nhau nên chốt chữ thường và từ chối phần còn lại.",
+      "domain": "ATTEND",
+      "payload": {
+        "studentCode": "B21DCCN123",
+        "nonce": "0xDEADBEEFCAFEBABE0123456789ABCDEF"
+      },
+      "expectedError": "nonce"
+    },
+    {
+      "id": "so-thuc-qua-nho",
+      "why": "JS in \"0.0001\", Java in \"1.0E-4\" → lệch hash im lặng. Phải ném lỗi.",
+      "domain": "SCORE",
+      "payload": {
+        "v": 0.0001,
+        "nonce": "0x9f86d081884c7d659a2feaa0c55ad015"
+      },
+      "expectedError": "an toàn"
+    },
+    {
+      "id": "so-thuc-qua-lon",
+      "why": "Vượt 1e7: JS in \"12345678.5\", Java in \"1.23456785E7\" → lệch hash im lặng.",
+      "domain": "SCORE",
+      "payload": {
+        "v": 12345678.5,
+        "nonce": "0x9f86d081884c7d659a2feaa0c55ad015"
+      },
+      "expectedError": "an toàn"
+    },
+    {
+      "id": "so-nguyen-vuot-safe-integer",
+      "why": "Vượt 2^53-1: Java `long` biểu diễn chính xác, JS `number` thì không. Bất kỳ giá trị nào trong vùng này đều có nguy cơ hai phía đọc ra hai số khác nhau.",
+      "domain": "AUDIT",
+      "payload": {
+        "v": 9007199254740994,
+        "nonce": "0x9f86d081884c7d659a2feaa0c55ad015"
+      },
+      "expectedError": "MAX_SAFE_INTEGER"
+    },
+    {
+      "id": "mien-khong-hop-le",
+      "why": "Chỉ có đúng 5 miền neo. Thêm miền thứ sáu là đổi lược đồ AnchorRegistry.",
+      "domain": "DIEMDANH",
+      "payload": {
+        "nonce": "0x9f86d081884c7d659a2feaa0c55ad015"
+      },
+      "expectedError": "Miền neo"
+    }
+  ]
+}

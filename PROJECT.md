@@ -269,7 +269,13 @@ Flyway 12 bảng · auth JWT · CRUD tổ chức/sự kiện · seed 500 sinh vi
 
 > **Mốc:** Swagger ≥30 endpoint, lệnh sinh client chạy được, **và một tx của mình đã hiện trên Amoy explorer**.
 >
-> **Trạng thái 2026-08-05:** ✅ 30 endpoint · ✅ sinh client (`scripts/gen-api-client.ps1`, 7 service / 23 model) · ❌ spike chuỗi **chưa làm** — chờ tài khoản Alchemy và POL từ faucet.
+> **Trạng thái 2026-08-05:** ✅ 30 endpoint · ✅ sinh client (`scripts/gen-api-client.ps1`, 7 service / 23 model) · ❌ spike chuỗi **chưa làm**.
+>
+> Chi tiết phần chuỗi: ✅ ví triển khai `0xf32728c5c2D0575ea406Ad37e2467916c89F529F` đã có
+> **0.3167 POL** trên Amoy · ✅ `ETHERSCAN_API_KEY` đã kiểm chứng gọi được `chainid=80002`
+> (**không còn key riêng cho PolygonScan** — Etherscan hợp nhất thành API V2, V1 tắt từ
+> 15/08/2025) · ❌ **`AMOY_RPC_URL` vẫn là placeholder**, chưa có tài khoản Alchemy →
+> đây là thứ duy nhất còn chặn việc deploy.
 
 ### Tuần 2 — Điểm danh (khối giá trị nhất)
 QR động HMAC 10s · màn hình presenter · check-in/out · device binding · geofence cảnh báo mềm · hàng đợi offline IndexedDB.
@@ -297,6 +303,15 @@ QR động HMAC 10s · màn hình presenter · check-in/out · device binding ·
 **Ngày đầu tuần, việc đầu tiên:** viết bộ test vector canonicalization — 5 payload mẫu + leaf hash kỳ vọng, chạy qua **cả** Java và JS.
 
 > **Mốc:** giao dịch neo thật trên explorer; test vector xanh cả hai phía.
+>
+> **Trạng thái 2026-08-05:** ✅ **test vector xanh cả hai phía** — 46 test Java
+> (`CanonicalVectorTest`) + 40 test JS (`verifier/test/canonical.test.mjs`), cùng đọc một
+> file `backend/src/test/resources/canonical-vectors.json`. Phía Java xanh ngay lần chạy đầu
+> với bộ vector do JS sinh, tức hai bên khớp từng byte một cách độc lập.
+> Đặc tả chốt: `docs/canonicalization.md`. Đã có `Jcs` · `AnchorDomain` · `LeafHasher`
+> trong module `anchor`, chưa import gì từ nghiệp vụ.
+> ❌ Chưa có: 3 contract, `MerkleService`, test vector cho **Merkle proof** (mới chỉ có
+> cho leaf), giao dịch neo trên explorer.
 
 ### Tuần 4 — Neo + credential
 Job neo hằng đêm · hash chain audit log · VC + chữ ký issuer · StatusList · xuất bundle JSON.
