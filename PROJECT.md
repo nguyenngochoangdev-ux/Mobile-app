@@ -102,7 +102,42 @@ Thực tế WebKit: `getUserMedia` trong PWA chạy **standalone mode** (đã "A
 2. Demo nghiệm thu bằng thiết bị Android, ghi rõ giới hạn iOS trong báo cáo.
 3. Luồng dự phòng: sinh viên **hiển thị** QR tĩnh của mình, cán bộ quét bằng máy cán bộ. Đảo chiều quét, không phụ thuộc camera máy sinh viên. Nên làm luồng này **bất kể chọn gì** — nó cũng là phương án cứu khi hội trường mất sóng.
 
-**Phải kiểm chứng ở tuần 0**, không để đến tuần 6. Test trên một iPhone thật, 30 phút.
+**Phải kiểm chứng ở tuần 0**, không để đến tuần 6.
+
+### Quyết định 2026-08-05 — demo bằng Android, iOS để ở phần hạn chế
+
+Chốt **phương án 1 + 2 + 3**, không chỉ một:
+
+- **Phương án 1 đã áp dụng từ tuần 2** — `app/index.html` cố ý không đặt
+  `apple-mobile-web-app-capable`. Không cần làm gì thêm.
+- **Phương án 2 là quyết định mới:** thiết bị demo và thiết bị test là **Android**,
+  không phải iPhone.
+- **Phương án 3 vẫn phải làm** — luồng đảo chiều là phương án cứu khi hội trường mất sóng,
+  độc lập với chuyện chọn thiết bị nào.
+
+**Hệ quả phải viết đúng trong báo cáo.** Android chưa bao giờ là chỗ có rủi ro; rủi ro nằm
+ở WebKit/iOS. Chọn Android **không giải quyết** rủi ro đó mà **né** nó. Vì vậy trong báo
+cáo chỉ được phát biểu *"giới hạn iOS dẫn theo báo cáo lỗi WebKit công khai"* — **không**
+được viết *"đã kiểm chứng"*. Chuẩn bị sẵn câu trả lời cho câu hỏi "em đã test trên iPhone
+chưa?": chưa, và đây là lý do.
+
+### Về việc đóng gói APK — hoãn, không làm trong 8 tuần
+
+Đã xét bằng `/scope-guard` ngày 2026-08-05. Không phục vụ luận điểm nào trong §10, không
+sinh số liệu cho chương 11, tốn ~1–1,5 ngày không có chỗ cắt để bù.
+
+Hai lý do kỹ thuật khiến nó cũng **không làm được việc** người ta hay kỳ vọng ở nó:
+
+1. Trusted Web Activity bắt buộc phải có **origin HTTPS đã deploy** kèm
+   `.well-known/assetlinks.json` khớp SHA-256 của keystore. PWA deploy ở tuần 6, nên APK
+   không thể tồn tại trước tuần 6 — không dùng làm bài test tuần 0 được. Nếu assetlinks
+   sai, Chrome tụt về Custom Tab và hiện thanh URL, mất đúng thứ duy nhất APK mang lại.
+2. TWA **chính là Chrome đang render trang đó**, nên camera hành xử y hệt Chrome Android.
+   Nó không cho thêm thông tin nào so với mở PWA trong Chrome trên máy Android.
+
+Câu ghi vào hướng phát triển: *"Đóng gói PWA thành ứng dụng Android qua Trusted Web
+Activity để phát hành trên CH Play là hướng phát triển; ở phiên bản hiện tại hệ thống truy
+cập qua trình duyệt."*
 
 ### 2.5. Quy chế điểm rèn luyện — xác nhận và cảnh báo
 
@@ -254,7 +289,7 @@ Lý do: toolchain chuỗi (tài khoản RPC, faucet, deploy, verify, sinh wrappe
 
 ### Tuần 0 (2–3 ngày, trước khi tính tuần 1)
 - [ ] Lấy bản quy chế điểm rèn luyện trường đang áp dụng, xác nhận thang 5 tiêu chí
-- [ ] **Test camera QR trên iPhone thật** — quyết định standalone vs Safari tab (§2.4)
+- [ ] **Test camera QR trên Android thật** (đổi từ iPhone — quyết định 2026-08-05, xem §2.4)
 - [ ] Tạo tài khoản Alchemy, lấy RPC Amoy; lấy POL từ faucet
 - [ ] Đọc EduCTX (Turkanović 2018) + W3C VC Data Model, ghi 1 trang khác biệt của đề tài
 - [ ] Chốt phạm vi đã cắt (§3), viết vào `docs/scope.md` — **ký tên vào đó, không sửa sau**
@@ -376,7 +411,7 @@ Ghi vào `docs/measurements.md` **ngay khi đo được**, không dồn.
 |---|---|---|
 | **Vỡ tiến độ do phạm vi** | Tuần 5 mới xong tuần 3 | Cắt trước ở tuần 0 (§3); tôn trọng cổng kiểm soát (§7) |
 | **Lệch canonicalization** | Mọi Merkle proof fail | Test vector ngày đầu tuần 3. Phát hiện tuần 3 mất 2 giờ, tuần 6 mất 2 ngày |
-| **Camera iOS trong PWA** | Sinh viên không quét được | Test tuần 0; luôn có luồng đảo chiều dự phòng (§2.4) |
+| **Camera iOS trong PWA** | Sinh viên không quét được | **Chấp nhận rủi ro, không kiểm chứng** — demo bằng Android (quyết định 2026-08-05, §2.4). `apple-mobile-web-app-capable` đã bỏ; luồng đảo chiều là phương án cứu. Ghi vào phần hạn chế, phát biểu dẫn theo báo cáo lỗi WebKit chứ không phải đo của mình |
 | **Sa lầy hạ tầng chuỗi** | Mất 3 tuần dựng Hyperledger Fabric | Public testnet. Tuyệt đối không tự dựng chain |
 | **RPC chết** | Không kết nối Amoy | Alchemy/Infura; có sẵn provider thứ hai trong config |
 | **Dồn báo cáo vào cuối** | Code đến tuần 8 rồi viết 3 đêm | Khóa cứng tuần 7 kể cả khi còn bug |
