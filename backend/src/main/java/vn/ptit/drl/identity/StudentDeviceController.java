@@ -60,10 +60,13 @@ public class StudentDeviceController {
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('STUDENT')")
-    @Operation(summary = "Sinh viên đăng ký thiết bị của mình")
+    @Operation(operationId = "registerDevice", summary = "Sinh viên đăng ký thiết bị của mình")
     @Transactional
-    public DeviceResponse register(@Valid @RequestBody RegisterRequest req,
-                                   @AuthenticationPrincipal AuthPrincipal principal) {
+    // Tên method phải là duy nhất trên toàn bộ API: openapi-typescript-codegen lấy nó
+    // làm tên hàm client. Trùng tên với RegistrationController.register sẽ sinh ra
+    // "register1", và số thứ tự đó đổi theo thứ tự endpoint -> vỡ ngầm khi sinh lại.
+    public DeviceResponse registerDevice(@Valid @RequestBody RegisterRequest req,
+                                         @AuthenticationPrincipal AuthPrincipal principal) {
         Long studentId = principal.studentId();
 
         var existing = repository.findByStudentIdAndDeviceFp(studentId, req.deviceFp());

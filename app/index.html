@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- viewport-fit=cover + user-scalable=no: quét QR trên điện thoại, tránh
+         double-tap zoom làm rung khung hình camera. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#0f172a" />
+
+    <!--
+      KHÔNG đặt apple-mobile-web-app-capable=yes.
+      Trên iOS, PWA chạy standalone hay bị chặn getUserMedia và không lưu quyền camera
+      giữa các lần mở (webkit bug 185448). App sinh viên sống bằng camera nên chấp nhận
+      chạy trong tab Safari để camera hoạt động ổn định.
+      Xem PROJECT.md §2.4. Quyết định này PHẢI kiểm chứng trên iPhone thật.
+    -->
+    <title>Sổ tay hoạt động sinh viên</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

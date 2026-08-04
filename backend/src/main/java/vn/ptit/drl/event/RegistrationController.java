@@ -44,9 +44,9 @@ public class RegistrationController {
     @PostMapping("/events/{eventId}/register")
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('STUDENT')")
-    @Operation(summary = "Sinh viên tự đăng ký tham gia sự kiện")
+    @Operation(operationId = "registerForEvent", summary = "Sinh viên tự đăng ký tham gia sự kiện")
     @Transactional
-    public RegistrationResponse register(@PathVariable Long eventId,
+    public RegistrationResponse registerForEvent(@PathVariable Long eventId,
                                          @AuthenticationPrincipal AuthPrincipal principal) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("sự kiện", eventId));

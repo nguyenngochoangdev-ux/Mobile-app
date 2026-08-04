@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Vùng camera của html5-qrcode: thư viện chèn video vào đây và tự đặt kích thước.
+   Ép max-width để không tràn trên màn hình điện thoại. */
+#qr-reader video {
+  width: 100% !important;
+  max-width: 100% !important;
+  border-radius: 0.75rem;
+}
+
+#qr-reader img[alt="Info icon"] {
+  display: none;
+}
