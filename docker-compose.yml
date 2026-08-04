@@ -1,0 +1,30 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: drl-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpw}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-drl}
+      MYSQL_USER: ${MYSQL_USER:-drl}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-drlpw}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    command:
+      # utf8mb4 bắt buộc — tên sinh viên có dấu tiếng Việt.
+      # Sai charset ở đây làm lệch cả canonicalization (xem canonical-hash skill).
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      # Giờ UTC ở tầng DB. Mọi timestamp neo lên chuỗi phải là ISO-8601 UTC.
+      - --default-time-zone=+00:00
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD:-rootpw}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+volumes:
+  mysql-data:

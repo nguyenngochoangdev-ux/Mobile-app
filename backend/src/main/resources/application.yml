@@ -1,0 +1,94 @@
+spring:
+  application:
+    name: drl-backend
+
+  datasource:
+    # characterEncoding phải là tên charset JAVA (UTF-8), KHÔNG phải tên charset
+    # MySQL (utf8mb4) — driver ném UnsupportedEncodingException. Phía server đã
+    # là utf8mb4 (xem docker-compose.yml); connectionCollation chốt collation.
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:drl}?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&serverTimezone=UTC&allowPublicKeyRetrieval=true&useSSL=false
+    username: ${MYSQL_USER:drl}
+    password: ${MYSQL_PASSWORD:drlpw}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      # KHÔNG BAO GIỜ đổi sang update/create. Schema do Flyway quản lý, một nguồn sự thật.
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        jdbc:
+          time_zone: UTC
+        format_sql: true
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: false
+    locations: classpath:db/migration
+
+  jackson:
+    # Timestamp ISO-8601 UTC, không phải epoch millis.
+    # Đây KHÔNG phải serializer dùng cho canonicalization — xem CanonicalJson.
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: UTC
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: always
+
+# ===== OpenAPI → sinh TypeScript client cho PWA =====
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+
+# ===== Cấu hình riêng của đề tài =====
+drl:
+  jwt:
+    secret: ${JWT_SECRET:doi-gia-tri-nay-truoc-khi-chay-that-su-can-64-byte-tro-len-de-du-an-toan}
+    access-ttl-minutes: ${JWT_ACCESS_TTL_MIN:30}
+    refresh-ttl-days: ${JWT_REFRESH_TTL_DAYS:14}
+
+  attendance:
+    # QR đổi mỗi 10 giây. Máy chủ chấp nhận slot {hiện tại, hiện tại - 1}
+    # để bù lệch đồng hồ giữa các thiết bị.
+    qr-slot-seconds: 10
+    qr-slot-tolerance: 1
+    # Cửa sổ chấp nhận bản ghi check-in offline đồng bộ muộn.
+    offline-window-hours: 24
+    # Geofence là CẢNH BÁO MỀM, không chặn check-in.
+    # GPS trong nhà rất kém chính xác — dùng làm tín hiệu phụ để đánh dấu
+    # bản ghi cần xem lại, không dùng để từ chối.
+    geofence-blocking: false
+
+  anchor:
+    # Job neo chạy 02:00 mỗi đêm. Hệ chạy một instance nên @Scheduled là đủ,
+    # không cần ShedLock.
+    cron: "0 0 2 * * *"
+    enabled: ${ANCHOR_ENABLED:false}
+    rpc-url: ${AMOY_RPC_URL:}
+    rpc-url-fallback: ${AMOY_RPC_URL_FALLBACK:}
+    chain-id: ${CHAIN_ID:80002}
+    issuer-registry-address: ${ISSUER_REGISTRY_ADDRESS:}
+    anchor-registry-address: ${ANCHOR_REGISTRY_ADDRESS:}
+    status-list-address: ${STATUS_LIST_ADDRESS:}
+
+  storage:
+    upload-dir: ${UPLOAD_DIR:./uploads}
+
+logging:
+  level:
+    vn.ptit.drl: DEBUG
+    org.flywaydb: INFO

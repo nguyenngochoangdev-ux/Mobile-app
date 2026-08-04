@@ -1,0 +1,49 @@
+# === Bí mật — TUYỆT ĐỐI KHÔNG COMMIT ===
+.env
+.env.local
+*.env
+!.env.example
+secrets/
+master.key
+*.keystore
+deployer-private-key*
+
+# === Java / Maven ===
+target/
+!.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+!**/maven-wrapper.jar
+*.log
+hs_err_pid*
+
+# === Node ===
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.tsbuildinfo
+npm-debug.log*
+pnpm-debug.log*
+
+# === Hardhat ===
+contracts/artifacts/
+contracts/cache/
+contracts/typechain-types/
+contracts/coverage/
+coverage.json
+
+# === Sinh tự động ===
+app/src/api/generated/
+backend/src/main/java/**/contracts/generated/
+
+# === IDE / OS ===
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# === Dữ liệu cục bộ ===
+uploads/
+mysql-data/
