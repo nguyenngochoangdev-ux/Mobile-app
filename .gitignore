@@ -29,9 +29,16 @@ pnpm-debug.log*
 # === Hardhat ===
 contracts/artifacts/
 contracts/cache/
+# typechain: Hardhat 3 sinh ra types/, Hardhat 2 sinh ra typechain-types/
+contracts/types/
 contracts/typechain-types/
 contracts/coverage/
 coverage.json
+# ABI + bin tách ra cho web3j codegen — dẫn xuất, sinh lại bằng `npm run abi`.
+contracts/build/
+
+# contracts/deployments/ thì CÓ commit: nó là bản ghi địa chỉ đã triển khai và tx hash,
+# không phải file dẫn xuất. Mất nó là mất dấu vết buổi deploy.
 
 # === Sinh tự động ===
 app/src/api/generated/
