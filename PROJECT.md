@@ -398,8 +398,15 @@ QR động HMAC 10s · màn hình presenter · check-in/out · device binding ·
 > vector do `merkletreejs` sinh. Tổng test tầng canonicalization giờ là
 > **Java 118 · JS 115**. Đặc tả: `docs/canonicalization.md` §8.
 >
-> ❌ Chưa có: **giao dịch `anchor()` thật** — mới có giao dịch *triển khai*, chưa có giao
-> dịch *neo*. Đây là thứ **duy nhất** còn thiếu để đóng cổng kiểm soát cuối tuần 3.
+> ✅ **GIAO DỊCH NEO THẬT — cổng tuần 3 đã đóng** (2026-08-06). Lô `ATTEND` `2026080501`,
+> 4 bản ghi điểm danh thật, 81.968 gas:
+> [`0x1d1ebe…db75`](https://amoy.polygonscan.com/tx/0x1d1ebe0d84320b669fe15243eee4a6a6d58b736cdd204db19ccbc08fa747db75)
+>
+> Vòng khép kín đã chạy thật: bản ghi MySQL → payload 11 trường → leaf → cây Merkle → giao
+> dịch Amoy → đọc lại root bằng **một `eth_call` trên RPC công cộng không key** → **4/4 proof
+> xác minh được**, và sửa một byte thì bị từ chối. Chi tiết: `docs/measurements.md` §11.6.
+>
+> Đây là lần đầu luận điểm 2 có bằng chứng chạy được thay vì là lời hứa.
 
 ### Tuần 4 — Neo + credential
 Job neo hằng đêm · hash chain audit log · VC + chữ ký issuer · StatusList · xuất bundle JSON.
@@ -436,10 +443,9 @@ Kiểm tra **đúng ngày**, không hoãn. Mỗi cổng có hành động cắt 
 | **Cuối tuần 3** | Chưa có tx neo trên Amoy | Cắt StatusList, giữ AnchorRegistry + IssuerRegistry. **Đo gas bitmap vs mapping chuyển sang chạy thuần trên Hardhat local** — vẫn ra đủ số liệu cho ch.11.4 mà không cần deploy |
 | **Cuối tuần 5** | Chưa chấm được điểm | Rút ruleset xuống **3 tiêu chí**, ghi rõ vào giới hạn phạm vi |
 
-**Trạng thái cổng cuối tuần 3, tính đến 2026-08-05:** 3 contract đã deploy và verify trên
-Amoy · phép đo #1 và #2 có số liệu local đầy đủ · `MerkleService` + test vector Merkle xanh
-cả hai phía. **Không phải cắt `StatusList`.** Còn thiếu đúng một thứ để đóng cổng: **giao
-dịch `anchor()` thật** — giờ đã dựng được root thật nên chỉ còn là một lệnh gọi.
+**✅ Cổng cuối tuần 3 ĐÃ ĐÓNG — 2026-08-06.** 3 contract deploy + verify trên Amoy · phép đo
+#1 và #2 đủ số liệu · `MerkleService` + test vector Merkle xanh cả hai phía · **giao dịch neo
+thật trên explorer** và proof xác minh được từ RPC công cộng. **Không phải cắt `StatusList`.**
 
 **Bổ sung một cổng gốc không có — cuối tuần 6:** nếu chưa có luồng end-to-end chạy được, **dừng phát triển hoàn toàn** và chuyển sang viết báo cáo sớm. Một hệ thống hẹp có báo cáo tử tế thắng một hệ thống rộng không có số liệu.
 

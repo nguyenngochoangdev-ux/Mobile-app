@@ -12,7 +12,7 @@ Cập nhật bằng `/measurements`.
 
 ## 11.1. Chi phí gas theo kích thước lô Merkle
 
-**Trạng thái:** ◐ đã đo **trên Hardhat local**, chưa đo trên Amoy (chưa deploy — thiếu `AMOY_RPC_URL`)
+**Trạng thái:** ✅ **đã đo cả trên Amoy lẫn Hardhat local** — 2026-08-06
 **Cách đo:** neo N bản ghi, đọc `gasUsed` từ `eth_getTransactionReceipt`.
 **Lưu ý:** namespace `erigon_*` và `trace_*` đã bị bỏ trên Amoy từ 01/07/2026 — không dùng.
 
@@ -23,26 +23,35 @@ với Amoy; **chi phí POL thì không** — nó còn phụ thuộc giá gas lú
 
 | N (số leaf) | Gas tổng | Gas/bản ghi | Môi trường | Ngày đo | Tx hash |
 |---|---|---|---|---|---|
-| 1 (ghi từng bản) | 54.752 | 54.752 | Hardhat local | 2026-08-05 | — chưa deploy |
-| 10 | 54.752 | 5.475,2 | Hardhat local | 2026-08-05 | — chưa deploy |
-| 100 | 54.752 | 547,5 | Hardhat local | 2026-08-05 | — chưa deploy |
-| 1000 | 54.752 | 54,8 | Hardhat local | 2026-08-05 | — chưa deploy |
-| 5000 | 54.752 | 11,0 | Hardhat local | 2026-08-05 | — chưa deploy |
+| **4 (lô thật đầu tiên)** | **81.968** | **20.492** | **Amoy** | **2026-08-06** | [`0x1d1ebe…db75`](https://amoy.polygonscan.com/tx/0x1d1ebe0d84320b669fe15243eee4a6a6d58b736cdd204db19ccbc08fa747db75) |
+| 1 (ghi từng bản) | 54.752 | 54.752 | Hardhat local | 2026-08-05 | — |
+| 10 | 54.752 | 5.475,2 | Hardhat local | 2026-08-05 | — |
+| 100 | 54.752 | 547,5 | Hardhat local | 2026-08-05 | — |
+| 1000 | 54.752 | 54,8 | Hardhat local | 2026-08-05 | — |
+| 5000 | 54.752 | 11,0 | Hardhat local | 2026-08-05 | — |
+
+> **Dòng đầu tiên đắt hơn phần còn lại — giải thích trước khi bị hỏi.** 81.968 gas là lô
+> **đầu tiên** của miền `ATTEND`, nên nó trả thêm chi phí khởi tạo ô đếm `_batchCount`
+> (0 → khác 0) và một phần calldata khác. Lô thứ hai trở đi về mức ổn định ~54.800 (đã đo
+> trên chuỗi cục bộ: 54.788). Con số dùng cho mọi tính toán quy mô là **54.752**, không phải
+> 81.968 — chuyện khởi tạo chỉ xảy ra đúng 5 lần trong cả đời hệ thống, một lần mỗi miền.
 
 **Cột "Gas tổng" giống nhau ở mọi dòng, và đó chính là kết quả.** Cây Merkle dựng off-chain;
 on-chain chỉ nhận đúng 32 byte root, nên chi phí neo **không phụ thuộc số bản ghi trong lô**.
 Dòng N = 1 là đối chứng: nếu ghi từng bản ghi lên chuỗi thay vì gộp lô thì mỗi bản ghi phải
 trả trọn một giao dịch. Gộp lô 5.000 làm chi phí mỗi bản ghi giảm **4.977 lần**.
 
-**Hai con số phụ, cùng lần đo:**
+**Ba con số của cùng một phép gọi `anchor()`, đo ở ba nơi:**
 
-| | Gas |
-|---|---:|
-| Neo lô **đầu tiên** của một miền | 71.852 |
-| Neo ở trạng thái ổn định | 54.752 |
+| Môi trường | Lô đầu của miền | Trạng thái ổn định |
+|---|---:|---:|
+| Hardhat EDR (`npm run gas`) | 71.852 | 54.752 |
+| Hardhat node cục bộ, gọi qua web3j | 71.888 | 54.788 |
+| **Amoy thật** | **81.968** | *(chưa đo — lô thứ hai chưa neo)* |
 
-Lô đầu tiên đắt hơn vì nó khởi tạo ô đếm `_batchCount` (0 → khác 0). Chuyện này xảy ra đúng
-5 lần trong cả đời hệ thống (5 miền neo), nên số dùng cho mọi tính toán là 54.752.
+Hai dòng đầu lệch nhau 36 gas do độ dài calldata của `batchId` khác nhau; điều đó xác nhận
+đường đi qua web3j không thêm chi phí nào. Dòng Amoy cao hơn ~10.000 gas so với local — cùng
+chiều với chênh lệch hằng số đã thấy ở phần deploy, và **local vẫn là cận dưới**.
 
 **Gas triển khai — đo cả hai môi trường, 2026-08-05.** Deploy thật lên Amoy lúc
 09:41 UTC, ví `0xf32728c5c2D0575ea406Ad37e2467916c89F529F`, gasPrice 30 gwei.
@@ -293,3 +302,47 @@ Diễn giải chuẩn: >68 là trên trung bình, >80 là tốt.
 | 2026-08-05 | #1 — gas neo theo kích thước lô (Hardhat local) | Neo 54.752 gas **bất kể N**. Gộp lô 5.000 giảm chi phí/bản ghi 4.977 lần. Còn nợ số đo thật trên Amoy | Hoàng |
 | 2026-08-05 | #2 — thu hồi bitmap vs mapping (Hardhat local) | Bitmap rẻ hơn **8,47×** khi chỉ số gom cụm nhưng **1,00×** khi rải đều. Kỳ vọng ban đầu sai; đề tài cấp chỉ số ngẫu nhiên nên rơi vào trường hợp xấu nhất | Hoàng |
 | 2026-08-05 | Deploy 3 contract lên Amoy + verify | 1.837.575 gas ≈ 0,0551 POL. Verify được trên cả PolygonScan lẫn Sourcify. Amoy tốn hơn local hằng số 6.720 gas/contract | Hoàng |
+| 2026-08-06 | **Giao dịch `anchor()` thật đầu tiên trên Amoy** | Lô `ATTEND` 2026080501, 4 bản ghi điểm danh thật, 81.968 gas. Proof lấy từ CSDL xác minh được về root đọc từ RPC công cộng **không key**. Đóng cổng kiểm soát cuối tuần 3 | Hoàng |
+
+---
+
+## 11.6. Vòng khép kín end-to-end — 2026-08-06
+
+**Không phải một phép đo có số, mà là bằng chứng luận điểm 2 chạy được thật.** Nên đưa vào
+báo cáo như một mục riêng, và quay video đúng luồng này ở tuần 6.
+
+### Chuỗi mắt xích, từ bản ghi tới xác minh độc lập
+
+| # | Bước | Bằng chứng |
+|---|---|---|
+| 1 | 4 bản ghi điểm danh thật trong MySQL | tuần 2, đủ `QR_SCAN` · `OFFLINE_SYNC` · `MANUAL` |
+| 2 | → payload chuẩn tắc 11 trường | `AttendancePayload`, khớp vector `attend-payload-*` |
+| 3 | → leaf hash | `LeafHasher`, Java 54 test · JS 121 test |
+| 4 | → Merkle root | `MerkleService`, Java 72 test · JS 75 test |
+| 5 | → giao dịch trên Amoy | [`0x1d1ebe…db75`](https://amoy.polygonscan.com/tx/0x1d1ebe0d84320b669fe15243eee4a6a6d58b736cdd204db19ccbc08fa747db75) · 81.968 gas |
+| 6 | → đọc lại root bằng **một** `eth_call` | `0x88f8f893…a830cc`, khớp root job tính |
+| 7 | → proof từ CSDL xác minh về root trên chuỗi | **4/4 bản ghi xác minh được** |
+| 8 | → sửa 1 byte của leaf | **bị từ chối** — phép kiểm tra là thật |
+
+### Điều kiện của bước 6–7, và vì sao nó là điểm bán hàng chính
+
+Đọc bằng `verifier/src/chain.mjs`, chỉ dùng `ethers`, trỏ vào
+`https://polygon-amoy-bor-rpc.publicnode.com/` — **endpoint công cộng, không cần API key,
+không gọi backend một dòng nào**.
+
+Nghĩa là: hồ sơ vẫn xác minh được kể cả khi trường đã tắt máy chủ **và** ngừng trả tiền cho
+mọi dịch vụ RPC. Đây chính là luận điểm 2 (`PROJECT.md` §10), và giờ nó có số liệu thật chứ
+không còn là lời hứa.
+
+Điều này chỉ khả thi vì `AnchorRegistry` cho tra cứu trực tiếp `(domain, batchId) → root`.
+Nếu verifier phải dò sự kiện thì giới hạn 10.000 block mỗi lần gọi `eth_getLogs` của endpoint
+công cộng (`PROJECT.md` §2.2) sẽ buộc nó phân trang hàng trăm lần và chết.
+
+### Phải nói rõ giới hạn của vòng này
+
+- **Chưa có bundle JSON.** Bước 7 hiện lấy proof trực tiếp từ CSDL. Định dạng bundle mà sinh
+  viên cầm đi là việc tuần 4.
+- **Chưa có giao diện verifier.** Mới có thư viện đọc chuỗi, chưa có trang tĩnh — tuần 6.
+- **4 bản ghi là lô nhỏ.** Cây Merkle 4 lá có 2 tầng; nó **không** chứng minh được hành vi ở
+  quy mô lớn. Phần đó đã kiểm riêng: lô 9 lá (số lẻ, có nút bị đẩy lên) trên chuỗi cục bộ, và
+  vector `n100-quy-mo-that`.
