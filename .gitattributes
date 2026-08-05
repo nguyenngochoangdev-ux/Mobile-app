@@ -1,0 +1,33 @@
+# Chốt LF cho toàn repo.
+#
+# Lý do không phải khẩu vị: `backend/src/test/resources/canonical-vectors.json` là HỢP ĐỒNG
+# HASH giữa Java và JS (docs/canonicalization.md §5). Nếu Git đổi LF↔CRLF theo máy thì file
+# đổi byte, và mọi thứ đọc nó theo byte sẽ lệch. Cùng lý do với mọi test vector sinh sau này.
+#
+# `eol=lf` (khác `text=auto`) buộc LF cả trong repo LẪN trong thư mục làm việc, nên file
+# giống nhau từng byte trên Windows, Linux, và trong container.
+* text=auto eol=lf
+
+# === Nhị phân — tuyệt đối không đụng vào ===
+*.docx   binary
+*.pdf    binary
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.ico    binary
+*.webp   binary
+*.woff   binary
+*.woff2  binary
+*.ttf    binary
+*.jar    binary
+*.keystore binary
+
+# === Bắt buộc CRLF: script Windows ===
+# PowerShell chạy được với LF, nhưng .bat/.cmd thì KHÔNG — cmd.exe đọc sai nhãn và nhảy sai
+# dòng khi gặp LF. mvnw.cmd là file loại này.
+*.bat    text eol=crlf
+*.cmd    text eol=crlf
+
+# === Sinh tự động: bỏ khỏi diff và khỏi thống kê ngôn ngữ ===
+package-lock.json  linguist-generated=true -diff
