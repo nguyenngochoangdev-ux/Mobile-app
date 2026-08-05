@@ -1,0 +1,23 @@
+{
+  "network": "amoy",
+  "chainId": 80002,
+  "deployer": "0xf32728c5c2D0575ea406Ad37e2467916c89F529F",
+  "deployedAt": "2026-08-05T09:41:33Z",
+  "contracts": {
+    "AnchorRegistry": {
+      "address": "0x4aC296Ad010233799bA3B91b8505269213503fAF",
+      "txHash": "0x3d66d99ac04b9065f854931b8a9d53640d9ec0482a7a2b8e04767ec3d67409c1",
+      "gasUsed": "519769"
+    },
+    "IssuerRegistry": {
+      "address": "0xD323118Fa310a730BC4202fADd8dfA7CeA4C5637",
+      "txHash": "0xca68b5f07775d069000aed1e08ae450276c01dbcb12acc384f7ba3f89da2b856",
+      "gasUsed": "817439"
+    },
+    "StatusList": {
+      "address": "0xc8538A8741CE428C4A26f3a06678b6Ca10972106",
+      "txHash": "0xb712f2d00cbda1d174e6adaf8057d75d919dba7104ab05aeec12dde529bb9790",
+      "gasUsed": "500367"
+    }
+  }
+}

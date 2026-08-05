@@ -334,8 +334,12 @@ Flyway 12 bảng · auth JWT · CRUD tổ chức/sự kiện · seed 500 sinh vi
 > Chi tiết phần chuỗi: ✅ ví triển khai `0xf32728c5c2D0575ea406Ad37e2467916c89F529F` đã có
 > **0.3167 POL** trên Amoy · ✅ `ETHERSCAN_API_KEY` đã kiểm chứng gọi được `chainid=80002`
 > (**không còn key riêng cho PolygonScan** — Etherscan hợp nhất thành API V2, V1 tắt từ
-> 15/08/2025) · ❌ **`AMOY_RPC_URL` vẫn là placeholder**, chưa có tài khoản Alchemy →
-> đây là thứ duy nhất còn chặn việc deploy.
+> 15/08/2025) · ✅ **`AMOY_RPC_URL` đã trỏ PublicNode và chạy được** (xem §2.2).
+>
+> **Cập nhật 2026-08-05:** dòng "`AMOY_RPC_URL` vẫn là placeholder → thứ duy nhất còn chặn
+> deploy" ở bản trước đã **hết đúng**. Kiểm tra lại từ chính Hardhat: `chainId` = 80002,
+> signer = ví trên, số dư 0,3167 POL, `gasPrice` = 30 gwei. Deploy 3 contract tốn ~1,82
+> triệu gas ≈ **0,055 POL**, thừa sức. **Không còn gì chặn việc deploy về mặt kỹ thuật.**
 
 ### Tuần 2 — Điểm danh (khối giá trị nhất)
 QR động HMAC 10s · màn hình presenter · check-in/out · device binding · geofence cảnh báo mềm · hàng đợi offline IndexedDB.
@@ -370,8 +374,28 @@ QR động HMAC 10s · màn hình presenter · check-in/out · device binding ·
 > với bộ vector do JS sinh, tức hai bên khớp từng byte một cách độc lập.
 > Đặc tả chốt: `docs/canonicalization.md`. Đã có `Jcs` · `AnchorDomain` · `LeafHasher`
 > trong module `anchor`, chưa import gì từ nghiệp vụ.
-> ❌ Chưa có: 3 contract, `MerkleService`, test vector cho **Merkle proof** (mới chỉ có
-> cho leaf), giao dịch neo trên explorer.
+>
+> ✅ **3 contract xong, 57 test Hardhat xanh, chạy thuần local** (2026-08-05).
+> `AnchorRegistry` · `IssuerRegistry` · `StatusList` + `bench/StatusListMapping` (đối chứng
+> đo gas, không deploy). Hardhat 3.12 · solc 0.8.28 ghim `evmVersion: cancun` · OZ 5.6.1.
+> Phép đo #1 và #2 **đã có số liệu local** — xem `docs/measurements.md` §11.1 và §11.4.
+> `contracts/test/AnchorRegistry.test.ts` chốt cứng 5 giá trị `bytes8(domain)` khớp
+> `docs/canonicalization.md` §2, nên lệch mã hóa miền ở bất kỳ tầng nào cũng làm test đỏ.
+>
+> ✅ **Đã deploy Amoy và verify** (2026-08-05, 09:41 UTC) — cả ba contract verify được trên
+> **PolygonScan lẫn Sourcify**. Tổng 1.837.575 gas ≈ 0,0551 POL; còn ~0,26 POL trong ví.
+> Địa chỉ đã ghi vào `.env` và `contracts/deployments/amoy.json`:
+>
+> | Contract | Địa chỉ |
+> |---|---|
+> | `AnchorRegistry` | `0x4aC296Ad010233799bA3B91b8505269213503fAF` |
+> | `IssuerRegistry` | `0xD323118Fa310a730BC4202fADd8dfA7CeA4C5637` |
+> | `StatusList` | `0xc8538A8741CE428C4A26f3a06678b6Ca10972106` |
+>
+> ❌ Chưa có: `MerkleService`, test vector cho **Merkle proof** (mới chỉ có cho leaf),
+> và **giao dịch `anchor()` thật** — mới có giao dịch *triển khai*, chưa có giao dịch *neo*.
+> Neo bằng root giả sẽ chiếm vĩnh viễn một `batchId` trong không gian thật (contract cố ý
+> không cho ghi đè), nên việc này chờ `MerkleService` sinh root thật.
 
 ### Tuần 4 — Neo + credential
 Job neo hằng đêm · hash chain audit log · VC + chữ ký issuer · StatusList · xuất bundle JSON.
@@ -407,6 +431,10 @@ Kiểm tra **đúng ngày**, không hoãn. Mỗi cổng có hành động cắt 
 | **Cuối tuần 2** | Chưa demo được điểm danh thật với người lạ | Đang overengineer backend. Đóng băng mọi CRUD, dồn 100% vào điểm danh |
 | **Cuối tuần 3** | Chưa có tx neo trên Amoy | Cắt StatusList, giữ AnchorRegistry + IssuerRegistry. **Đo gas bitmap vs mapping chuyển sang chạy thuần trên Hardhat local** — vẫn ra đủ số liệu cho ch.11.4 mà không cần deploy |
 | **Cuối tuần 5** | Chưa chấm được điểm | Rút ruleset xuống **3 tiêu chí**, ghi rõ vào giới hạn phạm vi |
+
+**Trạng thái cổng cuối tuần 3, tính đến 2026-08-05:** 3 contract đã deploy và verify trên
+Amoy, phép đo #1 và #2 đã có số liệu local đầy đủ. **Không phải cắt `StatusList`.** Còn thiếu
+đúng một thứ để đóng cổng: giao dịch `anchor()` thật, đang chờ `MerkleService`.
 
 **Bổ sung một cổng gốc không có — cuối tuần 6:** nếu chưa có luồng end-to-end chạy được, **dừng phát triển hoàn toàn** và chuyển sang viết báo cáo sớm. Một hệ thống hẹp có báo cáo tử tế thắng một hệ thống rộng không có số liệu.
 

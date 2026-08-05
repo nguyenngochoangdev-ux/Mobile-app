@@ -67,13 +67,21 @@ async function main() {
   log("Chi phí neo **không phụ thuộc số bản ghi trong lô** — cây Merkle dựng off-chain, on-chain");
   log("chỉ nhận đúng 32 byte root. Đây là kết quả chính của phép đo:");
   log();
-  log("| N bản ghi/lô | Gas cả lô | Gas/bản ghi | POL/bản ghi @ 30 gwei |");
+  log("| N (số leaf) | Gas tổng | Gas/bản ghi | POL/bản ghi @ 30 gwei |");
   log("|---:|---:|---:|---:|");
+
+  const anchorGas = steady!.gasUsed;
+  // Dòng đối chứng: nếu KHÔNG gộp lô mà ghi từng bản ghi lên chuỗi thì mỗi bản ghi phải trả
+  // trọn một giao dịch neo. Đây mới là con số để so sánh, không phải một hàng như các hàng kia.
+  log(
+    `| 1 *(ghi từng bản, đối chứng)* | ${anchorGas.toLocaleString("en-US")} | ` +
+      `${anchorGas.toLocaleString("en-US")} | ${polCost(anchorGas)} |`,
+  );
   for (const n of [10n, 100n, 1000n, 5000n]) {
-    const perRecord = Number(steady!.gasUsed) / Number(n);
+    const perRecord = Number(anchorGas) / Number(n);
     log(
-      `| ${n.toLocaleString("en-US")} | ${steady!.gasUsed.toLocaleString("en-US")} | ` +
-        `${perRecord.toFixed(1)} | ${(Number(polCost(steady!.gasUsed)) / Number(n)).toFixed(8)} |`,
+      `| ${n.toLocaleString("en-US")} | ${anchorGas.toLocaleString("en-US")} | ` +
+        `${perRecord.toFixed(1)} | ${(Number(polCost(anchorGas)) / Number(n)).toFixed(8)} |`,
     );
   }
 
@@ -114,6 +122,79 @@ async function main() {
       `| ${s.label} | ${bmGas.toLocaleString("en-US")} | ${mpGas.toLocaleString("en-US")} | ` +
         `bitmap rẻ hơn ${ratio.toFixed(2)}× |`,
     );
+  }
+
+  // Quét theo quy mô, để điền bảng §11.4 của docs/measurements.md.
+  log();
+  log("#### Quét theo số credential thu hồi trong MỘT giao dịch");
+  log();
+  log("| Số credential | Bitmap gom cụm | Bitmap rải đều *(trường hợp thật)* | Mapping | Tỷ lệ (rải đều) |");
+  log("|---:|---:|---:|---:|---:|");
+
+  const BLOCK_GAS_LIMIT = 30_000_000; // Amoy và Hardhat đều ~30M
+
+  /** Đo một lô, hoặc trả undefined nếu lô đó không vừa một giao dịch. */
+  async function batchGas(name: string, indices: bigint[]): Promise<bigint | undefined> {
+    const c = await ethers.deployContract(name, [admin!.address]);
+    try {
+      return (await (await c.setRevokedBatch(indices, true)).wait())!.gasUsed;
+    } catch (e) {
+      // Vượt giới hạn gas của block. Đây là một KẾT QUẢ, không phải sự cố — ghi lại.
+      if (JSON.stringify((e as any)?.data ?? "").includes("OutOfGas")) return undefined;
+      throw e;
+    }
+  }
+
+  const cell = (g: bigint | undefined) =>
+    g === undefined ? "*không vừa 1 tx*" : g.toLocaleString("en-US");
+
+  let marginal: { n: number; bmClustered: number; bmScattered: number; mapping: number } | undefined;
+
+  for (const n of [1, 100, 1000]) {
+    const clustered = Array.from({ length: n }, (_, i) => BigInt(i));
+    const scattered = Array.from({ length: n }, (_, i) => BigInt(i) * 256n);
+
+    const gC = await batchGas("StatusList", clustered);
+    const gS = await batchGas("StatusList", scattered);
+    const gM = await batchGas("StatusListMapping", clustered);
+
+    const ratio =
+      gS === undefined || gM === undefined ? "—" : `${(Number(gM) / Number(gS)).toFixed(2)}×`;
+    log(`| ${n.toLocaleString("en-US")} | ${cell(gC)} | ${cell(gS)} | ${cell(gM)} | ${ratio} |`);
+
+    // Lấy gas biên ở lô lớn nhất mà cả ba cách đều còn đo được.
+    if (gC !== undefined && gS !== undefined && gM !== undefined && n > 1) {
+      marginal = {
+        n,
+        bmClustered: Number(gC) / n,
+        bmScattered: Number(gS) / n,
+        mapping: Number(gM) / n,
+      };
+    }
+  }
+
+  log();
+  log("**Bảng dừng ở 1.000, và hai ô đã trống — đó cũng là số liệu.** Một giao dịch không vượt");
+  log(`được giới hạn gas của block (~${(BLOCK_GAS_LIMIT / 1e6).toFixed(0)} triệu trên Amoy), nên thu hồi hàng loạt ở quy mô`);
+  log("10.000 hay 100.000 credential **trong một giao dịch là bất khả thi với mọi cách lưu trữ** —");
+  log("phải chia nhiều giao dịch. Vì vậy con số dùng cho báo cáo là **gas biên trên mỗi");
+  log("credential**, không phải gas của một lô khổng lồ.");
+
+  if (marginal !== undefined) {
+    log();
+    log(`Gas biên, suy từ lô ${marginal.n} credential:`);
+    log();
+    log("| Cách lưu trữ | Gas biên/credential | Trần lý thuyết 1 tx |");
+    log("|---|---:|---:|");
+    for (const [label, g] of [
+      ["Bitmap, chỉ số gom cụm", marginal.bmClustered],
+      ["Bitmap, chỉ số rải đều *(trường hợp thật)*", marginal.bmScattered],
+      ["Mapping-per-credential", marginal.mapping],
+    ] as const) {
+      log(
+        `| ${label} | ${g.toFixed(0)} | ~${Math.floor(BLOCK_GAS_LIMIT / g).toLocaleString("en-US")} |`,
+      );
+    }
   }
 
   log();
