@@ -9,7 +9,8 @@
     "test": "hardhat test",
     "gas": "hardhat run scripts/measure-gas.ts",
     "deploy:amoy": "hardhat run scripts/deploy.ts --network amoy",
-    "abi": "hardhat run scripts/export-abi.ts"
+    "abi": "hardhat run scripts/export-abi.ts",
+    "deploy:local": "hardhat run scripts/deploy-local.ts --network localhost"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox-mocha-ethers": "^3.0.7",

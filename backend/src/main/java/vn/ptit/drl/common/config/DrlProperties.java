@@ -35,8 +35,18 @@ public record DrlProperties(Jwt jwt, Attendance attendance, Anchor anchor, Stora
                              int offlineWindowHours, boolean geofenceBlocking,
                              boolean autoApproveFirstDevice) {}
 
+    /**
+     * @param privateKey Khóa ký giao dịch neo. Phải có {@code ANCHOR_ROLE} trên
+     *                   {@code AnchorRegistry}.
+     *                   <p>
+     *                   Tách khỏi khóa triển khai là có chủ ý — contract cấp
+     *                   {@code ANCHOR_ROLE} riêng nên khóa triển khai (đồng thời là admin)
+     *                   cất được offline sau khi cấp quyền. Nếu khóa của job neo bị lộ, kẻ
+     *                   tấn công neo được root rác nhưng KHÔNG sửa được lô đã neo và không
+     *                   cấp/thu quyền được cho ai.
+     */
     public record Anchor(String cron, boolean enabled, String rpcUrl, String rpcUrlFallback,
-                         long chainId, String issuerRegistryAddress,
+                         long chainId, String privateKey, String issuerRegistryAddress,
                          String anchorRegistryAddress, String statusListAddress) {}
 
     public record Storage(String uploadDir) {}

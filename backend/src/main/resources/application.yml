@@ -84,6 +84,9 @@ drl:
     rpc-url: ${AMOY_RPC_URL:}
     rpc-url-fallback: ${AMOY_RPC_URL_FALLBACK:}
     chain-id: ${CHAIN_ID:80002}
+    # Khóa ký giao dịch neo — phải có ANCHOR_ROLE trên AnchorRegistry.
+    # Tách khỏi khóa triển khai để khóa admin cất được offline sau khi cấp quyền.
+    private-key: ${ANCHOR_PRIVATE_KEY:}
     issuer-registry-address: ${ISSUER_REGISTRY_ADDRESS:}
     anchor-registry-address: ${ANCHOR_REGISTRY_ADDRESS:}
     status-list-address: ${STATUS_LIST_ADDRESS:}
