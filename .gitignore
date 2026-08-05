@@ -39,6 +39,8 @@ contracts/build/
 
 # contracts/deployments/ thì CÓ commit: nó là bản ghi địa chỉ đã triển khai và tx hash,
 # không phải file dẫn xuất. Mất nó là mất dấu vết buổi deploy.
+# TRỪ chuỗi cục bộ — địa chỉ đổi mỗi lần khởi động lại `hardhat node`, không có gì để lưu.
+contracts/deployments/localhost.json
 
 # === Sinh tự động ===
 app/src/api/generated/
