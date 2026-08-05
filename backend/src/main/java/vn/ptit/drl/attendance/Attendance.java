@@ -56,7 +56,23 @@ public class Attendance {
     @Column(name = "qr_slot")
     private Long qrSlot;
 
-    /** True khi token HMAC hợp lệ. Điểm danh thủ công của cán bộ là false. */
+    /**
+     * True khi <b>máy</b> xác minh được sự có mặt tại thời điểm điểm danh, không phải chỉ
+     * "có chữ ký hợp lệ".
+     *
+     * <p>Phân biệt này là thứ làm cho chỉ số chất lượng dữ liệu của đề tài có nghĩa
+     * (PROJECT.md §10). Bốn trường hợp:
+     *
+     * <pre>
+     *   QR_SCAN / OFFLINE_SYNC : true  — token gắn SỰ KIỆN, đổi mỗi 10s, quét bằng máy đã duyệt
+     *   QR_SHOW, token còn tươi: true  — token gắn SINH VIÊN, chứng minh vừa đăng nhập vài giây trước
+     *   QR_SHOW, token đã cũ   : false — chỉ mắt cán bộ chứng minh sự có mặt
+     *   MANUAL                 : false — vấn đề oracle, không có gì chứng minh
+     * </pre>
+     *
+     * <p>Đếm được bao nhiêu phần trăm bản ghi là {@code true} chính là đóng góp mà đề tài
+     * tuyên bố, nên đừng nới định nghĩa này ra cho đẹp số.
+     */
     @Column(nullable = false)
     @Builder.Default
     private Boolean verified = false;

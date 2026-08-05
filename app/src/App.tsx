@@ -4,10 +4,12 @@ import Layout from './components/Layout'
 import LoginPage from './pages/LoginPage'
 import StudentHome from './pages/student/StudentHome'
 import ScanPage from './pages/student/ScanPage'
+import MyQrPage from './pages/student/MyQrPage'
 import DevicesPage from './pages/student/DevicesPage'
 import StaffEvents from './pages/staff/StaffEvents'
 import StaffEventDetail from './pages/staff/StaffEventDetail'
 import StaffDeviceApproval from './pages/staff/StaffDeviceApproval'
+import StaffScanStudent from './pages/staff/StaffScanStudent'
 import PresenterPage from './pages/presenter/PresenterPage'
 
 function RequireRole({ roles, children }: { roles: string[]; children: React.ReactNode }) {
@@ -49,10 +51,12 @@ export default function App() {
 
         <Route path="/sv" element={<RequireRole roles={['STUDENT']}><StudentHome /></RequireRole>} />
         <Route path="/sv/quet" element={<RequireRole roles={['STUDENT']}><ScanPage /></RequireRole>} />
+        <Route path="/sv/ma-cua-toi" element={<RequireRole roles={['STUDENT']}><MyQrPage /></RequireRole>} />
         <Route path="/sv/thiet-bi" element={<RequireRole roles={['STUDENT']}><DevicesPage /></RequireRole>} />
 
         <Route path="/cb/su-kien" element={<RequireRole roles={['STAFF', 'ADMIN']}><StaffEvents /></RequireRole>} />
         <Route path="/cb/su-kien/:eventId" element={<RequireRole roles={['STAFF', 'ADMIN']}><StaffEventDetail /></RequireRole>} />
+        <Route path="/cb/su-kien/:eventId/quet" element={<RequireRole roles={['STAFF', 'ADMIN']}><StaffScanStudent /></RequireRole>} />
         <Route path="/cb/thiet-bi" element={<RequireRole roles={['STAFF', 'ADMIN']}><StaffDeviceApproval /></RequireRole>} />
       </Route>
 

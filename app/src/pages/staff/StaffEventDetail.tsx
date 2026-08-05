@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { AttendanceService } from '../../api/generated'
 import type { AttendanceResponse } from '../../api/generated'
 import { fetchPage } from '../../lib/paged'
@@ -29,7 +29,17 @@ export default function StaffEventDetail() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Điểm danh sự kiện #{id}</h2>
+      <div className="flex items-center gap-3">
+        <h2 className="text-lg font-semibold">Điểm danh sự kiện #{id}</h2>
+        {/* Luồng đảo chiều (PROJECT.md §2.4 phương án 3) — lối vào phải ở ngay đây,
+            vì cán bộ chỉ cần tới nó khi luồng thường đã hỏng và đang có người xếp hàng. */}
+        <Link
+          to={`/cb/su-kien/${id}/quet`}
+          className="ml-auto rounded-lg bg-sky-600 px-3 py-1.5 text-sm font-medium hover:bg-sky-500"
+        >
+          Quét mã sinh viên
+        </Link>
+      </div>
 
       <div className="grid grid-cols-3 gap-2">
         <Stat label="Tổng" value={stats.data?.total ?? items.length} />

@@ -107,6 +107,8 @@ Cột "Thiết kế đề xuất" dùng **ba mức**, không dùng nhị phân c
 | Đưa **chính điện thoại của mình** cho bạn quét hộ | Không chặn | **Không ngăn được** — thiết bị hợp lệ, tài khoản hợp lệ | Không | ☐ chưa đo |
 | Sao chép `deviceFp` sang máy khác | Không chặn | **Không ngăn được** — chỉ là UUID trong `localStorage` | Không | ☐ chưa đo |
 | Đổi thiết bị để quét hộ lâu dài | Không chặn | Phải qua cán bộ duyệt, có nhật ký, thiết bị cũ bị thu hồi | Tăng chi phí | ✅ API |
+| **Đưa ảnh chụp QR của bạn cho cán bộ quét hộ** (luồng đảo chiều) | Không chặn | **Không ngăn được** — mã đúng, chữ ký đúng. Chỉ mắt cán bộ chặn được | Tăng chi phí | ✅ API |
+| **Sửa `studentId` trong mã QR của mình để mạo danh** | Không chặn | Chữ ký hỏng ngay, bị từ chối | Ngăn | ✅ API |
 | Giả mạo chứng chỉ khi xin việc | Phải xin xác nhận từ trường | Verify độc lập, không cần trường | Ngăn | ☐ tuần 6 |
 | Chối bỏ dữ liệu khi khiếu nại | Phụ thuộc nhật ký nội bộ | Có bằng chứng thời điểm on-chain | Phát hiện | ☐ tuần 4 |
 | Máy chủ trường ngừng hoạt động | Mất khả năng xác minh | Verifier vẫn chạy | Ngăn | ☐ tuần 6 |
@@ -181,6 +183,41 @@ bằng **máy chưa được duyệt** thì bị từ chối. Nó **không** ch�
 **Nên test cả ba ở buổi demo cuối tuần 2 và ghi kết quả thật.** Một bảng threat model
 có ô "qua được" đáng tin hơn nhiều so với bảng toàn ô "chặn" — hội đồng biết không có hệ
 thống nào chặn được tất cả, và bảng toàn màu xanh sẽ bị nghi ngờ ngay.
+
+### Luồng đảo chiều — kết quả kiểm chứng 2026-08-06
+
+Sinh viên hiển thị mã, cán bộ quét (`PROJECT.md` §2.4 phương án 3). Đo qua HTTP trên máy dev.
+
+| # | Kịch bản | Kết quả | Ghi chú |
+|---|---|---|---|
+| 1 | Mã còn tươi, sinh viên đã đăng ký | ✅ nhận, `verified=true` | `method=QR_SHOW` |
+| 2 | Toạ độ máy cán bộ ngoài khu vực | ✅ nhận, `geofenceOk=false` | cảnh báo mềm, đúng thiết kế |
+| 3 | Mã không phải của hệ thống (link, mã vạch) | 🛡️ từ chối | không ném lỗi, báo rõ ràng |
+| 4 | Sai tiền tố `DRL1` | 🛡️ từ chối | |
+| 5 | Token bịa | 🛡️ từ chối | chữ ký sai |
+| 6 | **Sửa `studentId` trong mã để mạo danh** | 🛡️ từ chối | chữ ký gắn với `studentId` |
+| 7 | Chưa đăng ký sự kiện có giới hạn | 🛡️ từ chối | giữ nguyên bước kiểm tra của luồng xuôi |
+| 8 | Đã điểm danh rồi | 🛡️ từ chối | |
+| 9 | Sinh viên gọi endpoint của cán bộ | 🛡️ HTTP 403 | |
+| 10 | Cán bộ gọi endpoint `my-qr` | 🛡️ HTTP 403 | |
+| 11 | **Đưa ảnh chụp mã của bạn cho cán bộ quét** | ❌ **qua được** | chỉ mắt cán bộ chặn được |
+| 12 | Mã cũ quá cửa sổ offline | 🛡️ từ chối | `StudentQrServiceTest` |
+| 13 | Mã cũ trong cửa sổ offline | ✅ nhận, **`verified=false`** | `StudentQrServiceTest` |
+| 14 | Slot tương lai | 🛡️ từ chối | chặn sinh trước token hàng loạt |
+
+**Dòng 11 và 13 là hai dòng quan trọng nhất.**
+
+Dòng 11: luồng đảo chiều **không** chứng minh sự có mặt. Nó chỉ bảo đảm mã không giả được —
+cán bộ không gõ nhầm MSSV và không bị đưa một mã bịa. Người cầm ảnh chụp mã của bạn mình vẫn
+qua. Đây là mô hình tin cậy **giống kiểm tra thẻ sinh viên**, và phải nói đúng như vậy.
+
+Dòng 13: mã cũ **vẫn được nhận** — vì đó chính là tình huống luồng này sinh ra để cứu (hội
+trường mất sóng, máy sinh viên không xin được mã mới). Nhưng nó bị đánh dấu `verified=false`,
+nên vẫn đếm riêng được. Nếu gộp hai mức này thành "hợp lệ / không hợp lệ" thì chỉ số chất
+lượng dữ liệu mất hết ý nghĩa.
+
+**Unit test:** `StudentQrServiceTest`, 18/18 đạt — phủ ba mức tươi, biên cửa sổ offline, tách
+khóa theo mục đích, và việc xoay khóa JWT làm vô hiệu mọi mã cũ.
 
 **Unit test:** `QrTokenServiceTest`, 8/8 đạt — phủ dung sai slot, slot tương lai, secret
 riêng từng sự kiện, token gắn `eventId`, cửa sổ offline 24 giờ.

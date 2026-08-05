@@ -21,6 +21,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import vn.ptit.drl.common.config.DrlProperties;
+import vn.ptit.drl.common.web.BusinessException;
 import vn.ptit.drl.common.web.NotFoundException;
 import vn.ptit.drl.event.EventRepository;
 import vn.ptit.drl.identity.jwt.AuthPrincipal;
@@ -36,6 +38,8 @@ public class AttendanceController {
     private final AttendanceRepository repository;
     private final EventRepository eventRepository;
     private final QrTokenService qrTokenService;
+    private final StudentQrService studentQrService;
+    private final DrlProperties props;
 
     public record CheckinRequest(
             @NotNull Long eventId,
@@ -133,6 +137,66 @@ public class AttendanceController {
     @Operation(summary = "Cán bộ điểm danh tay — verified = false (vấn đề oracle)")
     public AttendanceResponse manual(@RequestParam Long eventId, @RequestParam Long studentId) {
         return AttendanceResponse.of(service.manualCheckin(eventId, studentId));
+    }
+
+    // ===================== Luồng đảo chiều: sinh viên hiện QR, cán bộ quét =====================
+    // PROJECT.md §2.4 phương án 3 — phương án cứu khi hội trường mất sóng, camera máy sinh
+    // viên hỏng, hoặc máy sinh viên hết pin.
+
+    public record StudentQrResponse(String payload, long slot, Instant freshUntil,
+                                    int refreshSeconds) {}
+
+    @GetMapping("/my-qr")
+    @PreAuthorize("hasRole('STUDENT')")
+    @Operation(summary = "QR của chính sinh viên để cán bộ quét (luồng đảo chiều)")
+    public StudentQrResponse myQr(@AuthenticationPrincipal AuthPrincipal principal) {
+        var qr = studentQrService.current(principal.studentId());
+        return new StudentQrResponse(
+                qr.encode(), qr.slot(), studentQrService.freshUntil(qr.slot()),
+                props.attendance().qrSlotSeconds());
+    }
+
+    public record StaffScanRequest(
+            @NotNull Long eventId,
+            @NotBlank String payload,
+            BigDecimal lat,
+            BigDecimal lng) {}
+
+    /**
+     * Trả về cả {@code freshness} để màn hình cán bộ hiển thị được cảnh báo — cán bộ cần
+     * biết ngay lúc quét rằng mã này đã cũ, chứ không phải phát hiện lúc đối soát cuối kỳ.
+     */
+    public record StaffScanResponse(AttendanceResponse attendance, String freshness,
+                                    String warning) {}
+
+    @PostMapping("/scan-student")
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
+    @ResponseStatus(HttpStatus.CREATED)
+    @Transactional
+    @Operation(summary = "Cán bộ quét QR của sinh viên — luồng đảo chiều (method QR_SHOW)")
+    public StaffScanResponse scanStudent(@Valid @RequestBody StaffScanRequest req) {
+        var qr = studentQrService.decode(req.payload());
+        if (qr == null) {
+            throw new BusinessException(
+                    "Đây không phải mã QR của hệ thống. Yêu cầu sinh viên mở màn hình"
+                    + " \"Mã của tôi\".");
+        }
+
+        var freshness = studentQrService.verify(qr);
+        if (freshness == StudentQrService.Freshness.INVALID) {
+            throw new BusinessException(
+                    "Mã QR không hợp lệ hoặc đã quá cũ. Yêu cầu sinh viên làm mới màn hình.");
+        }
+
+        var saved = service.checkinByStaffScan(
+                req.eventId(), qr.studentId(), qr.slot(), freshness, req.lat(), req.lng());
+
+        String warning = freshness == StudentQrService.Freshness.STALE
+                ? "Mã đã quá hạn tươi — bản ghi được đánh dấu verified = false."
+                  + " Hãy đối chiếu mặt sinh viên với thẻ."
+                : null;
+
+        return new StaffScanResponse(AttendanceResponse.of(saved), freshness.name(), warning);
     }
 
     @GetMapping("/me")

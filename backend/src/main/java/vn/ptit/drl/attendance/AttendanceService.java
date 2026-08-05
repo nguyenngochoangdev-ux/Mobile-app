@@ -141,6 +141,89 @@ public class AttendanceService {
     }
 
     /**
+     * Cán bộ quét mã QR do sinh viên hiển thị — <b>luồng đảo chiều</b>.
+     *
+     * <p>{@code PROJECT.md} §2.4 phương án 3. Đây là phương án cứu, và nó phải tồn tại
+     * <b>bất kể</b> chọn thiết bị demo nào: hội trường mất sóng, camera máy sinh viên hỏng,
+     * hoặc máy sinh viên hết pin thì luồng xuôi chết hoàn toàn.
+     *
+     * <h3>Ba bước kiểm tra, không phải năm — và phải nói rõ vì sao</h3>
+     *
+     * <p>So với {@link #checkin}, luồng này <b>mất hai bước</b>:
+     *
+     * <ul>
+     *   <li><b>Không có device binding.</b> Máy sinh viên không tham gia giao dịch; máy quét
+     *       là máy cán bộ. Không có gì để đối chiếu với {@code student_devices}.
+     *   <li><b>Token không gắn với sự kiện.</b> Token thuộc về sinh viên, còn sự kiện do cán
+     *       bộ chọn trên máy mình. Nghĩa là một ảnh chụp QR của sinh viên, trong thời hạn còn
+     *       hiệu lực, có thể bị nộp cho <b>sự kiện khác</b>.
+     * </ul>
+     *
+     * <p>Cả hai đều <b>không</b> làm rộng thêm bề mặt tấn công so với hiện trạng, vì cán bộ
+     * đã có {@link #manualCheckin} — họ điểm danh được cho bất kỳ ai mà không cần mã nào.
+     * Luồng này chặt hơn điểm danh tay ở một điểm thật: mã QR <b>không giả được</b>, nên cán
+     * bộ không thể gõ nhầm MSSV hay bị đưa một mã bịa.
+     *
+     * <p>Thứ nó <b>không</b> chứng minh là sự có mặt. Người cầm ảnh chụp QR của bạn mình vẫn
+     * qua được — chỉ có mắt cán bộ chặn được, đúng như kiểm tra thẻ sinh viên. Vì vậy dòng
+     * này trong bảng threat model là <b>"Tăng chi phí"</b>, không phải "Ngăn".
+     *
+     * @param freshness kết quả kiểm tra token, quyết định cột {@code verified}. Xem
+     *     {@link StudentQrService.Freshness} — token còn tươi thì máy chứng minh được sinh
+     *     viên vừa đăng nhập vài giây trước; token cũ thì chỉ có cán bộ chứng minh.
+     */
+    @Transactional
+    public Attendance checkinByStaffScan(Long eventId, Long studentId, long slot,
+                                         StudentQrService.Freshness freshness,
+                                         BigDecimal lat, BigDecimal lng) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("sự kiện", eventId));
+
+        if (event.getStatus() == EventStatus.DRAFT) {
+            throw new BusinessException("Sự kiện chưa mở");
+        }
+
+        // Giữ nguyên hai bước còn áp dụng được của luồng xuôi.
+        if (event.getCapacity() != null) {
+            boolean registered = registrationRepository
+                    .findByEventIdAndStudentId(eventId, studentId)
+                    .filter(r -> r.getStatus() == RegistrationStatus.REGISTERED)
+                    .isPresent();
+            if (!registered) {
+                throw new BusinessException("Sự kiện này yêu cầu đăng ký trước");
+            }
+        }
+        if (attendanceRepository.existsByEventIdAndStudentId(eventId, studentId)) {
+            throw new BusinessException("Sinh viên đã điểm danh sự kiện này rồi");
+        }
+
+        // Toạ độ lấy từ máy CÁN BỘ. Ở luồng này nó đáng tin hơn luồng xuôi: cán bộ đứng tại
+        // điểm tổ chức, còn máy sinh viên thì ở đâu cũng có thể bịa toạ độ.
+        Boolean geofenceOk = GeoUtil.withinRadius(event.getLat(), event.getLng(),
+                event.getRadiusM(), lat, lng);
+
+        byte[] nonce = new byte[16];
+        RANDOM.nextBytes(nonce);
+
+        return attendanceRepository.save(Attendance.builder()
+                .event(event)
+                .student(studentRepository.findById(studentId)
+                        .orElseThrow(() -> new NotFoundException("sinh viên", studentId)))
+                .checkinAt(Instant.now())
+                .method(AttendanceMethod.QR_SHOW)
+                .qrSlot(slot)
+                .lat(lat)
+                .lng(lng)
+                // Chỉ token còn TƯƠI mới cho verified = true. Token cũ vẫn nhận (đó là mục
+                // đích của luồng cứu) nhưng phải đếm được riêng — nếu không thì chỉ số
+                // "bao nhiêu phần trăm dữ liệu được máy xác thực" mất hết ý nghĩa.
+                .verified(freshness == StudentQrService.Freshness.FRESH)
+                .geofenceOk(geofenceOk)
+                .nonce(nonce)
+                .build());
+    }
+
+    /**
      * Cán bộ điểm danh tay. {@code verified = false} — đây chính là vấn đề oracle:
      * blockchain sẽ bảo toàn vĩnh viễn cả bản ghi sai nếu cán bộ nhập sai từ đầu.
      * Giữ cờ này tách bạch để phần đánh giá còn đếm được bao nhiêu bản ghi là thủ công.

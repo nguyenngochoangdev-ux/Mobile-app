@@ -139,6 +139,10 @@ Chốt **phương án 1 + 2 + 3**, không chỉ một:
   không phải iPhone.
 - **Phương án 3 vẫn phải làm** — luồng đảo chiều là phương án cứu khi hội trường mất sóng,
   độc lập với chuyện chọn thiết bị nào.
+  **✅ Xong 2026-08-06.** Sinh viên: `/sv/ma-cua-toi` · cán bộ: `/cb/su-kien/:id/quet` ·
+  `StudentQrService` (18 test) · `method = QR_SHOW`. Mã QR **cache vào `localStorage`** nên
+  còn hiện được khi mất mạng — nếu không thì trang này vô dụng đúng lúc cần nhất. Mã cũ vẫn
+  nhận nhưng `verified = false`. 14 kịch bản kiểm chứng ở `docs/measurements.md` §11.2.
 
 **Hệ quả phải viết đúng trong báo cáo.** Android chưa bao giờ là chỗ có rủi ro; rủi ro nằm
 ở WebKit/iOS. Chọn Android **không giải quyết** rủi ro đó mà **né** nó. Vì vậy trong báo
