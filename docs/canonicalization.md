@@ -1,7 +1,8 @@
 # Đặc tả canonicalization — nguồn sự thật
 
 **Chốt ngày:** 2026-08-05
-**Trạng thái:** ✅ xanh cả hai phía (Java 46 test · JS 40 test)
+**Trạng thái:** ✅ xanh cả hai phía — **Java 118 test · JS 115 test**
+(leaf hash: 46 + 40 · cây Merkle §8: 72 + 75)
 
 > Đây là cạm bẫy số 2 trong `CLAUDE.md`: lệch canonicalization làm **mọi Merkle proof
 > fail**, và fail **im lặng** — hash vẫn tính ra bình thường, chỉ là không khớp.
@@ -105,6 +106,15 @@ Tương tự phía JS: verifier bị ràng buộc cứng chỉ được có `eth
 
 ## 5. Bộ test vector
 
+Có **hai** bộ vector, mỗi bộ một file, cả hai đều do phía JS sinh và cả hai phía cùng đọc:
+
+| Bộ | File | Chốt cái gì | Mục |
+|---|---|---|---|
+| 1 | `canonical-vectors.json` | **leaf hash** | mục này |
+| 2 | `merkle-vectors.json` | **cây Merkle** (root + proof) | §8 |
+
+Phần dưới đây nói về bộ 1.
+
 **Một file duy nhất, hai phía cùng đọc:** `backend/src/test/resources/canonical-vectors.json`
 
 | | |
@@ -148,9 +158,91 @@ Ghi lại để không mất thời gian lần hai:
 ## 7. Việc còn lại của tầng này
 
 - [ ] Cột `nonce BINARY(16)` vào các bảng được neo (migration Flyway `V2`)
-- [ ] `MerkleService` trong module `anchor` — nhận `List<byte[]> leaves` + `domain`, trả
-      root và proof; **không import gì từ nghiệp vụ** (`PROJECT.md` §5)
-- [ ] Test vector thứ hai cho **Merkle proof** (không chỉ leaf): cùng một tập leaf phải cho
-      cùng root ở Java và JS — chú ý quy ước sắp xếp cặp anh em và xử lý nút lẻ của
-      `merkletreejs`
+- [x] `MerkleService` trong module `anchor` — **xong 2026-08-05**, xem §8
+- [x] Test vector thứ hai cho **Merkle proof** — **xong 2026-08-05**, xem §8
 - [ ] `status_list_index` cấp **ngẫu nhiên từ pool còn trống**, không tuần tự (`PROJECT.md` §2.3)
+
+---
+
+## 8. Cây Merkle — chỗ lệch Java↔JS thứ hai
+
+**Chốt ngày:** 2026-08-05
+**Trạng thái:** ✅ xanh cả hai phía (Java 72 test · JS 75 test)
+
+> Chỗ này fail im lặng y hệt §1: root vẫn tính ra bình thường, chỉ là không khớp.
+> Ba quy ước dưới đây **đã đối chiếu bằng thực nghiệm** với `merkletreejs`, không đọc từ
+> tài liệu.
+
+| | Java | JS |
+|---|---|---|
+| Hiện thực | `MerkleService.java` (tự viết) | `verifier/src/merkle.mjs` (bọc `merkletreejs`) |
+| Test | `MerkleVectorTest.java` | `verifier/test/merkle.test.mjs` |
+| Vector chung | `backend/src/test/resources/merkle-vectors.json` | |
+| Sinh vector | `cd verifier && npm run gen-merkle-vectors` | |
+
+Hai bên **hiện thực độc lập**, không phải hai bản sao của cùng một đoạn mã: phía JS dùng
+thư viện, phía Java tự dựng cây. Java xanh ngay lần chạy đầu với vector do `merkletreejs`
+sinh — nên đây là bằng chứng hai bên khớp thật, không phải khớp vì cùng nguồn.
+
+### 8.1. Ba quy ước
+
+| # | Quy ước | Giá trị chốt | Hỏng thế nào nếu chọn sai |
+|---|---|---|---|
+| 1 | Cặp anh em **sắp xếp trước khi nối** | `keccak256( min(a,b) ‖ max(a,b) )`, so sánh byte **không dấu** | Proof phải mang bit trái/phải; chọn lệch là lệch mọi root |
+| 2 | Nút lẻ **đẩy lên nguyên vẹn** | `duplicateOdd: false` | Bitcoin **nhân đôi** nút cuối. Chọn nhầm ⇒ lệch root ở **mọi lô có số lá lẻ** — khoảng một nửa số lô |
+| 3 | Thứ tự lá **giữ nguyên** | `sortLeaves: false` | Sắp xếp lá làm mất thứ tự trong lô, và đổi luôn lá nào bị đẩy lên |
+
+Hệ quả của quy ước 1: **proof không cần bit trái/phải**, nên verifier chỉ là một vòng lặp
+`node = keccak256(min(node, sibling) ‖ max(node, sibling))`. Đây cũng đúng quy ước của
+OpenZeppelin `MerkleProof`, nên nếu sau này cần xác minh proof **on-chain** thì không phải
+đổi gì.
+
+Hai trường hợp biên đã chốt:
+- **Cây một lá:** root **chính là lá đó**, không băm thêm vòng nào, proof rỗng.
+- **Lá bị đẩy lên** không có anh em ở tầng đó, nên proof của nó **ngắn hơn** proof của lá
+  khác trong cùng cây. Đó là hành vi đúng, không phải lỗi.
+
+### 8.2. ⚠️ Bẫy `Arrays.compare` của Java
+
+Kiểu `byte` của Java **có dấu**. `Arrays.compare(byte[], byte[])` dùng `Byte.compare`, nên
+nó coi `0xFF` là −1 và xếp **trước** `0x00`. JavaScript (`Buffer.compare`) so sánh **không
+dấu**.
+
+Dùng nhầm `Arrays.compare` thay vì **`Arrays.compareUnsigned`** làm đảo thứ tự nối ở mọi cặp
+mà đúng một hash bắt đầu bằng byte ≥ `0x80` — tức khoảng **một nửa số cặp** — và không có gì
+báo lỗi.
+
+Bộ vector có riêng một cây `bay-so-sanh-co-dau` với hai lá **chọn cố ý** để phân biệt hai
+cách so sánh, kèm test khẳng định cặp đó vẫn còn phân biệt được (nếu không thì cây bẫy đã
+mất tác dụng và phải sinh lại).
+
+### 8.3. Ba thứ bị từ chối
+
+`MerkleService` và `merkle.mjs` đều **ném lỗi**, không "xử lý mềm":
+
+| Trường hợp | Vì sao từ chối |
+|---|---|
+| Lô rỗng | Không có cây từ 0 lá. `AnchorRegistry` cũng chặn `leafCount = 0` |
+| **Lá trùng** | Bằng chứng trở nên nhập nhằng — một proof hợp lệ cho hai vị trí. Mỗi payload có `nonce` 16 byte riêng nên trùng lá nghĩa là lô chứa **bản ghi lặp**, một lỗi cần vỡ ồn ào |
+| Lá sai độ dài | Lá phải đúng 32 byte. Nhận lá khác là nhận cả một lớp lỗi im lặng ở tầng gọi |
+
+### 8.4. Về việc `MerkleService` không nhận `domain`
+
+`PROJECT.md` §5 phác chữ ký là `(List<byte[]> leaves, domain)`. Bản hiện thực **cố ý bỏ
+`domain`**: mỗi lá đã là `keccak256(bytes8(domain) ‖ ':' ‖ JCS(payload))` nên miền neo nằm
+sẵn trong từng lá. Thêm một tham số mà hàm không dùng tới sẽ gợi ý sai rằng hai cây khác
+miền được tách nhau bởi thứ gì đó ngoài chính các lá. Việc tách miền thuộc về `LeafHasher`
+và về khóa `(domain, batchId)` của `AnchorRegistry`.
+
+### 8.5. Bộ vector gồm gì
+
+**10 cây** — `n=1` (biên nhỏ nhất) · `n=2` · **`n=3` (nút lẻ, quan trọng nhất)** · `n=4`
+(cân bằng) · `n=5` (lẻ ở hai tầng liên tiếp) · `n=7` · `n=8` · `bay-so-sanh-co-dau` ·
+`canonical-6-la-that` · `n=100` (cỡ một buổi điểm danh thật).
+
+`canonical-6-la-that` dựng từ **đúng 6 leaf hash của `canonical-vectors.json`** — nối hai bộ
+vector lại: nếu tầng leaf hash lệch thì cây cũng lệch, nên bộ này bảo vệ luôn bộ kia.
+
+Phần test **proof phải thất bại khi bị sửa** (sai lá · sai root · đổi một byte trong sibling
+· bỏ bớt sibling · dùng proof của lá khác) quan trọng ngang phần happy path: một hàm
+`verify` luôn trả `true` cũng làm mọi test root xanh.

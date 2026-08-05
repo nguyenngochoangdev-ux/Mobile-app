@@ -1,0 +1,498 @@
+{
+  "$schema": "khong-phai-JSON-Schema — day la bo test vector, doc docs/canonicalization.md §8 truoc khi sua",
+  "spec": "docs/canonicalization.md §8",
+  "conventions": {
+    "internalNode": "keccak256( min(a,b) || max(a,b) ), so sanh byte KHONG DAU",
+    "sortPairs": true,
+    "duplicateOdd": false,
+    "sortLeaves": false,
+    "oddNode": "day len nguyen ven, khong nhan doi va khong bam lai",
+    "singleLeaf": "root = chinh la do"
+  },
+  "warning": "File nay la HOP DONG giua backend Java va verifier JS. Test do = mot trong hai phia sai, KHONG phai file nay sai. Chi sinh lai bang `npm run gen-merkle-vectors` khi co y doi dac ta.",
+  "generatedBy": "verifier/scripts/gen-merkle-vectors.mjs",
+  "trees": [
+    {
+      "id": "n1-mot-la",
+      "why": "Cây một lá: root CHÍNH LÀ lá đó, không băm thêm lần nào, và proof rỗng. Nếu một phía băm thêm một vòng thì lệch ngay từ lô nhỏ nhất.",
+      "leafCount": 1,
+      "leaves": [
+        "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20"
+      ],
+      "root": "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20",
+      "proofs": [
+        {
+          "index": 0,
+          "leaf": "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20",
+          "siblings": []
+        }
+      ]
+    },
+    {
+      "id": "n2-can-bang",
+      "why": "Cây nhỏ nhất có một phép ghép: chốt công thức nút nội bộ keccak256(min||max).",
+      "leafCount": 2,
+      "leaves": [
+        "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20",
+        "0xbd0643e0b0d9207bdbb817e31fb751a2921af73afb28ad274308dc7738637c98"
+      ],
+      "root": "0x0cbd5112e969aa1dcf90da03cd1996831276877aa7ed01caf9f7a05d686363b5",
+      "proofs": [
+        {
+          "index": 0,
+          "leaf": "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20",
+          "siblings": [
+            "0xbd0643e0b0d9207bdbb817e31fb751a2921af73afb28ad274308dc7738637c98"
+          ]
+        },
+        {
+          "index": 1,
+          "leaf": "0xbd0643e0b0d9207bdbb817e31fb751a2921af73afb28ad274308dc7738637c98",
+          "siblings": [
+            "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "n3-nut-le-day-len",
+      "why": "BA LÁ — trường hợp quan trọng nhất của cả bộ. Lá thứ 3 lẻ ra, phải được ĐẨY LÊN nguyên vẹn (không nhân đôi, không băm lại). Proof của nó NGẮN HƠN proof của hai lá kia. Bitcoin nhân đôi nút cuối; chọn nhầm quy ước là lệch root ở mọi lô có số lá lẻ.",
+      "leafCount": 3,
+      "leaves": [
+        "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20",
+        "0xbd0643e0b0d9207bdbb817e31fb751a2921af73afb28ad274308dc7738637c98",
+        "0xca7bf1cedb81e8efec95dd76f8be72635c92b619ada0d2deaa2dcd00a474de71"
+      ],
+      "root": "0x87bd64c74d48dbcdb477beb7f4f8f72ac3250fd1bceb916826f66ddcd7253edb",
+      "proofs": [
+        {
+          "index": 0,
+          "leaf": "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20",
+          "siblings": [
+            "0xbd0643e0b0d9207bdbb817e31fb751a2921af73afb28ad274308dc7738637c98",
+            "0xca7bf1cedb81e8efec95dd76f8be72635c92b619ada0d2deaa2dcd00a474de71"
+          ]
+        },
+        {
+          "index": 1,
+          "leaf": "0xbd0643e0b0d9207bdbb817e31fb751a2921af73afb28ad274308dc7738637c98",
+          "siblings": [
+            "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20",
+            "0xca7bf1cedb81e8efec95dd76f8be72635c92b619ada0d2deaa2dcd00a474de71"
+          ]
+        },
+        {
+          "index": 2,
+          "leaf": "0xca7bf1cedb81e8efec95dd76f8be72635c92b619ada0d2deaa2dcd00a474de71",
+          "siblings": [
+            "0x0cbd5112e969aa1dcf90da03cd1996831276877aa7ed01caf9f7a05d686363b5"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "n4-can-bang-day-du",
+      "why": "Cây nhị phân đầy đủ hai tầng — không có nút lẻ ở bất kỳ tầng nào.",
+      "leafCount": 4,
+      "leaves": [
+        "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20",
+        "0xbd0643e0b0d9207bdbb817e31fb751a2921af73afb28ad274308dc7738637c98",
+        "0xca7bf1cedb81e8efec95dd76f8be72635c92b619ada0d2deaa2dcd00a474de71",
+        "0x5928400c29752600152dfe04fb44cb4f11d3a5dc025c92b7f002b59d53eaf27b"
+      ],
+      "root": "0x9bd7ca9fafa9e5c9ab4e5c13976d76a79ae65921e61b964810ccc341c20406bd",
+      "proofs": [
+        {
+          "index": 0,
+          "leaf": "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20",
+          "siblings": [
+            "0xbd0643e0b0d9207bdbb817e31fb751a2921af73afb28ad274308dc7738637c98",
+            "0x313d3a516bf7b5ea986aedd9ce7c02d08c6eda05d2a9304eb30869f309c61e89"
+          ]
+        },
+        {
+          "index": 3,
+          "leaf": "0x5928400c29752600152dfe04fb44cb4f11d3a5dc025c92b7f002b59d53eaf27b",
+          "siblings": [
+            "0xca7bf1cedb81e8efec95dd76f8be72635c92b619ada0d2deaa2dcd00a474de71",
+            "0x0cbd5112e969aa1dcf90da03cd1996831276877aa7ed01caf9f7a05d686363b5"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "n5-nut-le-nhieu-tang",
+      "why": "Năm lá: tầng 0 có 5 nút (lẻ), tầng 1 có 3 nút (lẻ nữa). Chốt việc đẩy nút lẻ xảy ra ĐỘC LẬP ở từng tầng, không chỉ tầng lá.",
+      "leafCount": 5,
+      "leaves": [
+        "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20",
+        "0xbd0643e0b0d9207bdbb817e31fb751a2921af73afb28ad274308dc7738637c98",
+        "0xca7bf1cedb81e8efec95dd76f8be72635c92b619ada0d2deaa2dcd00a474de71",
+        "0x5928400c29752600152dfe04fb44cb4f11d3a5dc025c92b7f002b59d53eaf27b",
+        "0x21adeb97f21cc7dbad57b94ac3981868f81350eccbb9a4a47520e67eda66849f"
+      ],
+      "root": "0xde11bf0a472ddcd7cd90ee4c6b14c9b3abc083916f7732fbbb80447d18e1caca",
+      "proofs": [
+        {
+          "index": 0,
+          "leaf": "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20",
+          "siblings": [
+            "0xbd0643e0b0d9207bdbb817e31fb751a2921af73afb28ad274308dc7738637c98",
+            "0x313d3a516bf7b5ea986aedd9ce7c02d08c6eda05d2a9304eb30869f309c61e89",
+            "0x21adeb97f21cc7dbad57b94ac3981868f81350eccbb9a4a47520e67eda66849f"
+          ]
+        },
+        {
+          "index": 4,
+          "leaf": "0x21adeb97f21cc7dbad57b94ac3981868f81350eccbb9a4a47520e67eda66849f",
+          "siblings": [
+            "0x9bd7ca9fafa9e5c9ab4e5c13976d76a79ae65921e61b964810ccc341c20406bd"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "n7-le-o-moi-tang",
+      "why": "Bảy lá: 7 -> 4 -> 2 -> 1. Lá cuối bị đẩy lên qua nhiều tầng liên tiếp.",
+      "leafCount": 7,
+      "leaves": [
+        "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20",
+        "0xbd0643e0b0d9207bdbb817e31fb751a2921af73afb28ad274308dc7738637c98",
+        "0xca7bf1cedb81e8efec95dd76f8be72635c92b619ada0d2deaa2dcd00a474de71",
+        "0x5928400c29752600152dfe04fb44cb4f11d3a5dc025c92b7f002b59d53eaf27b",
+        "0x21adeb97f21cc7dbad57b94ac3981868f81350eccbb9a4a47520e67eda66849f",
+        "0x140ae869756a1144496b468ded2a45f8c4c00e34b2cb10b964f1759ca3f246a0",
+        "0x3c27a5fcbcc041ef45d0fa6366587788625960bce69be84091d4e3f4a5eb15b8"
+      ],
+      "root": "0xfd55287d808ace7fdb4d85f68c0950e5f23ad016fe6d0e98db2cea22b5eabf3b",
+      "proofs": [
+        {
+          "index": 0,
+          "leaf": "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20",
+          "siblings": [
+            "0xbd0643e0b0d9207bdbb817e31fb751a2921af73afb28ad274308dc7738637c98",
+            "0x313d3a516bf7b5ea986aedd9ce7c02d08c6eda05d2a9304eb30869f309c61e89",
+            "0x14b569994d5842ab94d61b827134a1d40d8dd30a76decbbb5b78e269479588c4"
+          ]
+        },
+        {
+          "index": 5,
+          "leaf": "0x140ae869756a1144496b468ded2a45f8c4c00e34b2cb10b964f1759ca3f246a0",
+          "siblings": [
+            "0x21adeb97f21cc7dbad57b94ac3981868f81350eccbb9a4a47520e67eda66849f",
+            "0x3c27a5fcbcc041ef45d0fa6366587788625960bce69be84091d4e3f4a5eb15b8",
+            "0x9bd7ca9fafa9e5c9ab4e5c13976d76a79ae65921e61b964810ccc341c20406bd"
+          ]
+        },
+        {
+          "index": 6,
+          "leaf": "0x3c27a5fcbcc041ef45d0fa6366587788625960bce69be84091d4e3f4a5eb15b8",
+          "siblings": [
+            "0xc5e845d82b5b5b638a96ff1bc1719a60063b9014cd035c10bd12ed8123edb293",
+            "0x9bd7ca9fafa9e5c9ab4e5c13976d76a79ae65921e61b964810ccc341c20406bd"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "n8-can-bang-day-du",
+      "why": "Tám lá, cây đầy đủ ba tầng: mọi proof dài đúng 3.",
+      "leafCount": 8,
+      "leaves": [
+        "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20",
+        "0xbd0643e0b0d9207bdbb817e31fb751a2921af73afb28ad274308dc7738637c98",
+        "0xca7bf1cedb81e8efec95dd76f8be72635c92b619ada0d2deaa2dcd00a474de71",
+        "0x5928400c29752600152dfe04fb44cb4f11d3a5dc025c92b7f002b59d53eaf27b",
+        "0x21adeb97f21cc7dbad57b94ac3981868f81350eccbb9a4a47520e67eda66849f",
+        "0x140ae869756a1144496b468ded2a45f8c4c00e34b2cb10b964f1759ca3f246a0",
+        "0x3c27a5fcbcc041ef45d0fa6366587788625960bce69be84091d4e3f4a5eb15b8",
+        "0xf1a1458998a8a50b7a2ea3242b85cb59009e475459d278709348d4ede98a47cd"
+      ],
+      "root": "0x8c3bf30ec4b66cf243e61ee20f252c8bca4ea92dd9e63bf2af4d97949e7ca8f9",
+      "proofs": [
+        {
+          "index": 0,
+          "leaf": "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20",
+          "siblings": [
+            "0xbd0643e0b0d9207bdbb817e31fb751a2921af73afb28ad274308dc7738637c98",
+            "0x313d3a516bf7b5ea986aedd9ce7c02d08c6eda05d2a9304eb30869f309c61e89",
+            "0xbbc12cbffd87263e3775d14363ca03abbab3cfd6480a472c48d46064efd03f22"
+          ]
+        },
+        {
+          "index": 7,
+          "leaf": "0xf1a1458998a8a50b7a2ea3242b85cb59009e475459d278709348d4ede98a47cd",
+          "siblings": [
+            "0x3c27a5fcbcc041ef45d0fa6366587788625960bce69be84091d4e3f4a5eb15b8",
+            "0xc5e845d82b5b5b638a96ff1bc1719a60063b9014cd035c10bd12ed8123edb293",
+            "0x9bd7ca9fafa9e5c9ab4e5c13976d76a79ae65921e61b964810ccc341c20406bd"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bay-so-sanh-co-dau",
+      "why": "Hai lá được CHỌN CỐ Ý: byte đầu của lá thứ nhất >= 0x80, của lá thứ hai < 0x80. Java `Arrays.compare` (có dấu) đảo thứ tự cặp này, `Arrays.compareUnsigned` thì không. Dùng nhầm hàm là lệch root ở khoảng một nửa số cặp mà không có gì báo lỗi.",
+      "leafCount": 2,
+      "leaves": [
+        "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20",
+        "0x5928400c29752600152dfe04fb44cb4f11d3a5dc025c92b7f002b59d53eaf27b"
+      ],
+      "root": "0x3a94012668b595f48b0b4e2339aa7a14325cc2095b3b516ad5dd7ff707ffb552",
+      "proofs": [
+        {
+          "index": 0,
+          "leaf": "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20",
+          "siblings": [
+            "0x5928400c29752600152dfe04fb44cb4f11d3a5dc025c92b7f002b59d53eaf27b"
+          ]
+        },
+        {
+          "index": 1,
+          "leaf": "0x5928400c29752600152dfe04fb44cb4f11d3a5dc025c92b7f002b59d53eaf27b",
+          "siblings": [
+            "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "canonical-6-la-that",
+      "why": "Dựng từ ĐÚNG 6 leaf hash của canonical-vectors.json. Nối hai bộ vector: nếu tầng leaf hash lệch thì cây cũng lệch, nên bộ này bảo vệ luôn cả bộ kia.",
+      "leafCount": 6,
+      "leaves": [
+        "0xc3499cc6b063d2a70482febcff04ef852eda3b4e18915026abe1af371473bf5c",
+        "0xc46ece951ab6ce5b9865b9206525e16bdfcedac3f5515f43fd61c64beada9fa0",
+        "0x193c733442506498ee9a2e073605ff5e82dc3e790e1228e230c40e19a21a4fc3",
+        "0xf8151c000d63ae8d105bf6895630ab4fe6377a9db0a74ef84b09bbd73b9e6412",
+        "0x92f75f606289e45702918571cbd4b08290610cfbe449dcee6c01c4b46a752539",
+        "0x99468eeb621e536cdbef6ce05ed878e0159ee96963573be36675c7cfd0f9c3cd"
+      ],
+      "root": "0x6c8757e60de3497a30b88b6eb757d288545ba90ec3d06373c3cb7fd7e9cc3af6",
+      "proofs": [
+        {
+          "index": 0,
+          "leaf": "0xc3499cc6b063d2a70482febcff04ef852eda3b4e18915026abe1af371473bf5c",
+          "siblings": [
+            "0xc46ece951ab6ce5b9865b9206525e16bdfcedac3f5515f43fd61c64beada9fa0",
+            "0xbea770b507cc1435e158ed31808f1e364e28509ac82669d023f98e281931c106",
+            "0x2cddf03ed124a136e7f6c3e3560c658197455f6193af0a669e340062fccfe9ed"
+          ]
+        },
+        {
+          "index": 2,
+          "leaf": "0x193c733442506498ee9a2e073605ff5e82dc3e790e1228e230c40e19a21a4fc3",
+          "siblings": [
+            "0xf8151c000d63ae8d105bf6895630ab4fe6377a9db0a74ef84b09bbd73b9e6412",
+            "0xf581c75510c67aa85aac95a0aab79812360d4c9558771313b241c33ae7ec6dce",
+            "0x2cddf03ed124a136e7f6c3e3560c658197455f6193af0a669e340062fccfe9ed"
+          ]
+        },
+        {
+          "index": 5,
+          "leaf": "0x99468eeb621e536cdbef6ce05ed878e0159ee96963573be36675c7cfd0f9c3cd",
+          "siblings": [
+            "0x92f75f606289e45702918571cbd4b08290610cfbe449dcee6c01c4b46a752539",
+            "0xc40ab1c67410ac0d0386a6253322c343d0598e598f8407b676cb6e085d910539"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "n100-quy-mo-that",
+      "why": "Lô 100 bản ghi — cỡ một buổi điểm danh thật. Proof dài 7 tầng. Cũng là lô lớn nhất còn đọc được bằng mắt trong file vector.",
+      "leafCount": 100,
+      "leaves": [
+        "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20",
+        "0xbd0643e0b0d9207bdbb817e31fb751a2921af73afb28ad274308dc7738637c98",
+        "0xca7bf1cedb81e8efec95dd76f8be72635c92b619ada0d2deaa2dcd00a474de71",
+        "0x5928400c29752600152dfe04fb44cb4f11d3a5dc025c92b7f002b59d53eaf27b",
+        "0x21adeb97f21cc7dbad57b94ac3981868f81350eccbb9a4a47520e67eda66849f",
+        "0x140ae869756a1144496b468ded2a45f8c4c00e34b2cb10b964f1759ca3f246a0",
+        "0x3c27a5fcbcc041ef45d0fa6366587788625960bce69be84091d4e3f4a5eb15b8",
+        "0xf1a1458998a8a50b7a2ea3242b85cb59009e475459d278709348d4ede98a47cd",
+        "0x6bd0afd18776db2fe7b6661118511273b9d22d059aa1256426ed4ed7711864d1",
+        "0x295a980783d727bfb0132c8f4b2360f914ab5283976114d4009156871f9bb87d",
+        "0xee29499147ae4ea0464c6de293f31901229bc7fdd734128b8c7879dd36864df1",
+        "0xdba95a9b033b48ddd1d68f328b8221e61fd0d9ef2145ae0aaf47304401c4e72b",
+        "0x04c323e1ca840710f372b5c2003319e746e69bd42f18bed523021a39ebb57a08",
+        "0x9e3341bdf16dba7ed32f27010b51650bc8fef5afc3e811fc799af8f8c4f5cd31",
+        "0x79b161eef2600a30ef8ad7cc401111f70de9860cc6c35399398d90e4a63fe3b8",
+        "0x9de9060a851d23e0f1a04b2404786ec7d218e21c589de20dc46eabf6985d4a08",
+        "0x0dd7e526b746b13d00bcc133982a2dc3019041e1ea680feff2f0417ad9000f84",
+        "0x544d7a4d4166c55d50f2cde5c858c4f01d921dbe11204efcb890fc7a8953368c",
+        "0x5642ac5b1282417d3a3be641dbd0d1fa7805e08707f2ad4417613db811d91c03",
+        "0x4413d2c0b5d7a814de9e1275737c8dcd8152e94c16ef360c0b8a26b7f5ee4469",
+        "0xbf1cd699264cbb78ae762aa75fc9b3614c4220223543d5d7882c3ac92a465b87",
+        "0xad345c59058741f826fe5e53e36e211b01e67a6e31e9ef80185d2b10593cbe9a",
+        "0x08d851f0ba095a6defcfd00210d43c000873d1f95371fbbf5c1371e391f41373",
+        "0xf61e2450ee3af010ddd2e7e71cd7d57ec9b2aff2601b7a7d3b4dc0ffbeb72e79",
+        "0x25ec94c1326bf78049530ad1f6c1132ccffbfde90e2c0fbcd7f7ccd9689fd308",
+        "0x9bba31855dad08e1fd5c59a6605511a9894e00337d05b3de161fa4cf3a572303",
+        "0xeb153782dac58b0a6aa69abb52ec9a03fb1456b8e42b6ae6aabf69965b2dac10",
+        "0x9f4ce748af4e57a48752be2972c9bd19638eccdfa776338c51d558aa39c42c89",
+        "0x640f000e916c95ed35632b34cf79d7305c9cf765205376cb49758c95ffa67294",
+        "0xce80e9aee1309c7baf508062b82a026ebfb965c57ea99c490ca0511782148f75",
+        "0x2912d0abf2e110b6f4540145a7469d4eb8fc498c25e340988416356679e36f8a",
+        "0xd4c918073945af14f181caa73dc435e73e448703c3bd11e03930ffe29beed9f6",
+        "0x17a85b3992b740bb1412a1a16bf6a1613e157a3d772b6c3b719a5013af042590",
+        "0xd216842419f38c328efe3e04f5fef4aa5c67a85505a40de339ca30fc528d5479",
+        "0x04a39bca0bae63cf17894fb502ce22518b8c7bdc1bf2b510c72f6c49460b018e",
+        "0xae8e40fc363e5e80ed0aa35abcf9d0dd746b0ed0b5943b412a11da3fb82af8d6",
+        "0x95120fc75609f90b6ef037bb9bd4bd75227d65e4df7a1e18e31d0cd72eb5a3fc",
+        "0x3e9b6b77d50b40a62040283a2a2775a5bf6f633d56c5cfd2757035a921f28dc4",
+        "0xe3902f9e40337c7ab619276c4052a35fdf9ee7d5a78ad6fd8bf04489e4362fe8",
+        "0xc32f965cb56dc2f97d8fced37b2766d34ab0931aa3f043c028aa67fb2beb32d5",
+        "0xe1899725056f39cb8576202ddcf1d49156dd28743158c4cada85a3866604a43e",
+        "0x1bffec9cf8e7e6c3d82b337a868a034223ce1115a0e6f98aad2ab9f8bee2b015",
+        "0x92487ae5c1d6bc22ed7183c511cf85eb3c4e4a9bbcb705217cd996e559597762",
+        "0x3d53c5e488c09713047641f7a8d38d716fa3fa6909e9a9d2115e360d3cc076e9",
+        "0xc46a65ede8a5420fcb6f971068e723396b69f982fd5ec43f25ce54962082022f",
+        "0xcc48f11871c4ed444deed8f101f1820774becfb9959ad5d59b22df63cbaa1dc0",
+        "0x5b5fa657d2b1fe46215f542a8216db0a7cd7b1f8bdd8e97b3e57468949b967d2",
+        "0xe7ca5ebcff835b474e5a15ba8f8ef8aba2d9817da0d5411492de3abfc8db2ccd",
+        "0xd14831a1238d7366c3de4a76c1ebe2caaff59c89d71a9f2e14d30758c31b06e5",
+        "0xb718f418e84647e85cfddb65bd5b755ab48dcb452c26e58661fcb8f0131a591f",
+        "0x366b139a594ea6577aa85b090099197d6bd94009498762c2208eb059edffe089",
+        "0x0380ee5b2b7302a599dde9492f07a545e69060fe70cc0661d0e83ad643d80678",
+        "0x4d33abda8b6463575e9e2f99b51f39b43e7da846007d70892957e8add83d4f7d",
+        "0xb1e2ee94db6dfa37bfd845a0767020e58b12eb312bd453787f16e758f1fc9061",
+        "0x70c8334a856a1eac9763745ca1fd23a4ac47e81d6ccf8a029df6a1036c1c523f",
+        "0x4767704658b02fcbf95f3615d8db7535d17d3ffe1d71d1e415f3c43377afd82d",
+        "0x850356b493e1e9168fdb26c2ed578cd31ed6410136275647d642046ae34f9590",
+        "0x4cc229be3b01d61feda79d035e573903b3ac361e505a31ce6c4b9f13f0807d7d",
+        "0xf42934685a855cfc54399ceb65c8f891f09864489ce59ba837c1e9ad5cc27aa5",
+        "0x73a2554de72f79f4c5e03db8993a8804c4462fb5755c20fd6b0711c964645540",
+        "0xa6b6208071c93b578fbd660d7088f3d48c4beb4ef21b230ed56aa32d17ca7c8c",
+        "0xad0f080396337fa702d5544a4119903b1ec9e11df58680179231fd8b42332647",
+        "0x8a57331402738606c8981b7b8adcd2322de973427058902ca5887792b452dfd8",
+        "0xfb342dbcb2315b2d2d27d19960f3b0226eacbf54a54d18f05a0ffeba780aa844",
+        "0xf5999888e5478bff23b10bfa0149696aafae2ebb16bc0b174d65f452d24d56f5",
+        "0x2d9a916f0f3d199b5851f8cd513cd5608ad257e43e1caf1c38408fc0af5695fc",
+        "0xd69d9d4b09302effc32aa552cfdc5707e9f260a1af76235a34cb157d6f4e7d1f",
+        "0x7a6a71b18b25a22981ce6166c9512f61854123355750e64c59dabe15f3be52e8",
+        "0x597f87bcaa6cbbbd146bc9bfdc86431acde9b09c103b447cebf5dfeb93bacc8a",
+        "0x67f5fb0c6c0f340f8ce25ebafe42f2c722bd0678683ca7a2c3c6b7d9910e80f2",
+        "0xec129ad27dbe24a99bb1dd00b85ed757a30e236873c3fdf4551de709ea25d43b",
+        "0xc6c8616e3f65708e03d6e25e1901ccaba9ce2433d0b759b8d2d983330ee14e0f",
+        "0xc32ff3ef4deecbb696a1b8f4a3041bdba93a2cff726930e678e83808a9b41eb1",
+        "0x748e5ba87be910ac0fa2a99f0eb7af748019bcda675d21be6b00f5dfb6f77018",
+        "0xbe1ce8e599c0126c7ecbf077c039acc67420b93f786811bf0c57227df8b8dea7",
+        "0x2b21c2485f3fed15b08060660584fe6a77f8a34e509305b07737020c97a6b6ef",
+        "0x1671d9a5483b6c895f484bb120921f56f1c701125d7d5e0d80e14b3419361563",
+        "0x337727463f7bf72435f41eec7873b3c88530232f04d8fb3d4988dc7dc753e0aa",
+        "0x71236877fffc9006972a3f496fcc6f8edb1436bc8021260b74f3556c3bb264aa",
+        "0xe6d8b5df9843e8f52147b95c87e747f3d0141b6badd4a8230c387943cc74b7c5",
+        "0xa4e8749a4126def51b85741510197231b84ead91bfed4fe2f58a49c02b5371b0",
+        "0x6e62b369af7ddf3004d94cca36983c85a1ab3eaa47717ca898fba0b61552594e",
+        "0x729bfcacf46d00911d52c1b518fb78187c8ce89b0d8dc7b6f463d64490f965d1",
+        "0xb01e6b244fba1713740d6de0eeb1d93baf4a1141ad599d03398cdd333d96739b",
+        "0x7ea6f20835d79db77651b1b1e898dd51a470a6ad60d1924176c446e11730ad92",
+        "0xad39a376746152f7197dc12e69d8a486367241edb66f0a1be53f3ddfb881b8da",
+        "0x62e9d075e642d7648981c3e37b057d8be296f5f97799e02be224723e20ffbb16",
+        "0x1b71c723a52301d4ef677464a42e63209a14d968aeb37d55ade23d0238a3585f",
+        "0xc9f6f00e5b08848e76795b269ada6ae269ca87bcfce2207af14418da722c1c4c",
+        "0x7c5066265d27ce3c4f7fed5e06d63bf8dc90287063ef28a0779bfcf47954f77a",
+        "0x459b43e0c387d95a43b46f26a0adf98da04f3b54e87fae38052a871c16aa69e2",
+        "0x59f10cc0518daee0684e991798ed36993ac555d1740c502a1a994c45a738db1d",
+        "0x210cf67c8c3d70a661b7bf7d58f847ed6b6f27ce77af913ac0e33924a3f2ece5",
+        "0xeed8eb94387707efde98daba0efec9caaf24cf6bee54d9e75cd51d00c9b893dc",
+        "0xf643ab64ea0a990106cfb10b0d70281b434d7671a5255d0bdc699bd085816585",
+        "0x14816fda07ce6a7f7bb12af1f7bc2e0a5f21191cc64590040b3e10c6140b98b1",
+        "0x05a763156b1853d8420abb76019d34a73275ea8033b6e8abdb803446fc426e0b",
+        "0xfd76576c55e4457ca2d23ba822f36c0a1dd5c96a07cd919ff82fff15d83d4116",
+        "0x15cd1cfb8d7bc68bd76900bc58ce55026ff2dd5cc0299a833401aecf0304d923",
+        "0x3864434c905ddabb402a4bf150dd77567b12e7273878a59822952ef902aa9c71"
+      ],
+      "root": "0x8cf46432ee9e147810fa71707ab80bf501eb002760f60f9454809d07a7fd99d8",
+      "proofs": [
+        {
+          "index": 0,
+          "leaf": "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20",
+          "siblings": [
+            "0xbd0643e0b0d9207bdbb817e31fb751a2921af73afb28ad274308dc7738637c98",
+            "0x313d3a516bf7b5ea986aedd9ce7c02d08c6eda05d2a9304eb30869f309c61e89",
+            "0xbbc12cbffd87263e3775d14363ca03abbab3cfd6480a472c48d46064efd03f22",
+            "0xb7c04699a8bc26ff1a9189bbeaa9ba0fbbfc14fbaba70ac83d701bf331be9c37",
+            "0x907313f5a241f6b0ef2b2abdcee0e4eea6ab4bbd7998e7ee01868e4b5f59e357",
+            "0x1f3878173bb5c49d2f0e2dadb0a635147a8572b1778aa49b380bc8a2dc812aa6",
+            "0xa4b98b2620628ce8fd7dc2d54b4c7a51d8541c5850563ff5d4e5d1eea29bcae7"
+          ]
+        },
+        {
+          "index": 1,
+          "leaf": "0xbd0643e0b0d9207bdbb817e31fb751a2921af73afb28ad274308dc7738637c98",
+          "siblings": [
+            "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20",
+            "0x313d3a516bf7b5ea986aedd9ce7c02d08c6eda05d2a9304eb30869f309c61e89",
+            "0xbbc12cbffd87263e3775d14363ca03abbab3cfd6480a472c48d46064efd03f22",
+            "0xb7c04699a8bc26ff1a9189bbeaa9ba0fbbfc14fbaba70ac83d701bf331be9c37",
+            "0x907313f5a241f6b0ef2b2abdcee0e4eea6ab4bbd7998e7ee01868e4b5f59e357",
+            "0x1f3878173bb5c49d2f0e2dadb0a635147a8572b1778aa49b380bc8a2dc812aa6",
+            "0xa4b98b2620628ce8fd7dc2d54b4c7a51d8541c5850563ff5d4e5d1eea29bcae7"
+          ]
+        },
+        {
+          "index": 49,
+          "leaf": "0xb718f418e84647e85cfddb65bd5b755ab48dcb452c26e58661fcb8f0131a591f",
+          "siblings": [
+            "0xd14831a1238d7366c3de4a76c1ebe2caaff59c89d71a9f2e14d30758c31b06e5",
+            "0xfd988fbb668cde321b0516ae5aba0be9cecc7c283fb5500b884f667597c4b606",
+            "0x8fb38389a57e1b34673b59805e601da6f922210040b76c18a1543f3809537f1f",
+            "0x235d474ae8114e24b21f21af2617403b06bfa72f4e34839d82fec43f2e856e0f",
+            "0x46c57728a2ea037bd8094701ffb03f95a406478036fe93d313b13ba2f111a0ce",
+            "0x9539e182a96a84388841d72878e816e6cc349d93c1ef30d4e129e9291fd9035c",
+            "0xa4b98b2620628ce8fd7dc2d54b4c7a51d8541c5850563ff5d4e5d1eea29bcae7"
+          ]
+        },
+        {
+          "index": 98,
+          "leaf": "0x15cd1cfb8d7bc68bd76900bc58ce55026ff2dd5cc0299a833401aecf0304d923",
+          "siblings": [
+            "0x3864434c905ddabb402a4bf150dd77567b12e7273878a59822952ef902aa9c71",
+            "0x1b0e9e12e53917eae278ff9c69e97ca8808a582530bc42cf9632fc9de7624303",
+            "0xa0f475b15132705f3deba21c2e7840162447d567d27fa4659a18064e0fedccdf",
+            "0xa960871b04af726e9b4f662e8a01e5f47a94bdd1636f7d10f1b5e6bb8c1905b2"
+          ]
+        },
+        {
+          "index": 99,
+          "leaf": "0x3864434c905ddabb402a4bf150dd77567b12e7273878a59822952ef902aa9c71",
+          "siblings": [
+            "0x15cd1cfb8d7bc68bd76900bc58ce55026ff2dd5cc0299a833401aecf0304d923",
+            "0x1b0e9e12e53917eae278ff9c69e97ca8808a582530bc42cf9632fc9de7624303",
+            "0xa0f475b15132705f3deba21c2e7840162447d567d27fa4659a18064e0fedccdf",
+            "0xa960871b04af726e9b4f662e8a01e5f47a94bdd1636f7d10f1b5e6bb8c1905b2"
+          ]
+        }
+      ]
+    }
+  ],
+  "rejects": [
+    {
+      "id": "lo-rong",
+      "why": "Không dựng được cây từ 0 lá. AnchorRegistry cũng chặn leafCount = 0.",
+      "leaves": [],
+      "expectedError": "rỗng"
+    },
+    {
+      "id": "la-trung",
+      "why": "Hai lá giống hệt làm bằng chứng nhập nhằng — một proof hợp lệ cho hai vị trí. Mỗi payload có nonce 16 byte riêng nên trùng lá nghĩa là lô chứa bản ghi lặp.",
+      "leaves": [
+        "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20",
+        "0xbd0643e0b0d9207bdbb817e31fb751a2921af73afb28ad274308dc7738637c98",
+        "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20"
+      ],
+      "expectedError": "trùng"
+    },
+    {
+      "id": "la-sai-do-dai",
+      "why": "Lá phải đúng 32 byte. Nhận lá ngắn hơn là nhận cả một lớp lỗi im lặng ở tầng gọi.",
+      "leaves": [
+        "0xdc7733151463a410247a4e18e4fee427dceec60a66300236e50ac71ed2049b20",
+        "0x0011223344556677"
+      ],
+      "expectedError": "32 byte"
+    }
+  ]
+}

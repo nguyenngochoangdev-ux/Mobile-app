@@ -392,10 +392,14 @@ QR động HMAC 10s · màn hình presenter · check-in/out · device binding ·
 > | `IssuerRegistry` | `0xD323118Fa310a730BC4202fADd8dfA7CeA4C5637` |
 > | `StatusList` | `0xc8538A8741CE428C4A26f3a06678b6Ca10972106` |
 >
-> ❌ Chưa có: `MerkleService`, test vector cho **Merkle proof** (mới chỉ có cho leaf),
-> và **giao dịch `anchor()` thật** — mới có giao dịch *triển khai*, chưa có giao dịch *neo*.
-> Neo bằng root giả sẽ chiếm vĩnh viễn một `batchId` trong không gian thật (contract cố ý
-> không cho ghi đè), nên việc này chờ `MerkleService` sinh root thật.
+> ✅ **`MerkleService` + bộ test vector Merkle xong** (2026-08-05). Hai hiện thực **độc lập**
+> — phía JS bọc `merkletreejs`, phía Java tự dựng cây — cùng đọc
+> `backend/src/test/resources/merkle-vectors.json`. **Java xanh ngay lần chạy đầu** với
+> vector do `merkletreejs` sinh. Tổng test tầng canonicalization giờ là
+> **Java 118 · JS 115**. Đặc tả: `docs/canonicalization.md` §8.
+>
+> ❌ Chưa có: **giao dịch `anchor()` thật** — mới có giao dịch *triển khai*, chưa có giao
+> dịch *neo*. Đây là thứ **duy nhất** còn thiếu để đóng cổng kiểm soát cuối tuần 3.
 
 ### Tuần 4 — Neo + credential
 Job neo hằng đêm · hash chain audit log · VC + chữ ký issuer · StatusList · xuất bundle JSON.
@@ -433,8 +437,9 @@ Kiểm tra **đúng ngày**, không hoãn. Mỗi cổng có hành động cắt 
 | **Cuối tuần 5** | Chưa chấm được điểm | Rút ruleset xuống **3 tiêu chí**, ghi rõ vào giới hạn phạm vi |
 
 **Trạng thái cổng cuối tuần 3, tính đến 2026-08-05:** 3 contract đã deploy và verify trên
-Amoy, phép đo #1 và #2 đã có số liệu local đầy đủ. **Không phải cắt `StatusList`.** Còn thiếu
-đúng một thứ để đóng cổng: giao dịch `anchor()` thật, đang chờ `MerkleService`.
+Amoy · phép đo #1 và #2 có số liệu local đầy đủ · `MerkleService` + test vector Merkle xanh
+cả hai phía. **Không phải cắt `StatusList`.** Còn thiếu đúng một thứ để đóng cổng: **giao
+dịch `anchor()` thật** — giờ đã dựng được root thật nên chỉ còn là một lệnh gọi.
 
 **Bổ sung một cổng gốc không có — cuối tuần 6:** nếu chưa có luồng end-to-end chạy được, **dừng phát triển hoàn toàn** và chuyển sang viết báo cáo sớm. Một hệ thống hẹp có báo cáo tử tế thắng một hệ thống rộng không có số liệu.
 
