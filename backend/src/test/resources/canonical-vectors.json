@@ -128,6 +128,54 @@
       }
     },
     {
+      "id": "attend-payload-day-du",
+      "why": "LƯỢC ĐỒ ATTEND THẬT mà job neo dựng ra — đúng 11 trường của AttendancePayload.of(). Bản ghi QR_SCAN đầy đủ: có toạ độ, có deviceFp, có check-out. Đây là hợp đồng backend↔verifier, không phải một payload minh hoạ.",
+      "domain": "ATTEND",
+      "payload": {
+        "studentCode": "B21DCCN042",
+        "eventId": 7,
+        "method": "QR_SCAN",
+        "checkInAt": "2026-08-04T17:55:58Z",
+        "checkOutAt": "2026-08-04T19:30:00Z",
+        "deviceFp": "6f1c2a90-3b4d-4e5f-8a91-2c3d4e5f6a7b",
+        "lat": 21.0285,
+        "lng": 105.8542,
+        "verified": true,
+        "geofenceOk": true,
+        "nonce": "0x74a40e0f493b112d51f09ade5cab9d44"
+      },
+      "expected": {
+        "domainBytes8": "0x415454454e440000",
+        "jcs": "{\"checkInAt\":\"2026-08-04T17:55:58Z\",\"checkOutAt\":\"2026-08-04T19:30:00Z\",\"deviceFp\":\"6f1c2a90-3b4d-4e5f-8a91-2c3d4e5f6a7b\",\"eventId\":7,\"geofenceOk\":true,\"lat\":21.0285,\"lng\":105.8542,\"method\":\"QR_SCAN\",\"nonce\":\"0x74a40e0f493b112d51f09ade5cab9d44\",\"studentCode\":\"B21DCCN042\",\"verified\":true}",
+        "preimageBytes": 297,
+        "leaf": "0x8945a41f5c0fa08355174b6b5458b92276b88630d64ddebe81d33db45b13e788"
+      }
+    },
+    {
+      "id": "attend-payload-toan-null",
+      "why": "Cùng lược đồ nhưng là bản ghi MANUAL do cán bộ nhập tay: không toạ độ, không thiết bị, chưa check-out, geofenceOk không xác định. Bốn trường null phải GIỮ NGUYÊN literal `null` — trường vắng mặt cho ra hash khác. Đây là dạng bản ghi mà bảng threat model gọi là \"vấn đề oracle\".",
+      "domain": "ATTEND",
+      "payload": {
+        "studentCode": "B21DCCN042",
+        "eventId": 3,
+        "method": "MANUAL",
+        "checkInAt": "2026-08-04T17:57:04Z",
+        "checkOutAt": null,
+        "deviceFp": null,
+        "lat": null,
+        "lng": null,
+        "verified": false,
+        "geofenceOk": null,
+        "nonce": "0x0403c6481c937c9f1ffacbf727fbe58b"
+      },
+      "expected": {
+        "domainBytes8": "0x415454454e440000",
+        "jcs": "{\"checkInAt\":\"2026-08-04T17:57:04Z\",\"checkOutAt\":null,\"deviceFp\":null,\"eventId\":3,\"geofenceOk\":null,\"lat\":null,\"lng\":null,\"method\":\"MANUAL\",\"nonce\":\"0x0403c6481c937c9f1ffacbf727fbe58b\",\"studentCode\":\"B21DCCN042\",\"verified\":false}",
+        "preimageBytes": 238,
+        "leaf": "0x8f6142689d4528d9e5586aac04a27028bd00091be1b6f8e35a5bdcb8c079b39a"
+      }
+    },
+    {
       "id": "ruleset-sap-xep-khoa",
       "why": "Tra tấn thứ tự khóa theo ĐƠN VỊ MÃ UTF-16: chữ số < chữ hoa < chữ thường < ký tự có dấu. Java String.compareTo và JS Array.sort() đều dùng đúng thứ tự này.",
       "domain": "RULESET",
