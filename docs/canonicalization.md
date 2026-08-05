@@ -160,7 +160,9 @@ Ghi lại để không mất thời gian lần hai:
 - [x] Cột `nonce BINARY(16)` ở **cả năm miền neo** — **xong 2026-08-05**, xem §9
 - [x] `MerkleService` trong module `anchor` — **xong 2026-08-05**, xem §8
 - [x] Test vector thứ hai cho **Merkle proof** — **xong 2026-08-05**, xem §8
-- [ ] `status_list_index` cấp **ngẫu nhiên từ pool còn trống**, không tuần tự (`PROJECT.md` §2.3)
+- [x] `status_list_index` cấp **ngẫu nhiên từ pool còn trống** — **xong 2026-08-06**, xem §10
+
+Tầng canonicalization đã đóng hết mục. Việc còn lại của dự án nằm ở `PROJECT.md`.
 
 ---
 
@@ -323,3 +325,89 @@ nào. Đã kiểm tra trước khi chạy, không phải giả định.
 
 > ⚠️ **Nếu về sau cần migration tương tự trên bảng đã có dữ liệu ĐÃ NEO — đừng chép lại V2.**
 > Viết migration chỉ chạm các bản ghi có `leaf_hash IS NULL`.
+
+---
+
+## 10. Cấp `status_list_index` ngẫu nhiên
+
+**Chốt ngày:** 2026-08-06 · `StatusListIndexAllocator` + `StatusListIndexService` trong
+`vn.ptit.drl.credential` · 16 test.
+
+### 10.1. Vì sao không cấp tuần tự
+
+Thu hồi credential phát sự kiện `StatusChanged(index)` **lên chuỗi công khai, vĩnh viễn**.
+Cấp tuần tự thì bản thân con số đã là một dấu thời gian: index nhỏ = cấp sớm. Ai đối chiếu
+thứ tự đó với danh sách sinh viên theo khóa, theo lớp, hay theo thứ tự nhập học là truy ngược
+được credential nào của ai — **mà không cần chạm vào máy chủ của trường**.
+
+Đây là lỗ hổng cùng họ với lỗ hổng nonce (§3): dữ liệu không nằm trên chuỗi, nhưng **thứ tự**
+thì có, và thứ tự cũng là thông tin.
+
+> ⚠️ **Đừng "đơn giản hóa" thành một bộ đếm.** Nó sẽ chạy đúng, mọi test nghiệp vụ vẫn xanh,
+> và biện pháp riêng tư biến mất không dấu vết. Nhóm test `KhongDuocTuanTu` tồn tại riêng để
+> chặn chuyện đó — nó kiểm dãy không tăng dần, không bám quanh 0, và trải đều khắp pool.
+
+### 10.2. Thuật toán: bốc ngẫu nhiên rồi thử lại
+
+Bốc chỉ số ngẫu nhiên (`SecureRandom`) trong `[0, poolSize)`, hỏi CSDL xem đã dùng chưa,
+trùng thì bốc lại. Tối đa 64 lần rồi ném lỗi.
+
+Với độ đầy `p`, số lần bốc kỳ vọng là `1/(1−p)`. Đã **đo** chứ không chỉ tin công thức: ở độ
+đầy 50%, trung bình ~2 lần bốc (test `soLanBocKhopLyThuyet`).
+
+**`SecureRandom`, không phải `java.util.Random`.** `Random` là bộ sinh tuyến tính đồng dư —
+chỉ cần vài giá trị đầu ra là khôi phục được trạng thái và đoán được mọi giá trị sau. Dùng
+nhầm ở đây làm chỉ số "ngẫu nhiên" trở nên dự đoán được, tức mất sạch tác dụng của §10.1.
+
+**Đã cân nhắc và bỏ phương án hoán vị giả ngẫu nhiên có khóa (Feistel).** Nó cho ánh xạ song
+ánh nên không bao giờ trùng và không cần thử lại, nhưng đổi lại phải quản lý **thêm một khóa
+bí mật nữa** — và lộ khóa đó là khôi phục được toàn bộ thứ tự cấp phát, đúng thứ cơ chế này
+sinh ra để giấu. `PROJECT.md` §2.6 đã ghi việc giữ khóa là điểm yếu; thêm khóa thứ hai để
+tiết kiệm vài truy vấn là đánh đổi sai.
+
+### 10.3. Giới hạn có chủ ý: không lấp đầy được 100% pool
+
+Ở ô trống **cuối cùng** của pool `N`, mỗi lần bốc chỉ có xác suất `1/N` trúng — nên trượt cả
+64 lần là chuyện thường xuyên. Với pool 64, xác suất trượt là `(63/64)^64 ≈ 36%`.
+
+**Đây là tính chất, không phải lỗi.** Pool được cỡ sao cho độ đầy ở mức vài phần trăm; khi nó
+gần đầy ta **muốn** vỡ ồn ào để người vận hành tăng pool. Phương án "chữa" bằng quét tuyến
+tính tìm ô trống sẽ tốn một truy vấn CSDL cho mỗi chỉ số (pool mặc định `2^20`) và tệ hơn nữa
+là **giấu mất** vấn đề hết chỗ. Có test `khongLapDayDuoc100PhanTram` chốt điều này để một
+"sửa lỗi" như thế không lọt vào mà không ai cân nhắc.
+
+`StatusListIndexService` cảnh báo trong log khi độ đầy vượt **50%**.
+
+### 10.4. Chọn `poolSize` — cái núm có hệ quả đo được
+
+`drl.credential.status-list-pool-size`, mặc định **`2^20` = 1.048.576**.
+
+| | Pool **lớn** | Pool **nhỏ** |
+|---|---|---|
+| Bốc trùng | gần như không | nhiều lên, có ngày hết chỗ |
+| Mật độ chỉ số | rải đều | gom cụm hơn |
+| Gas thu hồi bitmap | **đắt nhất** — mỗi lần chạm một ô lưu trữ mới | rẻ hơn |
+
+Đầu thứ hai của bảng chính là phát hiện ở `docs/measurements.md` §11.4: bitmap rẻ hơn mapping
+**8,47×** khi chỉ số gom cụm nhưng chỉ **1,00×** khi rải đều. Cấp ngẫu nhiên đẩy hệ thống về
+phía rải đều — **quyền riêng tư mua bằng gas**, và đây là chỗ đánh đổi đó được quyết.
+
+Mặc định `2^20` với cỡ 50.000 credential cho độ đầy ~5%, số lần bốc kỳ vọng ~1,05.
+
+### 10.5. Ràng buộc UNIQUE mới là trọng tài cuối cùng
+
+`allocate()` trả về chỉ số còn trống **tại thời điểm hỏi**. Hai luồng cấp đồng thời vẫn có thể
+bốc trúng cùng một số. Chốt chặn thật là `UNIQUE KEY uk_cred_status_index` trong CSDL — bên
+gọi phải sẵn sàng nhận `DataIntegrityViolationException` và cấp lại.
+
+Hệ chạy một instance nên xác suất rất nhỏ, nhưng "rất nhỏ" không phải "không có".
+
+`allocateBatch(n)` tự loại trùng **trong nội bộ lô** — việc mà gọi `allocate()` nhiều lần
+không làm được khi các bản ghi chưa kịp ghi xuống CSDL. Dùng khi cấp credential hàng loạt
+cuối kỳ (tuần 5, chấm 500 sinh viên).
+
+### 10.6. Còn phải nối dây ở tuần 4
+
+Phần thuật toán và phần truy vấn CSDL đã xong và chạy được. Cái chưa có là **nơi gọi nó**:
+entity `Credential` và luồng cấp phát credential là việc của tuần 4. Cố ý chưa dựng entity
+bây giờ để không chốt sớm các quyết định về VC, chữ ký và bundle.

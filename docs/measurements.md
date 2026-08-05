@@ -257,6 +257,11 @@ nhất của bitmap.**
 > một đánh đổi định lượng được giữa quyền riêng tư và chi phí, không phải một lựa chọn hiển
 > nhiên.
 
+**Chỗ đánh đổi này được quyết ở đâu trong mã.** `drl.credential.status-list-pool-size`
+(mặc định `2^20`) chính là cái núm: pool lớn ⇒ chỉ số rải đều ⇒ dòng "rải đều" của bảng trên;
+pool nhỏ ⇒ gom cụm hơn ⇒ nhích về phía dòng "gom cụm", đổi lại bốc trùng nhiều hơn và có ngày
+hết chỗ. Thuật toán cấp phát và lý do chọn mặc định: `docs/canonicalization.md` §10.4.
+
 Chuẩn bị sẵn cho câu hỏi *"vậy sao không dùng mapping cho đơn giản?"*: vì lợi thế thật của
 bitmap nằm ở **phía đọc**, chỗ không tốn gas nên không xuất hiện trong bảng trên.
 `getWord(w)` trả 256 trạng thái trong **một** `eth_call`; mapping cần **256** lần gọi

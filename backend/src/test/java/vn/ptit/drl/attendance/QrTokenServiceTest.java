@@ -28,7 +28,7 @@ class QrTokenServiceTest {
     @BeforeEach
     void setUp() {
         var attendance = new DrlProperties.Attendance(10, 1, 24, false, true);
-        var props = new DrlProperties(null, attendance, null, null);
+        var props = new DrlProperties(null, attendance, null, null, null);
         service = new QrTokenService(props);
     }
 

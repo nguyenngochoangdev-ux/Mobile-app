@@ -32,12 +32,24 @@ Rồi chạy backend **bằng script**, đừng gọi thẳng Maven:
 - Swagger UI: http://localhost:8080/swagger-ui.html
 - OpenAPI JSON: http://localhost:8080/v3/api-docs
 
-> ⚠️ **Đừng chạy `cd backend && ./mvnw spring-boot:run` trực tiếp.** Spring Boot **không đọc
+Test cũng vậy:
+
+```powershell
+.\scripts\test-backend.ps1                    # toàn bộ
+.\scripts\test-backend.ps1 MerkleVectorTest   # một lớp
+```
+
+> ⚠️ **Đừng gọi thẳng `./mvnw spring-boot:run` hay `./mvnw test`.** Spring Boot **không đọc
 > file `.env`**, nên `application.yml` rơi về mặc định `MYSQL_PORT=3306` — trong khi `.env`
 > đặt `3310` để né MySQL80 cài sẵn trên Windows. Chạy thẳng nghĩa là **nối vào MySQL của
 > Windows chứ không phải container**, và nếu máy đó cũng có user `drl` thì Flyway sẽ chạy
 > migration lên **nhầm cơ sở dữ liệu mà không có gì báo động**. Đã dính một lần 2026-08-05.
-> `run-backend.ps1` nạp `.env` rồi mới gọi Maven; `reset-db.ps1` cũng vậy.
+>
+> Biểu hiện: `Access denied for user 'drl'@'localhost'` — trông hệt như sai mật khẩu, nên rất
+> dễ đi sai hướng. Gặp lỗi kết nối MySQL lạ thì kiểm `docker port drl-mysql` trước tiên.
+>
+> Ba script `run-backend.ps1`, `test-backend.ps1`, `reset-db.ps1` đều nạp `.env` trước khi
+> gọi Maven.
 
 ## Ranh giới kiến trúc — không được vi phạm
 

@@ -6,7 +6,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * Cấu hình riêng của đề tài, bind từ khối {@code drl:} trong application.yml.
  */
 @ConfigurationProperties(prefix = "drl")
-public record DrlProperties(Jwt jwt, Attendance attendance, Anchor anchor, Storage storage) {
+public record DrlProperties(Jwt jwt, Attendance attendance, Anchor anchor, Storage storage,
+                            Credential credential) {
 
     public record Jwt(String secret, long accessTtlMinutes, long refreshTtlDays) {}
 
@@ -39,4 +40,25 @@ public record DrlProperties(Jwt jwt, Attendance attendance, Anchor anchor, Stora
                          String anchorRegistryAddress, String statusListAddress) {}
 
     public record Storage(String uploadDir) {}
+
+    /**
+     * @param statusListPoolSize Kích thước không gian {@code status_list_index}.
+     *                         <p>
+     *                         Chỉ số được cấp NGẪU NHIÊN từ pool này, không tuần tự — cấp
+     *                         tuần tự làm sự kiện {@code StatusChanged(index)} trên chuỗi
+     *                         công khai lộ thứ tự cấp phát và tương quan được với danh sách
+     *                         sinh viên (PROJECT.md §2.3).
+     *                         <p>
+     *                         Đây là một cái núm có hai đầu đánh đổi. Pool LỚN thì gần như
+     *                         không bao giờ bốc trùng, nhưng chỉ số rải đều nên mỗi lần thu
+     *                         hồi chạm một ô lưu trữ mới — trường hợp đắt nhất của bitmap
+     *                         (đã đo: {@code docs/measurements.md} §11.4). Pool NHỎ thì chỉ
+     *                         số dày hơn, gom cụm tốt hơn, nhưng bốc trùng nhiều lên và có
+     *                         ngày hết chỗ.
+     *                         <p>
+     *                         Mặc định 2^20 = 1.048.576: với cỡ 50.000 credential thì độ đầy
+     *                         ~5%, số lần bốc kỳ vọng ~1,05. Xem
+     *                         {@code docs/canonicalization.md} §10.
+     */
+    public record Credential(long statusListPoolSize) {}
 }

@@ -88,6 +88,19 @@ drl:
     anchor-registry-address: ${ANCHOR_REGISTRY_ADDRESS:}
     status-list-address: ${STATUS_LIST_ADDRESS:}
 
+  credential:
+    # status_list_index cấp NGẪU NHIÊN từ pool này, KHÔNG tuần tự. Cấp tuần tự làm sự
+    # kiện StatusChanged(index) trên chuỗi công khai lộ thứ tự cấp phát và tương quan
+    # được với danh sách sinh viên (PROJECT.md §2.3).
+    #
+    # Cái núm này có hai đầu đánh đổi, đã đo ở docs/measurements.md §11.4:
+    #   pool LỚN  -> gần như không bốc trùng, nhưng chỉ số rải đều nên mỗi lần thu hồi
+    #                chạm một ô lưu trữ mới — trường hợp ĐẮT NHẤT của bitmap
+    #   pool NHỎ  -> chỉ số dày hơn, gom cụm tốt hơn, nhưng bốc trùng nhiều và có ngày hết
+    #
+    # 2^20 = 1.048.576. Với ~50.000 credential thì độ đầy ~5%, bốc kỳ vọng ~1,05 lần.
+    status-list-pool-size: ${STATUS_LIST_POOL_SIZE:1048576}
+
   storage:
     upload-dir: ${UPLOAD_DIR:./uploads}
 
