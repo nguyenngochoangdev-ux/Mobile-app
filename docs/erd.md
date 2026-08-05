@@ -82,10 +82,14 @@ credentials(id, student_id, issuer_org_id, type, payload_json, payload_hash,
 ## Nhóm 4 — Chấm điểm rèn luyện
 
 ```
-rulesets(id, version, semester, json_body, ruleset_hash, effective_from,
-         created_at)
+rulesets(id, version, semester, json_body, ruleset_hash, nonce, leaf_hash,
+         effective_from, created_at)
   ruleset_hash được neo với domain "RULESET" — chứng minh bộ quy tắc nào đã
   dùng để chấm, chống sửa quy chế sau khi công bố điểm
+  nonce, leaf_hash: thêm ở Flyway V2. leaf_hash KHÁC ruleset_hash — nó có
+  tiền tố bytes8(domain) và có nonce. Nonce ở bảng này KHÔNG phải biện pháp
+  riêng tư (ruleset vốn công khai) mà để LeafHasher có một đường đi duy nhất
+  cho cả năm miền. Xem docs/canonicalization.md §9.2
 
 score_runs(id, semester, ruleset_id → rulesets.id, run_at, status)
   status ∈ {RUNNING, DONE, FAILED}
@@ -113,11 +117,18 @@ anchor_leaves(id, batch_id → anchor_batches.id, leaf_hash, proof_json,
   INDEX(leaf_hash)
 
 audit_logs(id, actor_id, action, entity, entity_id, before_json, after_json,
-           prev_hash, hash, created_at)
-  hash = keccak(prev_hash || record)  ← HASH CHAIN
-  Chính chuỗi hash này cũng được neo (domain "AUDIT").
+           prev_hash, hash, nonce, leaf_hash, created_at)
+  hash = keccak(prev_hash || record)  ← HASH CHAIN, mắt xích nối các bản ghi
   Đây là cơ chế hiện thực hóa luận điểm 2.2a — chống sửa hồi tố bởi
   chính người quản trị.
+
+  HAI HASH, DÙNG NHẦM LÀ HỎNG (thêm ở Flyway V2):
+    hash      = mắt xích của chuỗi băm. Đứt xích ⇒ phát hiện chèn/sửa quá khứ.
+    leaf_hash = lá trong cây Merkle domain "AUDIT". Chứng minh MỘT bản ghi
+                cụ thể đã tồn tại.
+  Vẫn cần nonce dù đã có prev_hash: prev_hash NULL ở bản ghi đầu tiên, và
+  before_json/after_json chứa dữ liệu cá nhân thật.
+  Xem docs/canonicalization.md §9.3
 ```
 
 ---
@@ -139,3 +150,13 @@ audit_logs(id, actor_id, action, entity, entity_id, before_json, after_json,
    được (MSSV × eventId × thời gian ≈ 10⁸ tổ hợp) và ai cầm một leaf hash vét cạn được
    nội dung trong vài giây. Vỡ ngay khi sinh viên xuất bundle, vì proof chứa sibling
    hash — tức hash bản ghi **của sinh viên khác**. Xem `PROJECT.md` §2.3.
+
+   **Cả năm miền neo, không phải ba.** `V1__init` chỉ có `nonce` ở `attendances`,
+   `credentials`, `scores`; `rulesets` và `audit_logs` thiếu, nên hai miền `RULESET` và
+   `AUDIT` **không sinh được leaf nào** (`LeafHasher` từ chối payload không có nonce).
+   Flyway `V2` sửa chỗ đó.
+
+   **`NOT NULL` một mình không đủ.** Cột `BINARY NOT NULL` thêm vào bảng đã có dữ liệu sẽ
+   nhận mặc định ngầm là **toàn byte `0x00`** — vẫn thỏa `NOT NULL`, vẫn khớp regex của
+   `LeafHasher`, và vô hiệu hóa đúng biện pháp §2.3. `V2` thêm CHECK constraint
+   `nonce <> 0x00…00` ở cả năm bảng.

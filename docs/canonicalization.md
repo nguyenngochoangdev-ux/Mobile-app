@@ -157,7 +157,7 @@ Ghi lại để không mất thời gian lần hai:
 
 ## 7. Việc còn lại của tầng này
 
-- [ ] Cột `nonce BINARY(16)` vào các bảng được neo (migration Flyway `V2`)
+- [x] Cột `nonce BINARY(16)` ở **cả năm miền neo** — **xong 2026-08-05**, xem §9
 - [x] `MerkleService` trong module `anchor` — **xong 2026-08-05**, xem §8
 - [x] Test vector thứ hai cho **Merkle proof** — **xong 2026-08-05**, xem §8
 - [ ] `status_list_index` cấp **ngẫu nhiên từ pool còn trống**, không tuần tự (`PROJECT.md` §2.3)
@@ -246,3 +246,80 @@ vector lại: nếu tầng leaf hash lệch thì cây cũng lệch, nên bộ n�
 Phần test **proof phải thất bại khi bị sửa** (sai lá · sai root · đổi một byte trong sibling
 · bỏ bớt sibling · dùng proof của lá khác) quan trọng ngang phần happy path: một hàm
 `verify` luôn trả `true` cũng làm mọi test root xanh.
+
+---
+
+## 9. Nonce ở tầng cơ sở dữ liệu
+
+**Chốt ngày:** 2026-08-05 · Migration `V2__nonce_cho_moi_mien_neo.sql`, đã chạy thật trên
+MySQL 8.4 (Flyway v2, 41,5 s).
+
+### 9.1. Đính chính: "thêm cột nonce vào V2" là mô tả sai
+
+Mục §7 trước đây ghi việc còn lại là *"thêm cột `nonce BINARY(16)`"*. Kiểm tra lại `V1__init`
+thì **ba bảng đã có sẵn** `nonce BINARY(16) NOT NULL`: `attendances`, `credentials`, `scores`.
+
+Việc thật sự còn thiếu là **hai miền neo còn lại**:
+
+| Miền | Bảng | Trước V2 |
+|---|---|---|
+| ATTEND | `attendances` | ✅ có từ V1 |
+| CRED | `credentials` | ✅ có từ V1 |
+| SCORE | `scores` | ✅ có từ V1 |
+| **AUDIT** | `audit_logs` | ❌ **thiếu cả `nonce` lẫn `leaf_hash`** |
+| **RULESET** | `rulesets` | ❌ **thiếu cả `nonce` lẫn `leaf_hash`** |
+
+Hệ quả cụ thể: `LeafHasher` và `leaf.mjs` đều **từ chối** hash payload không có nonce hợp lệ,
+nên hai miền `AUDIT` và `RULESET` **không sinh được leaf nào**. Không phải chuyện làm cho đẹp.
+
+### 9.2. Nonce của `rulesets` không phải biện pháp riêng tư
+
+Bộ quy tắc chấm điểm là **tài liệu công khai** — sinh viên phải đọc được để tự tính lại điểm.
+Nonce ở bảng này tồn tại để `LeafHasher` có **đúng một** đường đi cho cả năm miền, và được
+công bố kèm ruleset.
+
+Mở ngoại lệ *"miền này không cần nonce"* là mở nhánh thứ hai trong hàm nhạy cảm nhất của hệ
+thống, và ngoại lệ kiểu đó luôn lan ra. Ba dòng chú thích rẻ hơn nhiều so với một nhánh mã.
+
+### 9.3. `audit_logs` có hai hash — dùng nhầm là hỏng
+
+| Cột | Là gì | Dùng để |
+|---|---|---|
+| `hash` | `keccak(prev_hash ‖ record)` | **Mắt xích** của chuỗi băm. Đứt xích ⇒ phát hiện được việc chèn/sửa quá khứ |
+| `leaf_hash` | `keccak(bytes8('AUDIT') ‖ ':' ‖ JCS(payload có nonce))` | **Lá** trong cây Merkle của lô neo. Chứng minh **một** bản ghi cụ thể đã tồn tại |
+
+Hai thứ phục vụ hai mục đích khác nhau và không thay thế nhau được.
+
+Vì sao vẫn cần nonce dù đã có `prev_hash`: `prev_hash` cho entropy ở mọi bản ghi **trừ bản
+ghi đầu tiên** (`prev_hash` NULL), và dựa vào nó là dựa vào một tính chất phụ. Ngoài ra
+`before_json`/`after_json` chứa dữ liệu cá nhân thật — đây là nhu cầu riêng tư thật sự, khác
+với trường hợp `rulesets`.
+
+### 9.4. `NOT NULL` một mình là không đủ
+
+Cách hỏng phổ biến nhất của một cột `BINARY NOT NULL` là **được thêm vào bảng đã có dữ liệu
+rồi nhận giá trị mặc định ngầm** — với `BINARY` thì mặc định đó là **toàn byte `0x00`**.
+
+Một nonce toàn `0x00` vẫn thỏa `NOT NULL`, và vẫn khớp regex `^0x[0-9a-f]{32}$` của
+`LeafHasher`. Nó **đi lọt qua mọi tầng kiểm tra hiện có** và vô hiệu hóa đúng biện pháp mà
+`PROJECT.md` §2.3 đặt ra.
+
+V2 thêm CHECK constraint ở **cả năm bảng**:
+
+```sql
+CHECK (nonce <> 0x00000000000000000000000000000000)
+```
+
+Đã kiểm chứng bằng cách cố tình chèn nonce toàn `0x00` → `ERROR 3819: Check constraint
+'ck_ruleset_nonce_khac_khong' is violated`.
+
+### 9.5. Backfill chỉ an toàn vì chưa neo gì
+
+V2 điền nonce ngẫu nhiên (`RANDOM_BYTES(16)`) cho các dòng cũ. **Đổi nonce của một bản ghi đã
+neo sẽ làm mọi Merkle proof của nó fail vĩnh viễn, và fail im lặng.**
+
+Việc này an toàn ở thời điểm chạy vì `anchor_batches` **rỗng** — chưa có giao dịch `anchor()`
+nào. Đã kiểm tra trước khi chạy, không phải giả định.
+
+> ⚠️ **Nếu về sau cần migration tương tự trên bảng đã có dữ liệu ĐÃ NEO — đừng chép lại V2.**
+> Viết migration chỉ chạm các bản ghi có `leaf_hash IS NULL`.

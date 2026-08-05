@@ -21,13 +21,23 @@ scripts/     tiện ích
 ```bash
 cp .env.example .env      # rồi điền JWT_SECRET, AMOY_RPC_URL
 docker compose up -d      # MySQL 8.4
-cd backend && ./mvnw spring-boot:run
+```
+
+Rồi chạy backend **bằng script**, đừng gọi thẳng Maven:
+
+```powershell
+.\scripts\run-backend.ps1
 ```
 
 - Swagger UI: http://localhost:8080/swagger-ui.html
 - OpenAPI JSON: http://localhost:8080/v3/api-docs
 
-Windows dùng `mvnw.cmd` thay `./mvnw`.
+> ⚠️ **Đừng chạy `cd backend && ./mvnw spring-boot:run` trực tiếp.** Spring Boot **không đọc
+> file `.env`**, nên `application.yml` rơi về mặc định `MYSQL_PORT=3306` — trong khi `.env`
+> đặt `3310` để né MySQL80 cài sẵn trên Windows. Chạy thẳng nghĩa là **nối vào MySQL của
+> Windows chứ không phải container**, và nếu máy đó cũng có user `drl` thì Flyway sẽ chạy
+> migration lên **nhầm cơ sở dữ liệu mà không có gì báo động**. Đã dính một lần 2026-08-05.
+> `run-backend.ps1` nạp `.env` rồi mới gọi Maven; `reset-db.ps1` cũng vậy.
 
 ## Ranh giới kiến trúc — không được vi phạm
 
