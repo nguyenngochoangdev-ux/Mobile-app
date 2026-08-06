@@ -68,6 +68,17 @@ class CredentialRevocationDbTest {
   @Autowired OrganizationRepository organizations;
   @Autowired JdbcTemplate jdbc;
 
+  /**
+   * Một {@code users.id} có thật, hoặc {@code null}.
+   *
+   * <p>{@code audit_logs.actor_id} có khóa ngoại tới {@code users} nên không bịa số được —
+   * và thu hồi giờ ghi nhật ký, nên mọi lời gọi ở đây đều đi qua ràng buộc đó.
+   */
+  private Long actorCoThat() {
+    java.util.List<Long> ids = jdbc.queryForList("SELECT id FROM users LIMIT 1", Long.class);
+    return ids.isEmpty() ? null : ids.get(0);
+  }
+
   private Credential capCredential() {
     Organization org = organizations.save(Organization.builder()
         .name("Doan Thanh nien — test thu hoi")
@@ -93,7 +104,7 @@ class CredentialRevocationDbTest {
     assertFalse(client.isRevoked(index), "Credential mới cấp phải chưa bị thu hồi");
     assertNull(c.getRevokedAt());
 
-    var kq = revocation.setRevoked(c.getId(), true, "Cap nham hoc ky");
+    var kq = revocation.setRevoked(c.getId(), true, "Cap nham hoc ky", actorCoThat());
 
     assertTrue(kq.revoked());
     assertFalse(kq.daDungTruocDo());
@@ -117,10 +128,10 @@ class CredentialRevocationDbTest {
     Credential c = capCredential();
     long index = c.getStatusListIndex();
 
-    revocation.setRevoked(c.getId(), true, null);
+    revocation.setRevoked(c.getId(), true, null, actorCoThat());
     assertTrue(client.isRevoked(index));
 
-    var kq = revocation.setRevoked(c.getId(), false, "Thu hoi nham");
+    var kq = revocation.setRevoked(c.getId(), false, "Thu hoi nham", actorCoThat());
 
     assertFalse(kq.revoked());
     assertFalse(client.isRevoked(index), "Bit phải tắt lại trên chuỗi");
@@ -136,10 +147,10 @@ class CredentialRevocationDbTest {
   void goiLaiKhongGuiGiaoDich() {
     Credential c = capCredential();
 
-    var lan1 = revocation.setRevoked(c.getId(), true, null);
+    var lan1 = revocation.setRevoked(c.getId(), true, null, actorCoThat());
     assertNotNull(lan1.txHash());
 
-    var lan2 = revocation.setRevoked(c.getId(), true, null);
+    var lan2 = revocation.setRevoked(c.getId(), true, null, actorCoThat());
 
     assertTrue(lan2.daDungTruocDo(), "Phải nhận ra trạng thái đã đúng");
     assertNull(lan2.txHash(), "Không được gửi giao dịch thừa");
@@ -192,7 +203,7 @@ class CredentialRevocationDbTest {
   @Test
   @DisplayName("Credential không tồn tại")
   void khongCoCredential() {
-    assertThrows(NotFoundException.class, () -> revocation.setRevoked(999_999_999L, true, null));
+    assertThrows(NotFoundException.class, () -> revocation.setRevoked(999_999_999L, true, null, null));
   }
 
   @Test
@@ -202,7 +213,7 @@ class CredentialRevocationDbTest {
     // có bit trạng thái đổi. Người cầm bundle vẫn chứng minh được credential từng tồn tại và
     // do ai cấp — họ chỉ không dùng nó được nữa.
     Credential c = capCredential();
-    revocation.setRevoked(c.getId(), true, null);
+    revocation.setRevoked(c.getId(), true, null, actorCoThat());
 
     Credential doclai = repository.findById(c.getId()).orElseThrow();
     assertEquals(c.getPayloadJson(), doclai.getPayloadJson(), "payload không được đổi");

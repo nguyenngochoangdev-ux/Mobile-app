@@ -38,6 +38,7 @@ class AuditServiceDbTest {
   @Autowired AuditService service;
   @Autowired AuditLogRepository repository;
   @Autowired JdbcTemplate jdbc;
+  @Autowired vn.ptit.drl.attendance.AttendanceService attendanceService;
 
   @PersistenceContext EntityManager entityManager;
 
@@ -286,6 +287,43 @@ class AuditServiceDbTest {
     IllegalStateException ex = assertThrows(IllegalStateException.class,
         () -> source.pending(500));
     assertTrue(ex.getMessage().contains("KHÔNG neo"), ex.getMessage());
+  }
+
+  // ------------------------------------------------------------------ nối vào nghiệp vụ
+
+  @Test
+  @DisplayName("Điểm danh tay ghi nhật ký — sự kiện quan trọng nhất của luận điểm 1")
+  void diemDanhTayGhiNhatKy() {
+    // Điểm danh tay là cửa duy nhất mà dữ liệu vào hệ thống không có gì máy móc chứng minh
+    // (vấn đề oracle). Không ghi nhật ký ở đây thì cả cơ chế mất chỗ dùng thật nhất của nó.
+    long truoc = repository.count();
+
+    Long eventId = jdbc.queryForList("SELECT id FROM events LIMIT 1", Long.class)
+        .stream().findFirst().orElse(null);
+    Long studentId = jdbc.queryForList(
+        "SELECT id FROM students WHERE id NOT IN"
+            + " (SELECT student_id FROM attendances WHERE event_id = ?) LIMIT 1",
+        Long.class, eventId).stream().findFirst().orElse(null);
+
+    org.junit.jupiter.api.Assumptions.assumeTrue(eventId != null && studentId != null,
+        "CSDL chưa có sự kiện/sinh viên phù hợp — chạy seeder trước");
+
+    attendanceService.manualCheckin(eventId, studentId, actorCoThat());
+    repository.flush();
+    entityManager.clear();
+
+    assertEquals(truoc + 1, repository.count(), "Không có bản ghi nhật ký nào được ghi");
+
+    AuditLog moi = repository.findFirstByOrderByIdDesc().orElseThrow();
+    assertEquals("ATTENDANCE_MANUAL", moi.getAction());
+    assertEquals("attendances", moi.getEntity());
+    assertNull(moi.getBeforeJson(), "Tạo mới thì không có trạng thái trước");
+    assertTrue(moi.getAfterJson().contains("\"verified\":false"),
+        "Nhật ký phải ghi lại rằng bản ghi này KHÔNG được máy xác minh: "
+            + moi.getAfterJson());
+
+    // Và chuỗi vẫn liền lạc sau khi nghiệp vụ ghi vào.
+    assertTrue(service.verifyChain().nguyenVen());
   }
 
   @Test

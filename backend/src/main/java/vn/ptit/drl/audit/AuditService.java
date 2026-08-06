@@ -26,14 +26,23 @@ import vn.ptit.drl.anchor.LeafHasher;
  * <b>cái cây</b>, và kẻ tấn công xóa được một nhánh mà nhánh còn lại vẫn liền xích. Mất đúng
  * thứ cơ chế này bảo vệ.
  *
- * <p>Hệ chạy <b>một instance</b> (PROJECT.md §4: không Redis, không ShedLock), nên
- * {@code synchronized} chặn được. Chốt chặn thứ hai nằm ở CSDL: ràng buộc
- * {@code uk_audit_prev_hash} (V7) không cho hai bản ghi mang cùng {@code prev_hash}.
+ * <p><b>{@code synchronized} thu hẹp cửa sổ đua nhưng KHÔNG đóng được nó</b> — nói khác đi là
+ * nói quá. Phương thức này chạy với {@code Propagation.REQUIRED}, tức là nó tham gia giao
+ * dịch <i>của bên gọi</i>, và giao dịch đó <b>commit sau khi khóa đã được nhả</b>. Nên vẫn có
+ * đường: luồng A đọc bản ghi cuối, chèn (chưa commit), nhả khóa; luồng B vào, đọc <i>vẫn</i>
+ * bản ghi cũ, và hai bản ghi cùng trỏ về một cha.
+ *
+ * <p><b>Thứ thật sự bảo đảm là ràng buộc CSDL</b> {@code uk_audit_prev_hash} (V7): bản ghi
+ * thứ hai vi phạm UNIQUE và giao dịch của nó cuộn lại. Cách hỏng vì thế là <b>một thao tác
+ * nghiệp vụ thất bại ồn ào và người dùng thử lại</b>, chứ không phải một chuỗi hỏng âm thầm.
+ * Đó là đánh đổi đúng.
+ *
+ * <p>Hệ chạy <b>một instance</b> (PROJECT.md §4: không Redis, không ShedLock) nên xác suất
+ * chạm vào đường này rất nhỏ; {@code synchronized} vẫn giữ vì nó rẻ và làm nó nhỏ hơn nữa.
  *
  * <p><b>Khiếm khuyết đã biết:</b> MySQL cho phép nhiều giá trị NULL trong một UNIQUE, nên
- * ràng buộc đó <b>không</b> chặn được hai bản ghi <i>đầu tiên</i> cùng lúc. Trường hợp đó chỉ
- * xảy ra khi nhật ký còn rỗng, và {@code synchronized} đã chặn ở tầng ứng dụng. Ghi ra đây
- * thay vì giả vờ là không có.
+ * ràng buộc đó <b>không</b> chặn được hai bản ghi <i>đầu tiên</i> cùng lúc — chỉ xảy ra khi
+ * nhật ký còn rỗng. Ghi ra đây thay vì giả vờ là không có.
  *
  * <h2>Ghi nhật ký KHÔNG được làm hỏng nghiệp vụ</h2>
  *

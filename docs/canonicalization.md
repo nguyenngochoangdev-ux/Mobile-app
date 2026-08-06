@@ -825,12 +825,21 @@ Mắt xích mới phụ thuộc mắt xích **cuối cùng**. Hai luồng cùng 
 sẽ tạo hai bản ghi trỏ về cùng một cha — chuỗi thành **cái cây**, và xóa một nhánh không làm
 đứt xích ở nhánh còn lại.
 
-Ba lớp chặn: hệ chạy **một instance** (`PROJECT.md` §4) · `AuditService.record` là
-`synchronized` · ràng buộc `uk_audit_prev_hash` (V7).
+**`synchronized` thu hẹp cửa sổ nhưng KHÔNG đóng được nó.** `AuditService.record` chạy với
+`Propagation.REQUIRED` — nó tham gia giao dịch *của bên gọi*, và giao dịch đó **commit sau khi
+khóa đã nhả**. Nên luồng A vẫn có thể đọc-chèn-nhả khóa trước khi commit, rồi luồng B đọc vẫn
+bản ghi cũ.
+
+**Thứ thật sự bảo đảm là ràng buộc CSDL `uk_audit_prev_hash`** (V7): bản ghi thứ hai vi phạm
+UNIQUE, giao dịch của nó cuộn lại. Cách hỏng vì thế là *một thao tác nghiệp vụ thất bại ồn ào
+và người dùng thử lại* — không phải một chuỗi hỏng âm thầm.
+
+Hệ chạy **một instance** (`PROJECT.md` §4) nên xác suất chạm vào đường này rất nhỏ;
+`synchronized` vẫn giữ vì nó rẻ và làm nó nhỏ hơn nữa.
 
 > **Khiếm khuyết:** MySQL cho phép nhiều `NULL` trong một `UNIQUE`, nên ràng buộc đó **không**
-> chặn được hai bản ghi *đầu tiên* cùng lúc. Chỉ xảy ra khi nhật ký còn rỗng, và
-> `synchronized` đã chặn ở tầng ứng dụng. Ghi ra đây thay vì giả vờ là không có.
+> chặn được hai bản ghi *đầu tiên* cùng lúc — chỉ xảy ra khi nhật ký còn rỗng. Ghi ra đây thay
+> vì giả vờ là không có.
 
 ### 14.6. Ghi nhật ký chạy trong giao dịch CỦA BÊN GỌI
 

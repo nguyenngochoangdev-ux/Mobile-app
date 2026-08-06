@@ -65,38 +65,6 @@ public class CredentialRevocationService {
   private final JdbcTemplate jdbc;
   private final vn.ptit.drl.audit.AuditService audit;
 
-  /**
-   * Chuỗi JSON an toàn cho lý do thu hồi.
-   *
-   * <p>Dựng tay vì lớp này không nên kéo Jackson vào chỉ để bọc một chuỗi, nhưng nối thẳng
-   * chuỗi người dùng nhập vào JSON là lỗi kinh điển: một dấu nháy kép trong lý do làm hỏng
-   * cả bản ghi nhật ký, và bản ghi hỏng thì mắt xích của nó vô nghĩa.
-   */
-  private static String jsonString(String s) {
-    if (s == null) {
-      return "null";
-    }
-    StringBuilder b = new StringBuilder("\"");
-    for (int i = 0; i < s.length(); i++) {
-      char ch = s.charAt(i);
-      switch (ch) {
-        case '"' -> b.append("\\\"");
-        case '\\' -> b.append("\\\\");
-        case '\n' -> b.append("\\n");
-        case '\r' -> b.append("\\r");
-        case '\t' -> b.append("\\t");
-        default -> {
-          if (ch < 0x20) {
-            b.append(String.format("\\u%04x", (int) ch));
-          } else {
-            b.append(ch);
-          }
-        }
-      }
-    }
-    return b.append('"').toString();
-  }
-
   /** Kết quả một lần thu hồi, để log và để test đối chiếu. */
   public record Result(long credentialId, long statusListIndex, boolean revoked,
                        String txHash, long gasUsed, boolean daDungTruocDo) {}
@@ -105,10 +73,14 @@ public class CredentialRevocationService {
    * Thu hồi (hoặc bỏ thu hồi) một credential.
    *
    * @param revoked {@code true} để thu hồi, {@code false} để bỏ thu hồi
+   * @param actorId {@code users.id} của cán bộ bấm nút, {@code null} nếu hệ thống tự làm.
+   *     Bắt buộc truyền vào chứ không đọc từ {@code SecurityContext}: lớp này cũng chạy từ
+   *     runner và từ test, nơi không có context nào — và một nhật ký ghi "không rõ ai" cho
+   *     một hành động của người thật thì không dùng làm bằng chứng được.
    * @throws NotFoundException nếu không có credential
    * @throws BusinessException nếu chuỗi đang tắt, hoặc trạng thái đã đúng như yêu cầu
    */
-  public Result setRevoked(long credentialId, boolean revoked, String lyDo) {
+  public Result setRevoked(long credentialId, boolean revoked, String lyDo, Long actorId) {
     StatusListClient client = requireClient();
 
     Credential c = credentials.findById(credentialId)
@@ -172,10 +144,13 @@ public class CredentialRevocationService {
     // Ghi nhật ký SAU khi cả chuỗi lẫn CSDL đã xong. Ghi trước là ghi một sự kiện có thể
     // chưa xảy ra; và vì nhật ký chỉ ghi thêm, không rút lại được.
     audit.record(revoked ? "CREDENTIAL_REVOKE" : "CREDENTIAL_UNREVOKE", "credentials",
-        credentialId, null,
-        "{\"revoked\":" + truocDo + "}",
-        "{\"revoked\":" + revoked + ",\"txHash\":\"" + receipt.getTransactionHash() + "\""
-            + ",\"lyDo\":" + jsonString(lyDo) + "}");
+        credentialId, actorId,
+        vn.ptit.drl.audit.AuditJson.of("revoked", truocDo),
+        vn.ptit.drl.audit.AuditJson.of(
+            "revoked", revoked,
+            "txHash", receipt.getTransactionHash(),
+            "statusListIndex", index,
+            "lyDo", lyDo));
 
     log.info("Credential {} · revoked={} · tx {} · gas {}",
         credentialId, revoked, receipt.getTransactionHash(), receipt.getGasUsed());

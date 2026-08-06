@@ -159,10 +159,12 @@ public class CredentialController {
           """)
   @Transactional
   public CredentialRevocationService.Result revoke(
-      @PathVariable Long id, @Valid @RequestBody(required = false) RevokeRequest req) {
+      @PathVariable Long id, @Valid @RequestBody(required = false) RevokeRequest req,
+      @AuthenticationPrincipal AuthPrincipal principal) {
 
     boolean revoked = req == null || req.revoked() == null || req.revoked();
-    return revocationService.setRevoked(id, revoked, req == null ? null : req.reason());
+    return revocationService.setRevoked(
+        id, revoked, req == null ? null : req.reason(), principal.userId());
   }
 
   // ---------------------------------------------------------------- bundle

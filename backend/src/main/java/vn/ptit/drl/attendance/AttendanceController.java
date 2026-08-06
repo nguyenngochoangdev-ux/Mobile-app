@@ -135,8 +135,10 @@ public class AttendanceController {
     @ResponseStatus(HttpStatus.CREATED)
     @Transactional
     @Operation(summary = "Cán bộ điểm danh tay — verified = false (vấn đề oracle)")
-    public AttendanceResponse manual(@RequestParam Long eventId, @RequestParam Long studentId) {
-        return AttendanceResponse.of(service.manualCheckin(eventId, studentId));
+    public AttendanceResponse manual(@RequestParam Long eventId, @RequestParam Long studentId,
+                                     @AuthenticationPrincipal AuthPrincipal principal) {
+        return AttendanceResponse.of(
+                service.manualCheckin(eventId, studentId, principal.userId()));
     }
 
     // ===================== Luồng đảo chiều: sinh viên hiện QR, cán bộ quét =====================

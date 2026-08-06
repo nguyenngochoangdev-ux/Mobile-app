@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+import vn.ptit.drl.audit.AuditJson;
+import vn.ptit.drl.audit.AuditService;
 import vn.ptit.drl.common.GeoUtil;
 import vn.ptit.drl.common.config.DrlProperties;
 import vn.ptit.drl.common.web.BusinessException;
@@ -40,6 +42,7 @@ public class AttendanceService {
     private final StudentDeviceRepository deviceRepository;
     private final RegistrationRepository registrationRepository;
     private final QrTokenService qrTokenService;
+    private final AuditService audit;
     private final DrlProperties props;
 
     public record CheckinCommand(Long eventId, Long studentId, long slot, String token,
@@ -229,7 +232,7 @@ public class AttendanceService {
      * Giữ cờ này tách bạch để phần đánh giá còn đếm được bao nhiêu bản ghi là thủ công.
      */
     @Transactional
-    public Attendance manualCheckin(Long eventId, Long studentId) {
+    public Attendance manualCheckin(Long eventId, Long studentId, Long actorId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("sự kiện", eventId));
 
@@ -240,7 +243,7 @@ public class AttendanceService {
         byte[] nonce = new byte[16];
         RANDOM.nextBytes(nonce);
 
-        return attendanceRepository.save(Attendance.builder()
+        Attendance a = attendanceRepository.save(Attendance.builder()
                 .event(event)
                 .student(studentRepository.findById(studentId)
                         .orElseThrow(() -> new NotFoundException("sinh viên", studentId)))
@@ -249,5 +252,25 @@ public class AttendanceService {
                 .verified(false)
                 .nonce(nonce)
                 .build());
+
+        // ĐÂY LÀ BẢN GHI NHẬT KÝ QUAN TRỌNG NHẤT CỦA CẢ HỆ THỐNG.
+        //
+        // Điểm danh tay là cửa duy nhất mà dữ liệu vào hệ thống KHÔNG có gì máy móc chứng
+        // minh — chính là "vấn đề oracle" ở dòng cuối bảng threat model. Blockchain sẽ bảo
+        // toàn vĩnh viễn cả bản ghi sai nếu cán bộ nhập sai từ đầu.
+        //
+        // Không ngăn được, nhưng ghi lại được AI đã nhập, LÚC NÀO, cho SINH VIÊN NÀO — và
+        // mắt xích làm việc sửa lại về sau trở nên phát hiện được. Đó đúng là mức mà đề tài
+        // tuyên bố: không giải quyết bài toán oracle, mà ĐO ĐƯỢC và TRUY ĐƯỢC chất lượng
+        // dữ liệu đầu vào (PROJECT.md §10).
+        audit.record("ATTENDANCE_MANUAL", "attendances", a.getId(), actorId,
+                null,
+                AuditJson.of(
+                        "eventId", eventId,
+                        "studentId", studentId,
+                        "method", "MANUAL",
+                        "verified", false));
+
+        return a;
     }
 }

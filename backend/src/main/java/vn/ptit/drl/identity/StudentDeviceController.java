@@ -17,6 +17,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
+import vn.ptit.drl.audit.AuditJson;
+import vn.ptit.drl.audit.AuditService;
 import vn.ptit.drl.common.config.DrlProperties;
 import vn.ptit.drl.common.web.BusinessException;
 import vn.ptit.drl.common.web.NotFoundException;
@@ -35,6 +37,7 @@ import vn.ptit.drl.identity.jwt.AuthPrincipal;
 public class StudentDeviceController {
 
     private final StudentDeviceRepository repository;
+    private final AuditService audit;
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
     private final DrlProperties props;
@@ -134,20 +137,37 @@ public class StudentDeviceController {
         if (device.getStatus() == DeviceStatus.ACTIVE) {
             throw new BusinessException("Thiết bị đã ở trạng thái hoạt động");
         }
+        DeviceStatus trangThaiCu = device.getStatus();
 
         // Mỗi sinh viên chỉ có MỘT thiết bị hoạt động. Duyệt thiết bị mới thì thu hồi
         // thiết bị cũ — nếu không, mượn tài khoản vẫn điểm danh hộ được bằng máy cũ.
-        repository.findByStudentId(device.getStudent().getId()).stream()
+        long soThietBiCuBiThuHoi = repository.findByStudentId(device.getStudent().getId())
+                .stream()
                 .filter(d -> d.getStatus() == DeviceStatus.ACTIVE)
-                .forEach(d -> {
+                .peek(d -> {
                     d.setStatus(DeviceStatus.REVOKED);
                     repository.save(d);
-                });
+                })
+                .count();
 
         device.setStatus(DeviceStatus.ACTIVE);
         device.setApprovedBy(userRepository.findById(principal.userId()).orElse(null));
         device.setApprovedAt(Instant.now());
-        return DeviceResponse.of(repository.save(device));
+        StudentDevice saved = repository.save(device);
+
+        // Duyệt thiết bị là hành động của cán bộ có hệ quả trực tiếp lên việc điểm danh:
+        // từ lúc này, máy đó điểm danh được cho sinh viên đó. Nếu về sau có tranh chấp
+        // "em không hề dùng máy này", nhật ký là chỗ duy nhất trả lời được ai đã duyệt và
+        // lúc nào — và mắt xích làm việc sửa lại về sau trở nên phát hiện được.
+        audit.record("DEVICE_APPROVE", "student_devices", saved.getId(), principal.userId(),
+                AuditJson.of("status", trangThaiCu.name()),
+                AuditJson.of(
+                        "status", DeviceStatus.ACTIVE.name(),
+                        "studentId", saved.getStudent().getId(),
+                        "deviceFp", saved.getDeviceFp(),
+                        "thuHoiThietBiCu", soThietBiCuBiThuHoi));
+
+        return DeviceResponse.of(saved);
     }
 
     @PatchMapping("/{id}/revoke")
@@ -158,9 +178,20 @@ public class StudentDeviceController {
                                  @AuthenticationPrincipal AuthPrincipal principal) {
         StudentDevice device = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("thiết bị", id));
+        DeviceStatus trangThaiCu = device.getStatus();
+
         device.setStatus(DeviceStatus.REVOKED);
         device.setApprovedBy(userRepository.findById(principal.userId()).orElse(null));
         device.setApprovedAt(Instant.now());
-        return DeviceResponse.of(repository.save(device));
+        StudentDevice saved = repository.save(device);
+
+        audit.record("DEVICE_REVOKE", "student_devices", saved.getId(), principal.userId(),
+                AuditJson.of("status", trangThaiCu.name()),
+                AuditJson.of(
+                        "status", DeviceStatus.REVOKED.name(),
+                        "studentId", saved.getStudent().getId(),
+                        "deviceFp", saved.getDeviceFp()));
+
+        return DeviceResponse.of(saved);
     }
 }
