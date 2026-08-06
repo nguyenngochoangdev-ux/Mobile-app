@@ -63,9 +63,25 @@ public class CredentialService {
   private final ObjectProvider<IssuerSigner> signerProvider;
   private final vn.ptit.drl.audit.AuditService audit;
 
-  /** Nội dung cần cấp — phần thay đổi theo từng credential. */
+  /**
+   * Nội dung cần cấp — phần thay đổi theo từng credential.
+   *
+   * @param actorId {@code users.id} của cán bộ bấm nút, {@code null} nếu hệ thống tự cấp
+   *     (runner, chấm điểm hàng loạt cuối kỳ). Đi thẳng vào {@code audit_logs.actor_id}.
+   *     <p>
+   *     Bản đầu hardcode {@code null} ở chỗ ghi nhật ký, nên credential cấp qua API cũng
+   *     được ghi là "hệ thống tự làm" — đúng loại lỗi làm nhật ký mất giá trị làm bằng
+   *     chứng. Phát hiện khi đọc lại nhật ký thật trước lần neo `AUDIT` đầu tiên.
+   */
   public record Request(Student student, Organization issuerOrg, String semester,
-                        int activityCount, int totalPoints, Instant expiresAt) {}
+                        int activityCount, int totalPoints, Instant expiresAt, Long actorId) {
+
+    /** Cấp bởi hệ thống, không có người bấm nút. */
+    public Request(Student student, Organization issuerOrg, String semester,
+                   int activityCount, int totalPoints, Instant expiresAt) {
+      this(student, issuerOrg, semester, activityCount, totalPoints, expiresAt, null);
+    }
+  }
 
   /**
    * Cấp một credential mới.
@@ -119,7 +135,7 @@ public class CredentialService {
         .nonce(HEX.parseHex(LeafHasher.newNonce().substring(2)))
         .build();
 
-    return allocateIndexAndPersist(c, signer);
+    return allocateIndexAndPersist(c, signer, req.actorId());
   }
 
   /**
@@ -130,11 +146,12 @@ public class CredentialService {
    * Hệ chạy một instance nên xác suất đụng rất nhỏ — nhưng "rất nhỏ" không phải "không có",
    * và cách hỏng của nó là một credential không cấp được ngay giữa buổi chấm cuối kỳ.
    */
-  private Credential allocateIndexAndPersist(Credential c, IssuerSigner signer) {
+  private Credential allocateIndexAndPersist(Credential c, IssuerSigner signer,
+                                            Long actorId) {
     for (int attempt = 1; attempt <= MAX_INDEX_RETRY; attempt++) {
       c.setStatusListIndex(indexService.allocate());
       try {
-        return persistWithProof(c, signer);
+        return persistWithProof(c, signer, actorId);
       } catch (DataIntegrityViolationException e) {
         if (attempt == MAX_INDEX_RETRY) {
           throw new IllegalStateException(
@@ -157,7 +174,7 @@ public class CredentialService {
    * chọn đúng độ dài thật để nếu vì lý do gì đó chúng lọt xuống CSDL thì cũng không phá kiểu
    * cột, và đủ dị thường (toàn byte 0) để nhận ra ngay khi đọc.
    */
-  private Credential persistWithProof(Credential c, IssuerSigner signer) {
+  private Credential persistWithProof(Credential c, IssuerSigner signer, Long actorId) {
     c.setLeafHash(new byte[32]);
     c.setSignature(new byte[IssuerSigner.SIGNATURE_BYTES]);
     c.setPayloadJson("{}");
@@ -188,7 +205,7 @@ public class CredentialService {
     //
     // `after` là chính chuỗi JCS đã ký — không dựng lại một bản tóm tắt khác. Nhật ký nói
     // ĐÚNG thứ đã được ký, không phải một cách diễn đạt gần đúng của nó.
-    audit.record("CREDENTIAL_ISSUE", "credentials", saved.getId(), null, null, json);
+    audit.record("CREDENTIAL_ISSUE", "credentials", saved.getId(), actorId, null, json);
 
     // Ba cột này khai updatable = false nên Hibernate KHÔNG sinh UPDATE cho chúng. Phải ghi
     // bằng câu lệnh tường minh. Đây là cái giá của việc chốt cứng tính bất biến ở tầng

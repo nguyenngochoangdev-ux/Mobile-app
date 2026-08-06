@@ -337,8 +337,14 @@ class AuditServiceDbTest {
     var payload = AuditPayload.of(repository.findById(e.getId()).orElseThrow());
     String json = vn.ptit.drl.anchor.Jcs.canonicalize(payload);
 
-    assertFalse(json.contains("Hoàng"), "Nội dung cá nhân lọt vào payload được neo");
-    assertFalse(json.contains("95"), "Nội dung cá nhân lọt vào payload được neo");
+    // Chỉ dò các chuỗi KHÔNG PHẢI HEX. Bản đầu của test này còn dò cả "95" và nó đỏ ngẫu
+    // nhiên: payload toàn hash hex, mà "95" là hai chữ số hex nên nó xuất hiện do tình cờ.
+    // Test chập chờn còn tệ hơn không có test — nó dạy người ta chạy lại cho tới khi xanh.
+    for (String cam : new String[] {"Hoàng", "hoTen", "diem", biMat}) {
+      assertFalse(json.contains(cam),
+          "Nội dung cá nhân lọt vào payload được neo: tìm thấy \"" + cam + "\" trong " + json);
+    }
     assertNotNull(payload.get("beforeHash"));
+    assertTrue(((String) payload.get("beforeHash")).matches("^0x[0-9a-f]{64}$"));
   }
 }

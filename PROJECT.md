@@ -489,11 +489,30 @@ Nhớ: **nonce trong payload** (§2.3), **status index ngẫu nhiên** (§2.3).
 > **V7** đổi `audit_logs.before_json`/`after_json` và `rulesets.json_body` sang `LONGTEXT` —
 > lần thứ hai dính bẫy kiểu `JSON` của MySQL, lần này chặn cả họ.
 >
-> ❌ **Còn lại, cả hai đều là giao dịch ghi lên Amoy:**
-> 1. **Neo một lô `AUDIT` thật.** Chuỗi băm không có neo thì luận điểm 1 vẫn thiếu mắt xích
->    cuối. Hai dòng threat model đang ghi `◐ chuỗi ✅, neo ☐` đợi đúng cái này.
-> 2. *(tuỳ chọn)* Thu hồi thật một credential để có ảnh chụp verifier báo "ĐÃ THU HỒI".
->    Đảo ngược được (khác `anchor`) nhưng sự kiện `StatusChanged` nằm lại vĩnh viễn.
+> ## ✅ LUẬN ĐIỂM 1 ĐÃ ĐÓNG — 2026-08-06
+>
+> 5 thao tác nghiệp vụ **thật qua HTTP + JWT** (2× điểm danh tay · cấp credential · thu hồi
+> và duyệt thiết bị) → 5 mắt xích → neo lô `AUDIT` `2026080601`:
+> [`0xe965fb…0a42`](https://amoy.polygonscan.com/tx/0xe965fb7c0e1e5f8de8f329493ceefefa67c1b6970643c51faf0fbfa0878c0a42),
+> 81.956 gas. **5/5 proof xác minh được** về root đọc từ Amoy bằng chính mã của verifier.
+>
+> Cây **5 lá** nên đây là lô đầu tiên trên chuỗi thật có cả trường hợp **nút lẻ bị đẩy lên**
+> (proof 1 sibling thay vì 3) — thứ mà hai lô `CRED` 1 lá không kiểm được.
+>
+> Cùng lượt neo cũng đóng **lô thứ hai** của `ATTEND` và `CRED`, cho **số gas trạng thái ổn
+> định trên Amoy lần đầu tiên**: 64.028 và 64.004. Chi phí khởi tạo miền = **17.940 gas**,
+> trả một lần mỗi miền. Quy đổi học kỳ tính lại bằng số Amoy: **1,08 POL** thay vì 0,92 —
+> số local cũ thấp hơn 17%. Chi tiết: `docs/measurements.md` §11.1 và §11.8.
+>
+> **Ba hạn chế đã ghi vào §11.8:** cửa sổ 24 giờ giữa hai lần neo vẫn giấu được việc sửa ·
+> một bản ghi trong lô có `actor_id` NULL do lỗi đã sửa nhưng không sửa được bản đã neo ·
+> nhật ký mới phủ 5 loại sự kiện.
+>
+> ❌ **Còn lại (tuỳ chọn, giao dịch ghi):** thu hồi thật một credential để có ảnh chụp
+> verifier báo "ĐÃ THU HỒI". Đảo ngược được (khác `anchor`) nhưng sự kiện `StatusChanged`
+> nằm lại vĩnh viễn.
+>
+> **Tuần 4 xem như xong.** Việc tiếp theo là tuần 5: rule engine + miền `SCORE`.
 >
 > ⚠️ **Nợ kỹ thuật phát hiện khi làm phần này:** `attendances` **không chụp ảnh** MSSV —
 > `AttendancePayload` đọc qua khóa ngoại. Đổi MSSV làm hỏng mọi proof điểm danh đã neo.

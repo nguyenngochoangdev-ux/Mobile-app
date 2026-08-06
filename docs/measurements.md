@@ -23,19 +23,24 @@ với Amoy; **chi phí POL thì không** — nó còn phụ thuộc giá gas lú
 
 | N (số leaf) | Gas tổng | Gas/bản ghi | Môi trường | Ngày đo | Tx hash |
 |---|---|---|---|---|---|
-| **4 — lô `ATTEND` đầu tiên** | **81.968** | **20.492** | **Amoy** | **2026-08-06** | [`0x1d1ebe…db75`](https://amoy.polygonscan.com/tx/0x1d1ebe0d84320b669fe15243eee4a6a6d58b736cdd204db19ccbc08fa747db75) |
-| **1 — lô `CRED` đầu tiên** | **81.944** | **81.944** | **Amoy** | **2026-08-06** | [`0x0cbaca…e4d6`](https://amoy.polygonscan.com/tx/0x0cbacae962f23e9c56cc8f87a2d46e7f358bcc1ec3c8168aa4aaff032190e4d6) |
+| **4 — `ATTEND` lô đầu của miền** | **81.968** | **20.492** | **Amoy** | **2026-08-06** | [`0x1d1ebe…db75`](https://amoy.polygonscan.com/tx/0x1d1ebe0d84320b669fe15243eee4a6a6d58b736cdd204db19ccbc08fa747db75) |
+| **1 — `CRED` lô đầu của miền** | **81.944** | **81.944** | **Amoy** | **2026-08-06** | [`0x0cbaca…e4d6`](https://amoy.polygonscan.com/tx/0x0cbacae962f23e9c56cc8f87a2d46e7f358bcc1ec3c8168aa4aaff032190e4d6) |
+| **5 — `AUDIT` lô đầu của miền** | **81.956** | **16.391** | **Amoy** | **2026-08-06** | [`0xe965fb…0a42`](https://amoy.polygonscan.com/tx/0xe965fb7c0e1e5f8de8f329493ceefefa67c1b6970643c51faf0fbfa0878c0a42) |
+| **2 — `ATTEND` lô THỨ HAI** | **64.028** | **32.014** | **Amoy** | **2026-08-06** | [`0x9c63ad…ceb1`](https://amoy.polygonscan.com/tx/0x9c63ad9425347b765a10af88acd30664c71725fc7e5fe4a4f072ec44751dceb1) |
+| **1 — `CRED` lô THỨ HAI** | **64.004** | **64.004** | **Amoy** | **2026-08-06** | [`0xd3a630…4b2d`](https://amoy.polygonscan.com/tx/0xd3a630c48f5df9415ba30320c57672ab3c04fce2bab3de0fc3ab62d88b644b2d) |
 | 1 (ghi từng bản) | 54.752 | 54.752 | Hardhat local | 2026-08-05 | — |
 | 10 | 54.752 | 5.475,2 | Hardhat local | 2026-08-05 | — |
 | 100 | 54.752 | 547,5 | Hardhat local | 2026-08-05 | — |
 | 1000 | 54.752 | 54,8 | Hardhat local | 2026-08-05 | — |
 | 5000 | 54.752 | 11,0 | Hardhat local | 2026-08-05 | — |
 
-> **Dòng đầu tiên đắt hơn phần còn lại — giải thích trước khi bị hỏi.** 81.968 gas là lô
-> **đầu tiên** của miền `ATTEND`, nên nó trả thêm chi phí khởi tạo ô đếm `_batchCount`
-> (0 → khác 0) và một phần calldata khác. Lô thứ hai trở đi về mức ổn định ~54.800 (đã đo
-> trên chuỗi cục bộ: 54.788). Con số dùng cho mọi tính toán quy mô là **54.752**, không phải
-> 81.968 — chuyện khởi tạo chỉ xảy ra đúng 5 lần trong cả đời hệ thống, một lần mỗi miền.
+> **Ba dòng đầu đắt hơn hai dòng sau — giải thích trước khi bị hỏi.** Chúng là lô **đầu tiên
+> của từng miền**, nên trả thêm chi phí khởi tạo ô đếm `_batchCount` (0 → khác 0):
+> **17.940 gas**, đo được bằng hiệu 81.968 − 64.028 (`ATTEND`) và 81.944 − 64.004 (`CRED`) —
+> hai miền độc lập cho cùng một con số.
+>
+> Chuyện khởi tạo xảy ra **đúng 5 lần trong cả đời hệ thống**, một lần mỗi miền. Con số dùng
+> cho mọi tính toán quy mô là **~64.000**, không phải ~82.000.
 
 **Cột "Gas tổng" giống nhau ở mọi dòng, và đó chính là kết quả.** Cây Merkle dựng off-chain;
 on-chain chỉ nhận đúng 32 byte root, nên chi phí neo **không phụ thuộc số bản ghi trong lô**.
@@ -48,17 +53,42 @@ trả trọn một giao dịch. Gộp lô 5.000 làm chi phí mỗi bản ghi gi
 |---|---:|---:|
 | Hardhat EDR (`npm run gas`) | 71.852 | 54.752 |
 | Hardhat node cục bộ, gọi qua web3j | 71.888 | 54.788 |
-| **Amoy thật** | **81.968** (`ATTEND`) · **81.944** (`CRED`) | *(chưa đo — chưa miền nào có lô thứ hai)* |
+| **Amoy thật** | **81.944 – 81.968** | **64.004 – 64.028** ✅ *(đo 2026-08-06)* |
 
-> **Hai lô đầu của hai miền khác nhau lệch nhau đúng 24 gas** (81.968 vs 81.944), dù một lô
-> có 4 lá còn lô kia 1 lá. Đây là bằng chứng trực tiếp cho phát biểu ở trên: **chi phí neo
-> không phụ thuộc số bản ghi trong lô**. Chênh 24 gas đến từ độ dài calldata của tên miền —
-> `ATTEND` 6 ký tự, `CRED` 4 ký tự, mà `bytes8` đệm `0x00` bên phải, và byte `0x00` trong
-> calldata rẻ hơn byte khác 0 (4 gas so với 16 gas): 2 byte × 12 = 24. Số khớp chính xác.
+**Chi phí khởi tạo miền trên Amoy: 17.940 gas**, trả **đúng một lần cho mỗi miền** (ô đếm
+`_batchCount` đi từ 0 sang khác 0). Con số dùng cho mọi tính toán quy mô là **~64.000**, không
+phải ~82.000.
 
-Hai dòng đầu lệch nhau 36 gas do độ dài calldata của `batchId` khác nhau; điều đó xác nhận
-đường đi qua web3j không thêm chi phí nào. Dòng Amoy cao hơn ~10.000 gas so với local — cùng
-chiều với chênh lệch hằng số đã thấy ở phần deploy, và **local vẫn là cận dưới**.
+### Một dự đoán nhỏ, kiểm được, và đã đúng ở cả 5 phép đo
+
+Năm giao dịch `anchor()` trên Amoy lệch nhau **đúng bội số của 12 gas**, và bội số đó bằng
+**hiệu số ký tự trong tên miền**:
+
+| Miền | Số ký tự | Lô đầu | Lô ổn định |
+|---|---:|---:|---:|
+| `CRED` | 4 | 81.944 | 64.004 |
+| `AUDIT` | 5 | 81.956 | — |
+| `ATTEND` | 6 | 81.968 | 64.028 |
+| | | **+12/ký tự** | **+12/ký tự** |
+
+Vì sao: tham số là `bytes8`, **đệm `0x00` bên phải**. Trong calldata, byte `0x00` tốn 4 gas
+còn byte khác 0 tốn 16 — chênh **12 gas mỗi ký tự**. Tên miền dài thêm một ký tự là bớt một
+byte `0x00`.
+
+**Giá trị của mục này với báo cáo không nằm ở 12 gas** — nó nhỏ đến mức vô nghĩa về chi phí.
+Giá trị nằm ở chỗ nó là một **dự đoán định lượng từ lý thuyết EVM, kiểm được bằng số đo thật,
+và đúng chính xác ở cả năm điểm**. Nó cho thấy các con số trong chương này đến từ đo đạc có
+hiểu biết chứ không phải chép lại từ explorer.
+
+> **Chênh lệch Amoy ↔ Hardhat local: ~9.250 gas ở trạng thái ổn định** (64.028 vs 54.788),
+> so với **6.720 gas** ở phần deploy. Hai con số khác nhau nên **không có một hằng số chung**,
+> và **đừng giải thích bừa** nếu bị hỏi. Phép so này cũng không phải so có kiểm soát: hai bên
+> khác cả miền lẫn `batchId`, mà cả hai đều đổi số byte `0x00` trong calldata.
+> Điều nói được chắc chắn: **Amoy luôn cao hơn local**, nên mọi con số local trong tài liệu
+> này là **cận dưới**.
+
+Hai dòng Hardhat lệch nhau 36 gas do độ dài calldata của `batchId` khác nhau; điều đó xác nhận
+**đường đi qua web3j không thêm chi phí nào**.
 
 **Gas triển khai — đo cả hai môi trường, 2026-08-05.** Deploy thật lên Amoy lúc
 09:41 UTC, ví `0xf32728c5c2D0575ea406Ad37e2467916c89F529F`, gasPrice 30 gwei.
@@ -80,9 +110,13 @@ phụ thuộc máy chủ của trường. Bản ghi đầy đủ: `contracts/dep
 > hằng số và nhỏ (~1,3%), theo chiều **local ước lượng THẤP hơn thật** — tức là mọi con số
 > local trong tài liệu này là cận dưới, không phải con số bị thổi phồng.
 
-**Quy đổi.** Neo hằng đêm × 5 miền × 16 tuần ≈ 560 giao dịch/học kỳ × 54.752 gas
-≈ **30,7 triệu gas/học kỳ cho toàn trường**. Ở 30 gwei ≈ **0,92 POL/học kỳ**; với 500 sinh
-viên là ≈ **0,0018 POL/sinh viên/học kỳ**.
+**Quy đổi — dùng số đo THẬT trên Amoy, không dùng số local.** Neo hằng đêm × 5 miền × 16 tuần
+≈ 560 giao dịch/học kỳ × **64.000 gas** ≈ **35,8 triệu gas/học kỳ cho toàn trường**.
+Ở 30 gwei ≈ **1,08 POL/học kỳ**; với 500 sinh viên là ≈ **0,0021 POL/sinh viên/học kỳ**.
+
+> Bản trước quy đổi bằng 54.752 (Hardhat local) và ra 0,92 POL. Đã thay bằng số Amoy —
+> chênh **17%**. Dùng số local cho một con số trình bày là hạ thấp chi phí thật, đúng loại
+> chỗ hội đồng bắt được.
 
 > ⚠️ Con số POL là `[ƯỚC LƯỢNG]` ở một mức giá gas giả định, không phải số đo. Quy đổi ra
 > VNĐ cần tỷ giá POL **tại ngày viết báo cáo** — đừng điền sẵn bây giờ, giá sẽ lệch.
@@ -108,7 +142,7 @@ Cột "Thiết kế đề xuất" dùng **ba mức**, không dùng nhị phân c
 | Mối đe dọa | CSDL truyền thống | Thiết kế đề xuất | Mức | Kiểm chứng |
 |---|---|---|---|---|
 | Quản trị viên sửa dữ liệu quá khứ **(sửa vụng, không tính lại chuỗi)** | Không phát hiện được | Hash chain nhật ký | Phát hiện | ✅ test SQL thật |
-| Quản trị viên sửa quá khứ **rồi TÍNH LẠI CẢ CHUỖI** | Không phát hiện được | Hash chain **không** bắt được; chỉ root đã neo mới bắt | Phát hiện **chỉ với khoảng đã neo** | ◐ chuỗi ✅, neo ☐ |
+| Quản trị viên sửa quá khứ **rồi TÍNH LẠI CẢ CHUỖI** | Không phát hiện được | Hash chain **không** bắt được; chỉ root đã neo mới bắt | Phát hiện **chỉ với khoảng đã neo** | ✅ **lô đã neo** |
 | Chia sẻ **ảnh chụp** mã QR (gửi sau) | Không chặn | QR đổi mỗi 10s, dung sai 1 nhịp | Ngăn | ✅ API |
 | **Chuyển tiếp QR thời gian thực** (chụp và gửi ngay trong 20s) | Không chặn | Không ngăn được. Cần thêm đồng phạm có mặt tại chỗ | Tăng chi phí | ☐ chưa đo |
 | Mượn **tài khoản** (đưa mật khẩu, quét bằng máy khác) | Không chặn | Thiết bị chưa duyệt bị từ chối | Ngăn | ✅ API |
@@ -118,7 +152,7 @@ Cột "Thiết kế đề xuất" dùng **ba mức**, không dùng nhị phân c
 | **Đưa ảnh chụp QR của bạn cho cán bộ quét hộ** (luồng đảo chiều) | Không chặn | **Không ngăn được** — mã đúng, chữ ký đúng. Chỉ mắt cán bộ chặn được | Tăng chi phí | ✅ API |
 | **Sửa `studentId` trong mã QR của mình để mạo danh** | Không chặn | Chữ ký hỏng ngay, bị từ chối | Ngăn | ✅ API |
 | Giả mạo chứng chỉ khi xin việc | Phải xin xác nhận từ trường | Verify độc lập, không cần trường | Ngăn | ✅ **bundle thật** |
-| Chối bỏ dữ liệu khi khiếu nại | Phụ thuộc nhật ký nội bộ | Nhật ký có chuỗi băm + neo định kỳ | Phát hiện | ◐ chuỗi ✅, neo ☐ |
+| Chối bỏ dữ liệu khi khiếu nại | Phụ thuộc nhật ký nội bộ | Nhật ký có chuỗi băm + neo định kỳ | Phát hiện | ✅ **lô đã neo** |
 | Máy chủ trường ngừng hoạt động | Mất khả năng xác minh | Verifier vẫn chạy | Ngăn | ✅ **bundle thật** |
 | **Sửa nội dung credential trong tệp bundle** | Không áp dụng | Ba lớp độc lập cùng bắt: leaf · chữ ký · Merkle proof | Ngăn | ✅ **bundle thật** |
 | **Trỏ bundle sang contract giả của kẻ tấn công** | Không áp dụng | Verifier dùng địa chỉ tin cậy trong mã nguồn của chính nó, không lấy từ bundle | Ngăn | ✅ test |
@@ -165,8 +199,11 @@ Phát biểu đúng mức: **chuỗi băm làm việc sửa hồi tố trở nê
 thi đối với khoảng thời gian đã neo.** Cửa sổ còn giấu được chính là khoảng cách giữa hai lần
 neo — hiện là 24 giờ (job 02:00). Chi tiết: `docs/canonicalization.md` §14.2.
 
-Cột cuối ghi `◐ chuỗi ✅, neo ☐` vì **chưa có lô `AUDIT` nào trên Amoy**. Đừng đánh dấu ✅ cho
-tới khi có.
+**Cập nhật 2026-08-06:** lô `AUDIT` `2026080601` **đã neo trên Amoy**, 5 mắt xích thật, 5/5
+proof xác minh được từ RPC công cộng không key — xem §11.8. Hai dòng trên chuyển sang ✅.
+
+Nhưng ✅ đó chỉ áp dụng cho **khoảng thời gian đã neo**. Cửa sổ giữa hai lần neo (hiện 24 giờ)
+vẫn giấu được, và đó là điều phải nói khi bảo vệ chứ không phải giấu sau một dấu tích xanh.
 
 ### Ba dòng cần chuẩn bị trả lời khi bảo vệ
 
@@ -401,6 +438,8 @@ Diễn giải chuẩn: >68 là trên trung bình, >80 là tốt.
 | 2026-08-05 | Deploy 3 contract lên Amoy + verify | 1.837.575 gas ≈ 0,0551 POL. Verify được trên cả PolygonScan lẫn Sourcify. Amoy tốn hơn local hằng số 6.720 gas/contract | Hoàng |
 | 2026-08-06 | **Giao dịch `anchor()` thật đầu tiên trên Amoy** | Lô `ATTEND` 2026080501, 4 bản ghi điểm danh thật, 81.968 gas. Proof lấy từ CSDL xác minh được về root đọc từ RPC công cộng **không key**. Đóng cổng kiểm soát cuối tuần 3 | Hoàng |
 | 2026-08-06 | **Vòng khép kín CREDENTIAL — đóng mốc tuần 4** | Đăng ký issuer (133.590 gas) + neo lô `CRED` 2026080601 (81.944 gas) ≈ 0,0089 POL. Bundle 1.529 byte **verify 6/6** bằng script Node, ba `eth_call` trên RPC công cộng không key, không chạm backend. Sửa `totalPoints` 15→95 làm **ba lớp độc lập cùng đỏ**. Hạn chế: lô chỉ 1 lá nên proof rỗng. Xem §11.7 | Hoàng |
+| 2026-08-06 | **Neo nhật ký `AUDIT` — đóng luận điểm 1** | 5 thao tác nghiệp vụ thật qua HTTP+JWT → 5 mắt xích → lô `AUDIT` 2026080601 (81.956 gas). **5/5 proof** xác minh được về root đọc từ Amoy; cây 5 lá nên có cả trường hợp nút lẻ bị đẩy lên (proof 1 sibling). Xem §11.8 | Hoàng |
+| 2026-08-06 | **Gas trạng thái ổn định trên Amoy** *(lấp chỗ trống cũ)* | Lô thứ hai của `ATTEND` = **64.028**, của `CRED` = **64.004**. Chi phí khởi tạo miền = **17.940 gas**, trả một lần cho mỗi miền. Quy đổi học kỳ tính lại bằng số Amoy: **1,08 POL** thay vì 0,92 (số local cũ thấp hơn 17%) | Hoàng |
 
 ---
 
@@ -525,3 +564,68 @@ một giá trị đúng/sai.
 
 Ví còn **0,2327 POL** sau cả hai giao dịch (trước đó 0,2417). `registerIssuer` là chi phí
 **một lần cho mỗi đơn vị cấp phát**, không lặp lại theo số credential.
+
+---
+
+## 11.8. Nhật ký có chuỗi băm đã NEO — luận điểm 1 — 2026-08-06
+
+**Mắt xích cuối cùng của luận điểm 1 đã đóng.** Trước hôm nay, chuỗi băm chỉ chứng minh được
+tính nhất quán *nội bộ*: quản trị viên có toàn quyền CSDL tính lại cả chuỗi là qua mặt được.
+Giờ root nằm trên chuỗi công khai và **không tính lại được nữa**.
+
+### Vòng chạy
+
+| # | Bước | Bằng chứng |
+|---|---|---|
+| 1 | 5 thao tác nghiệp vụ **thật qua HTTP + JWT**, đăng nhập bằng tài khoản `canbo` | 2× `ATTENDANCE_MANUAL` · `CREDENTIAL_ISSUE` · `DEVICE_REVOKE` · `DEVICE_APPROVE` |
+| 2 | → 5 mắt xích, mỗi cái nối vào cái trước | `actor_id = 504` cho hành động của người |
+| 3 | → neo lô `AUDIT` `2026080601` | [`0xe965fb…0a42`](https://amoy.polygonscan.com/tx/0xe965fb7c0e1e5f8de8f329493ceefefa67c1b6970643c51faf0fbfa0878c0a42) · 81.956 gas |
+| 4 | → đọc root bằng **một `eth_call`** trên RPC công cộng không key | `0x1250efca…821b3f` |
+| 5 | → **5/5 proof** xác minh được, dựng lại bằng chính mã của verifier | proof 3 sibling; lá cuối 1 sibling (nút lẻ đẩy lên) |
+| 6 | → sửa `entityId` của một bản ghi | **bị từ chối** |
+
+Cố ý đi qua **đúng đường HTTP + xác thực**, không gọi thẳng service: nhật ký ghi `actor_id`, và
+giá trị đó chỉ có nghĩa khi nó đến từ một phiên đăng nhập thật.
+
+### Vì sao lô này là lô có ý nghĩa nhất trong ba lô đã neo
+
+Nó có **5 lá** — cây Merkle 3 tầng, proof dài 3, và **lá cuối bị đẩy lên nên proof của nó chỉ
+dài 1**. Đó đúng là trường hợp biên mà `docs/canonicalization.md` §8.1 chốt bằng quy ước
+`duplicateOdd: false`, và đây là lần đầu nó chạy **trên chuỗi thật** chứ không chỉ trong test.
+
+Hai lô `CRED` đều 1 lá (`root == leaf`, proof rỗng) nên chúng **không** kiểm được gì về cây.
+
+### Ba phép kiểm độc lập, và cái nào bắt được gì
+
+| Sửa cái gì | Chuỗi băm | Merkle proof |
+|---|---|---|
+| Nội dung một bản ghi, quên tính lại mắt xích | **bắt** | **bắt** |
+| Nội dung + tính lại mắt xích của chính nó | **bắt** (`prevHash` bản sau lệch) | **bắt** |
+| **Nội dung + tính lại TOÀN BỘ chuỗi** | **KHÔNG bắt** | **bắt** — root trên chuỗi không đổi được |
+
+Dòng cuối là lý do phải neo. Có test (`tinhLaiCaChuoiThiKhongBat`) cố tình chứng minh cột giữa
+của dòng đó thua — xem `docs/canonicalization.md` §14.2.
+
+### ⚠️ Ba hạn chế phải nói ra
+
+1. **Cửa sổ 24 giờ.** Job neo chạy 02:00 hằng đêm, nên việc sửa hồi tố vẫn giấu được trong
+   khoảng giữa hai lần neo. Thu hẹp chỉ tốn thêm giao dịch, không tốn thiết kế — chi phí neo
+   không phụ thuộc số bản ghi. **Đây là cái núm đánh đổi định lượng được**, nên nêu trong báo
+   cáo thay vì im lặng.
+2. **`CREDENTIAL_ISSUE` trong lô này có `actor_id` NULL** dù được cấp qua API bởi `canbo` —
+   `CredentialService` hardcode `null` ở chỗ ghi nhật ký. Phát hiện khi đọc lại nhật ký thật
+   trước lần neo này; đã sửa, nhưng **bản ghi đã neo thì không sửa được** và giữ nguyên như
+   một dấu vết trung thực.
+3. **Nhật ký chưa phủ hết thao tác.** Năm loại sự kiện đã ghi là những loại có hệ quả lớn
+   nhất; sửa sự kiện, sửa hồ sơ sinh viên, đổi ruleset thì chưa. Ghi vào phần hạn chế.
+
+### Chi phí
+
+| Giao dịch | Gas | Ghi chú |
+|---|---:|---|
+| `AUDIT` lô đầu | 81.956 | gồm 17.940 khởi tạo miền, trả một lần |
+| `ATTEND` lô thứ hai | 64.028 | **số ổn định đầu tiên đo được trên Amoy** |
+| `CRED` lô thứ hai | 64.004 | |
+| **Cộng** | **210.988** | ≈ 0,0127 POL ở 60 gwei |
+
+Ví còn **0,2201 POL**.

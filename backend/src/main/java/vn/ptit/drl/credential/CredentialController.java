@@ -78,7 +78,8 @@ public class CredentialController {
           lại, đúng mô hình W3C Verifiable Credentials.
           """)
   @Transactional
-  public CredentialResponse issue(@Valid @RequestBody IssueRequest req) {
+  public CredentialResponse issue(@Valid @RequestBody IssueRequest req,
+                                  @AuthenticationPrincipal AuthPrincipal principal) {
     var student = studentRepository.findById(req.studentId())
         .orElseThrow(() -> new NotFoundException("Không thấy sinh viên " + req.studentId()));
     var org = organizationRepository.findById(req.issuerOrgId())
@@ -97,7 +98,7 @@ public class CredentialController {
 
     return toResponse(service.issue(new CredentialService.Request(
         student, org, req.semester(), req.activityCount(), req.totalPoints(),
-        req.expiresAt())));
+        req.expiresAt(), principal.userId())));
   }
 
   // ---------------------------------------------------------------- tra cứu
