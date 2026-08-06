@@ -66,7 +66,7 @@ Chọn **một** trong ba cách. Cách A là nhanh nhất cho buổi demo.
 Máy tính vẫn chạy backend; đường hầm cho nó một địa chỉ HTTPS công khai.
 
 ```powershell
-# Cần tài khoản Cloudflare (miễn phí) hoặc dùng bản dùng thử không cần đăng nhập
+winget install --id Cloudflare.cloudflared     # chỉ lần đầu
 cloudflared tunnel --url http://localhost:8080
 ```
 
@@ -81,10 +81,49 @@ trên điện thoại**.
 > **Cho buổi bảo vệ:** mở đường hầm **trước** buổi, cài app lên điện thoại demo, và **đừng
 > tắt terminal**. Tắt là app trắng trang.
 
-### B. Cùng mạng LAN + chứng chỉ tự ký — không khuyến nghị
+### B. Cáp USB — không cần mạng, không cần HTTPS
 
-Chrome coi chứng chỉ tự ký là không hợp lệ và **từ chối cài PWA**, kể cả khi bấm bỏ qua cảnh
-báo. Chỉ dùng được để xem thử, không cài được. Ghi ra đây để khỏi mất thời gian thử.
+Cách chắc chắn nhất cho phòng bảo vệ sóng yếu. Chrome trên máy tính chuyển tiếp một cổng sang
+điện thoại, và điện thoại thấy nó ở **`http://localhost:8080`**.
+
+Mấu chốt: **`localhost` là secure context.** Trình duyệt đối xử với nó y như HTTPS — nên
+**camera chạy** và **nút cài đặt xuất hiện**, dù không có chứng chỉ nào.
+
+1. Trên điện thoại: **Cài đặt → Giới thiệu → bấm 7 lần vào "Số bản dựng"** để bật Tuỳ chọn
+   nhà phát triển, rồi bật **Gỡ lỗi USB**.
+2. Cắm cáp USB vào máy tính, chọn **Cho phép** khi điện thoại hỏi.
+3. Trên máy tính, mở Chrome → `chrome://inspect/#devices` → tích **Discover USB devices**.
+4. Bấm **Port forwarding…** → thêm dòng:
+
+   | Port | IP address and port |
+   |---|---|
+   | `8080` | `localhost:8080` |
+
+   → tích **Enable port forwarding** → **Done**.
+5. Trên điện thoại, mở Chrome vào **`http://localhost:8080`**.
+
+| | |
+|---|---|
+| **Được** | Không cần mạng, không cần internet, không cần cài gì thêm. Camera chạy |
+| **Mất** | Phải cắm cáp. Rút cáp là app không mở được nữa |
+
+> ⚠️ Chrome có thể tạo **lối tắt** thay vì WebAPK đầy đủ khi nguồn là `localhost` — vẫn có
+> biểu tượng và vẫn mở toàn màn hình, nhưng đây không phải bản cài "thật". Dùng cách này để
+> **kiểm thử và quay video**; muốn bản cài thật thì dùng cách A hoặc C.
+
+### B2. Cùng mạng LAN, không HTTPS — chỉ để xem thử
+
+Điện thoại cùng Wi-Fi mở `http://<IP-máy-tính>:8080` là thấy giao diện ngay. Nhưng vì là
+`http://`:
+
+- ❌ **không cài được** (không có mục "Cài đặt ứng dụng")
+- ❌ **camera không bật được** → không quét QR được
+
+Chỉ dùng để trả lời câu "điện thoại có chạm được vào máy chủ không". Nếu bước này hỏng thì
+kiểm tường lửa Windows cho cổng 8080 và xem hai máy có cùng mạng không.
+
+Dùng chứng chỉ **tự ký** cho LAN cũng không cứu được: Chrome coi nó là không hợp lệ và **vẫn
+từ chối cài PWA**, kể cả khi bấm bỏ qua cảnh báo. Ghi ra để khỏi mất thời gian thử.
 
 ### C. Deploy thật — bền, cần thêm việc
 
