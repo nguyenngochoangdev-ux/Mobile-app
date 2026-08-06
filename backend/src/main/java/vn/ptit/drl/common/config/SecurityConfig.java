@@ -18,10 +18,31 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import lombok.RequiredArgsConstructor;
 import vn.ptit.drl.identity.jwt.JwtAuthFilter;
 
+/*
+ * Danh sách đường của PWA phục vụ từ chính backend (xem WebAppConfig).
+ *
+ * Liệt kê từng đuôi tệp chứ KHÔNG dùng `/**`: một dấu sao kép ở đây mở toàn bộ ứng dụng, và
+ * lỗi đó rất khó thấy khi đọc lướt qua cấu hình bảo mật.
+ *
+ * Mấy đường này không có gì bí mật. Chúng là mã nguồn giao diện, ai tải app về cũng có. Dữ
+ * liệu thật vẫn nằm sau /api và vẫn cần JWT.
+ */
+
 @Configuration
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
+
+    private static final String[] TAI_NGUYEN_TINH = {
+            "/", "/index.html", "/manifest.webmanifest",
+            "/assets/**", "/registerSW.js", "/sw.js", "/workbox-*.js",
+            "/*.png", "/*.svg", "/*.ico", "/*.webmanifest"
+    };
+
+    private static final String[] ROUTE_CLIENT = {
+            "/sv/**", "/cb/**", "/login", "/trinh-chieu/**"
+    };
+
 
     private final JwtAuthFilter jwtAuthFilter;
 
@@ -67,26 +88,20 @@ public class SecurityConfig {
                     .requestMatchers("/error").permitAll()
 
                     // ---- PWA phục vụ từ chính backend (xem WebAppConfig) ----------------
-                    //
                     // Một origin duy nhất cho app và API: điện thoại Android chỉ cài được
                     // PWA khi trang chạy HTTPS, và nếu API nằm ở origin http:// khác thì
                     // trình duyệt chặn thẳng vì mixed content.
-                    //
-                    // Mấy đường này KHÔNG có gì bí mật — chúng là mã nguồn giao diện, ai tải
-                    // app về cũng có. Dữ liệu thật vẫn nằm sau /api và vẫn cần JWT.
-                    //
-                    // `/*.png`, `/*.svg`, ... chứ không phải `/**`: một dấu sao kép ở đây sẽ
-                    // mở toàn bộ ứng dụng, và lỗi đó rất khó thấy khi đọc lướt.
-                    .requestMatchers(HttpMethod.GET,
-                            "/", "/index.html", "/manifest.webmanifest",
-                            "/assets/**", "/registerSW.js", "/sw.js", "/workbox-*.js",
-                            "/*.png", "/*.svg", "/*.ico", "/*.webmanifest")
-                        .permitAll()
+                    // Cho cả GET lẫn HEAD. Theo RFC 9110, HEAD phải trả về đúng phần đầu của
+                    // GET; mở GET mà quên HEAD làm `curl -I` trả 401 trong khi trình duyệt
+                    // vẫn tải trang bình thường. Công cụ giám sát và một số proxy dùng HEAD
+                    // để kiểm tra, nên chênh lệch này gây báo động giả.
+                    .requestMatchers(HttpMethod.GET, TAI_NGUYEN_TINH).permitAll()
+                    .requestMatchers(HttpMethod.HEAD, TAI_NGUYEN_TINH).permitAll()
+
                     // Route phía client (React Router). Chúng trả về index.html, không trả
                     // dữ liệu — chặn chúng chỉ làm app trắng trang khi người dùng tải lại.
-                    .requestMatchers(HttpMethod.GET, "/sv/**", "/cb/**", "/login",
-                            "/trinh-chieu/**")
-                        .permitAll()
+                    .requestMatchers(HttpMethod.GET, ROUTE_CLIENT).permitAll()
+                    .requestMatchers(HttpMethod.HEAD, ROUTE_CLIENT).permitAll()
 
                     .anyRequest().authenticated())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
