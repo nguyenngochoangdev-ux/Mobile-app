@@ -288,6 +288,38 @@ cho báo cáo là **gas biên trên mỗi credential**:
 | Bitmap, chỉ số **rải đều** *(trường hợp thật)* | 24.314 | ~1.233 credential |
 | Mapping-per-credential | 24.360 | ~1.231 credential |
 
+### Thu hồi TỪNG credential một — phép đo bổ sung, 2026-08-06
+
+Bảng trên đo **gas biên trong cùng một giao dịch** (`setRevokedBatch`). Luồng vận hành thật
+thu hồi **từng credential một**, mỗi lần một giao dịch riêng, nên nó gánh thêm 21.000 gas phí
+giao dịch. Đo qua `StatusListClient` trên **Hardhat node cục bộ** (`CredentialRevocationDbTest`
++ `StatusListClientLocalChainTest`):
+
+| Trường hợp | Gas | Ghi chú |
+|---|---:|---|
+| Thu hồi, **ô lưu trữ mới** (word chưa ai chạm) | **47.978** | 0 → khác 0: SSTORE 20.000 |
+| Thu hồi, **word đã có bit khác bật** | **30.878** | khác 0 → khác 0: SSTORE 2.900 |
+| Gọi lại khi **trạng thái không đổi** | thấp hơn hẳn | contract bỏ qua, không sinh sự kiện |
+
+> **⚠️ Kỳ vọng ban đầu sai lần thứ hai ở mục này — và sai theo hướng ngược với lần trước.**
+> Test đầu tiên đòi `gasDau > gasSau * 2` và **đỏ**: tỷ lệ thật chỉ **1,55×**, không phải 8,47×
+> như bảng trên. Lý do: khi mỗi lần thu hồi là **một giao dịch riêng**, phần cố định (21.000
+> gas phí giao dịch + kiểm quyền `AccessControl`) át tỷ lệ. **Hiệu** thì đúng lý thuyết:
+> 47.978 − 30.878 = **17.100**, khớp chênh lệch SSTORE 20.000 − 2.900.
+>
+> **Hệ quả cho báo cáo:** con số 8,47× ở bảng trên **chỉ đúng cho thu hồi hàng loạt**. Trộn
+> hai phép đo này lại là chỗ dễ bị hội đồng bắt bẻ nhất của cả mục 11.4. Trình bày chúng như
+> hai dòng riêng, kèm điều kiện đo.
+
+**Tái lập:**
+
+```
+cd contracts && npx hardhat node          # cửa sổ 1
+cd contracts && npm run deploy:local      # cửa sổ 2 — in ra địa chỉ StatusList
+$env:LOCAL_CHAIN_TEST="true"; $env:LOCAL_STATUS_LIST="0x…"
+.\scripts\test-backend.ps1 StatusListClientLocalChainTest
+```
+
 ### ⚠️ Kỳ vọng ban đầu đã SAI — và đây mới là kết quả đáng viết
 
 Bản trước của mục này viết: *"gas bitmap **không đổi** theo quy mô (lật 1 bit trong 1 slot

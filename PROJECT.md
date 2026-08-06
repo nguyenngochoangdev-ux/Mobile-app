@@ -458,13 +458,26 @@ Nhớ: **nonce trong payload** (§2.3), **status index ngẫu nhiên** (§2.3).
 > proof rỗng (bước Merkle là trường hợp biên) · khóa issuer **trùng khóa neo** · chưa lọc
 > theo học kỳ · `StatusList` chưa nối dây.
 >
-> ❌ **Còn lại của tuần 4, theo thứ tự nên làm:**
-> 1. **Nối dây `StatusList`** — `revoked_at`/`revoke_tx_hash` đã có cột, chưa có luồng gọi
->    `setRevoked()`. Không có nó thì `statusListIndex` trong payload chỉ tay vào một bit
->    không ai bật bao giờ, và phép kiểm thu hồi của verifier luôn trả "còn hiệu lực".
-> 2. **Hash chain `audit_logs`** — miền `AUDIT` mới có cột `nonce`/`leaf_hash` (V2), chưa có
+> ✅ **`StatusList` đã nối dây (2026-08-06).** `StatusListClient` + `CredentialRevocationService`
+> + `POST /api/credentials/{id}/revoke`. Kiểm chứng trên **chuỗi Hardhat cục bộ thật**, không
+> mock: 14 test (`StatusListClientLocalChainTest` 7 · `CredentialRevocationDbTest` 7).
+> Gas đo được: **47.978** khi chạm ô lưu trữ mới, **30.878** khi word đã có bit bật —
+> `docs/measurements.md` §11.4.
+>
+> **Thứ tự ghi NGƯỢC với job neo, và đó là chủ ý:** gửi giao dịch **trước**, ghi CSDL **sau**.
+> Nguồn sự thật về thu hồi là bit trên chuỗi, vì đó là thứ **duy nhất verifier đọc**. Ghi CSDL
+> trước rồi giao dịch hỏng sẽ làm trang quản trị báo "đã thu hồi" trong khi nhà tuyển dụng
+> chạy verifier vẫn thấy còn hiệu lực — hỏng im lặng, đúng chỗ quan trọng nhất. Cách hỏng
+> ngược lại (chuỗi xong, CSDL chưa) thì verifier vẫn đúng và `reconcile()` sửa được.
+> Cố ý **không có chế độ "thu hồi cục bộ"**.
+>
+> ❌ **Còn lại của tuần 4:**
+> 1. **Hash chain `audit_logs`** — miền `AUDIT` mới có cột `nonce`/`leaf_hash` (V2), chưa có
 >    `AnchorSource`. Đây là thứ hiện thực **luận điểm 1** (chống sửa hồi tố), hiện chưa có gì.
 >    Hai dòng threat model còn treo `☐ tuần 4` đều đợi cái này.
+> 2. *(tuỳ chọn)* Thu hồi thật một credential trên Amoy để có số liệu on-chain và ảnh chụp
+>    verifier báo "ĐÃ THU HỒI". Một giao dịch ghi, **đảo ngược được** (khác `anchor`) nhưng
+>    sự kiện `StatusChanged` thì nằm lại vĩnh viễn.
 >
 > ⚠️ **Nợ kỹ thuật phát hiện khi làm phần này:** `attendances` **không chụp ảnh** MSSV —
 > `AttendancePayload` đọc qua khóa ngoại. Đổi MSSV làm hỏng mọi proof điểm danh đã neo.

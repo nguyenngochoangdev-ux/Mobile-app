@@ -35,6 +35,7 @@ public class CredentialController {
 
   private final CredentialService service;
   private final CredentialBundleService bundleService;
+  private final CredentialRevocationService revocationService;
   private final CredentialRepository repository;
   private final StudentRepository studentRepository;
   private final OrganizationRepository organizationRepository;
@@ -136,6 +137,32 @@ public class CredentialController {
       throw new NotFoundException("Không thấy credential " + id);
     }
     return toResponse(c);
+  }
+
+  // ---------------------------------------------------------------- thu hồi
+
+  public record RevokeRequest(@Size(max = 255) String reason, Boolean revoked) {}
+
+  @PostMapping("/{id}/revoke")
+  @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
+  @Operation(summary = "Thu hồi credential (lật bit trên StatusList)",
+      description = """
+          Gửi giao dịch `setRevoked` lên chuỗi TRƯỚC, ghi CSDL SAU — ngược thứ tự với job neo,
+          và đó là chủ ý: nguồn sự thật về thu hồi là bit trên chuỗi, vì đó là thứ duy nhất
+          verifier đọc. Ghi CSDL trước rồi giao dịch hỏng sẽ làm trang quản trị báo "đã thu
+          hồi" trong khi nhà tuyển dụng chạy verifier vẫn thấy credential còn hiệu lực.
+
+          Đặt `revoked = false` để BỎ thu hồi. Thao tác này đảo ngược được (khác `anchor`),
+          nhưng lịch sử thì không: mỗi lần lật để lại một sự kiện `StatusChanged` vĩnh viễn.
+
+          Cần `drl.anchor.enabled=true`. Cố ý KHÔNG có chế độ thu hồi cục bộ.
+          """)
+  @Transactional
+  public CredentialRevocationService.Result revoke(
+      @PathVariable Long id, @Valid @RequestBody(required = false) RevokeRequest req) {
+
+    boolean revoked = req == null || req.revoked() == null || req.revoked();
+    return revocationService.setRevoked(id, revoked, req == null ? null : req.reason());
   }
 
   // ---------------------------------------------------------------- bundle
