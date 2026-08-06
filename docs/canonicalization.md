@@ -10,9 +10,11 @@
 | payload `CRED` | §11 | 13 | 34 |
 | chữ ký issuer | §12 | 18 | — |
 | bundle | §13 | 8 | 37 |
-| **chuỗi băm `AUDIT`** | **§14** | **34** | **37** |
+| chuỗi băm `AUDIT` | §14 | 34 | 37 |
+| **`SCORE` · `RULESET` · `evidence_hash`** | **§15** | **46** | **34** |
 
-Ba miền neo đã có payload: `ATTEND` · `CRED` · `AUDIT`. Còn `SCORE` và `RULESET` (tuần 5).
+**Cả năm miền neo đã có payload** — `ATTEND` · `CRED` · `SCORE` · `AUDIT` · `RULESET`.
+Tầng canonicalization đóng hoàn toàn.
 
 > Đây là cạm bẫy số 2 trong `CLAUDE.md`: lệch canonicalization làm **mọi Merkle proof
 > fail**, và fail **im lặng** — hash vẫn tính ra bình thường, chỉ là không khớp.
@@ -125,6 +127,9 @@ Có **năm** bộ vector, mỗi bộ một file, **tất cả đều do phía JS
 | 3 | `cred-signature-vectors.json` | **chữ ký issuer** (leaf → địa chỉ ví) | §12 |
 | 4 | `bundle-fixture.json` | **cả tệp bundle** | §13 |
 | 5 | `audit-chain-vectors.json` | **mắt xích** của chuỗi băm nhật ký | §14 |
+
+Miền `SCORE` và `RULESET` (§15) dùng chung bộ 1 — chúng thêm payload mới chứ không thêm công
+thức mới, nên không cần file vector riêng.
 
 Bộ 1–3 và 5 chốt từng **phép tính**; bộ 4 chốt cái **vỏ** gói chúng lại. Phía JS sinh vector và
 phía Java phải khớp — chứ không phải ngược lại — để Java không bao giờ "tự chấm bài mình".
@@ -868,3 +873,96 @@ ra:**
 `after_json` (V7) · `rulesets.json_body` (V7, đổi trước khi miền `RULESET` được dùng ở tuần 5,
 lúc bảng còn rỗng). `anchor_leaves.proof_json` **giữ nguyên kiểu `JSON`** — nội dung là một
 **mảng**, mà MySQL giữ nguyên thứ tự phần tử, và byte của nó không đi vào phép băm nào.
+
+---
+
+## 15. Miền `SCORE` và `RULESET` — điểm số tái tính được
+
+**Chốt ngày:** 2026-08-06 · Java 46 test · JS 34 test · **hai miền cuối, tầng này đóng hoàn toàn**
+
+| | Java | JS |
+|---|---|---|
+| Payload `SCORE` | `scoring/ScorePayload.java` | `verifier/src/score.mjs` |
+| Payload `RULESET` | `scoring/RulesetPayload.java` | cùng file |
+| `evidence_hash` | `scoring/EvidenceHasher.java` | cùng file |
+| Test | `ScoringVectorTest` · `RuleEvaluatorTest` · `ScoringServiceDbTest` | `verifier/test/score.test.mjs` |
+| Vector | `canonical-vectors.json`, tiền tố `score-payload` / `ruleset-payload` | |
+
+### 15.1. Ba công thức
+
+```
+evidenceHash = keccak256( UTF-8(JCS({"domain":"ATTEND","leaves":[...đã sắp xếp...]})) )
+rulesetHash  = keccak256( UTF-8(chính byte của tệp bộ quy tắc) )
+leaf         = keccak256( bytes8('SCORE'|'RULESET') ‖ ':' ‖ UTF-8(JCS(payload)) )
+```
+
+`SCORE` có **14 trường**, `RULESET` có **5**.
+
+### 15.2. Hai trường làm nên cả ý nghĩa của miền `SCORE`
+
+Mười hai trường còn lại chỉ nói *điểm là bao nhiêu*. Hai trường này nói *vì sao nó là con số
+đó*:
+
+| Trường | Trả lời |
+|---|---|
+| `evidenceHash` | **Chấm trên dữ liệu nào?** |
+| `rulesetHash` | **Chấm bằng quy tắc nào?** |
+
+Neo điểm mà thiếu một trong hai thì "chấm tự động" chỉ là chuyển việc tin cán bộ sang tin máy
+chủ. Lập luận đầy đủ và so sánh với EduCTX: `docs/measurements.md` §11.9.
+
+**Vì sao sắp xếp danh sách lá:** thứ tự duyệt bản ghi là chi tiết của truy vấn CSDL. Không sắp
+thì đổi một mệnh đề `ORDER BY` là đổi mọi `evidence_hash` dù dữ liệu y hệt.
+
+**Vì sao dùng leaf chứ không phải id bản ghi:** id chỉ có nghĩa bên trong CSDL của trường.
+Leaf thì đã nằm trong cây Merkle của lô `ATTEND` đã neo, nên **mỗi phần tử của bằng chứng tự
+nó cũng chứng minh được**.
+
+### 15.3. `rulesetHash` băm BYTE THÔ — cùng quyết định với §14.3
+
+Tệp bộ quy tắc là JSON do người **soạn quy chế** viết, không phải cây giá trị do hệ thống dựng.
+Đưa nó qua `Jcs` là mở đường cho một con số ngoài tập con được chấp nhận làm **không nạp được
+bộ quy tắc**.
+
+Hệ quả có lợi, và là điểm chính: sinh viên tải tệp về, băm nguyên văn, so với giá trị đã neo —
+**không cần biết JCS là gì**, một lệnh `keccak256` trên tệp là đủ.
+
+Hệ quả phải chấp nhận: đổi **một khoảng trắng** là đổi hash. Đúng như mong muốn với một văn bản
+quy chế — bản đã công bố là bản có hiệu lực, không phải "một bản tương đương về ngữ nghĩa".
+
+### 15.4. ⚠️ SpEL phải chạy trong `SimpleEvaluationContext`
+
+Không thuộc canonicalization, nhưng nằm cạnh nó và **nguy hiểm hơn nhiều** — ghi ở đây để
+người sửa bộ quy tắc đọc được.
+
+`StandardEvaluationContext` (mặc định của SpEL) cho phép biểu thức **gọi phương thức bất kỳ,
+dựng đối tượng bất kỳ, tham chiếu kiểu bất kỳ** — kể cả `T(java.lang.Runtime).getRuntime()
+.exec(...)`. Bộ quy tắc là một **tệp JSON do người dùng nạp lên**, nên dùng context đó biến nó
+thành **một đường thực thi mã tuỳ ý**.
+
+`RuleEvaluator` dùng `SimpleEvaluationContext.forReadOnlyDataBinding()`: chỉ đọc thuộc tính và
+chỉ số. Có ba test chốt — tham chiếu kiểu bị chặn, gọi phương thức bị chặn, đọc thuộc tính thì
+được.
+
+Đây là lỗ hổng có tên trong danh sách CWE và đã gây nhiều CVE thật ở ứng dụng Spring. **Nên nêu
+trong báo cáo:** chọn SpEL là mượn được một bộ đánh giá đã kiểm chứng thay vì tự viết DSL
+(`CLAUDE.md` cấm, và cấm đúng) — nhưng phải biết đóng đúng một cái van, và **cái van đó không
+bật sẵn**.
+
+### 15.5. Bộ quy tắc tự khai phần nó KHÔNG chấm được
+
+Mỗi tiêu chí mang trường `nguon`:
+
+| Giá trị | Nghĩa |
+|---|---|
+| `TU_DONG` | hoàn toàn từ dữ liệu điểm danh |
+| `MAC_DINH` | **không có nguồn dữ liệu** — điểm là giá trị bộ quy tắc khai |
+| `HON_HOP` | một phần từ dữ liệu, phần còn lại là điểm nền |
+
+Không có trường này thì một bảng điểm 5 tiêu chí **trông như thể cả 5 đều được tính từ dữ
+liệu** — điều không đúng với hệ thống hiện tại. Với bộ quy tắc `2026-1.v1`: **50/100 chấm từ
+dữ liệu, 40/100 mặc định, 10/100 không bao giờ cấp**.
+
+`RuleEvaluator.kiemBoQuyTac` bắt các mâu thuẫn giữa lời khai và nội dung — ví dụ khai
+`MAC_DINH` mà lại có quy tắc, hay khai `TU_DONG` mà có điểm nền khác 0. Kiểm **một lần trước
+khi chấm**, không phải 500 lần trong lúc chấm.

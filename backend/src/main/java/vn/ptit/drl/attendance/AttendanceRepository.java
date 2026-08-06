@@ -14,6 +14,28 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 
     Optional<Attendance> findByEventIdAndStudentId(Long eventId, Long studentId);
 
+    /**
+     * Mọi bản ghi điểm danh của một học kỳ, kèm sinh viên và sự kiện.
+     *
+     * <p>Dùng cho việc chấm điểm hàng loạt: <b>một truy vấn cho cả 500 sinh viên</b>, thay vì
+     * một truy vấn mỗi người. {@code join fetch} vì mỗi bản ghi cần {@code student.mssv} (để
+     * dựng payload {@code ATTEND} tính leaf làm bằng chứng) và {@code event.criteriaCode} +
+     * {@code event.points} (để dựng dữ kiện chấm điểm).
+     *
+     * <p>Sự kiện có {@code semester} NULL <b>bị bỏ qua</b> — xem migration V8. Đoán học kỳ
+     * cho chúng sẽ đưa điểm sai vào một bản ghi đã ký và đã neo.
+     *
+     * <p>Sắp xếp theo {@code student.id} rồi {@code id} để lượt chấm tất định.
+     */
+    @Query("""
+        SELECT a FROM Attendance a
+          JOIN FETCH a.student s
+          JOIN FETCH a.event e
+         WHERE e.semester = :semester
+         ORDER BY s.id, a.id
+        """)
+    List<Attendance> findBySemesterForScoring(@Param("semester") String semester);
+
     boolean existsByEventIdAndStudentId(Long eventId, Long studentId);
 
     Page<Attendance> findByEventId(Long eventId, Pageable pageable);

@@ -66,6 +66,17 @@ public class Event {
     @Column(name = "criteria_code", length = 8)
     private String criteriaCode;
 
+    /**
+     * Học kỳ dạng {@code YYYY-1} / {@code YYYY-2}. NULL nghĩa là chưa xác định, và việc chấm
+     * điểm <b>bỏ qua</b> sự kiện đó thay vì đoán bừa.
+     *
+     * <p>Giá trị khởi tạo do migration V8 điền theo khoảng ngày quy ước — <b>không phải lịch
+     * học chính thức của trường</b>. Cán bộ sửa được. Xem V8 để biết vì sao quy ước này nằm
+     * trong một cột chứ không nằm trong một hàm.
+     */
+    @Column(length = 16)
+    private String semester;
+
     @Builder.Default
     private Integer points = 0;
 

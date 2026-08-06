@@ -523,6 +523,35 @@ Nhớ: **nonce trong payload** (§2.3), **status index ngẫu nhiên** (§2.3).
 Ruleset JSON có version · SpEL evaluator · chạy chấm theo kỳ · `evidence_hash` · neo domain `SCORE` + `RULESET`.
 
 > **Mốc:** chấm 500 sinh viên, mỗi bản ghi có `evidence_hash` tái tính được.
+>
+> ## ✅ MỐC TUẦN 5 ĐÃ ĐẠT — 2026-08-06
+>
+> **500 sinh viên trong 0,68–0,90 giây**, `evidence_hash` của **cả 500** tái tính được từ bản
+> ghi điểm danh (`ScoringServiceDbTest.chamToanKhoa`). Test: **Java 367 · JS 297**, 0 fail.
+>
+> `RulesetDoc` + `RuleEvaluator` (SpEL) · `EvidenceHasher` · `ScorePayload` ·
+> `RulesetPayload` · `ScoringService` · hai `AnchorSource` mới. **Cả năm miền neo giờ đã có
+> payload** — tầng canonicalization đóng hoàn toàn (`docs/canonicalization.md` §15).
+>
+> **V8** thêm `events.semester` — trả khoản nợ đã ghi hai lần ở §11.7 và javadoc
+> `CredentialNowRunner`.
+>
+> ⚠️ **Ba điều phải nói kèm con số 0,7 giây, nếu không nó là con số rỗng** — chi tiết ở
+> `docs/measurements.md` §11.3:
+> 1. **Chỉ 4/500 sinh viên có dữ liệu điểm danh.** 496 người còn lại chấm trên bằng chứng
+>    rỗng, nên 0,7 giây là **cận dưới**, không phải thời gian chấm một khóa thật.
+> 2. **Phân bố xếp loại méo** (`YEU` 499 · `TRUNG_BINH` 1) — hệ quả của thiếu dữ liệu, không
+>    phải kết quả đánh giá. Trình bày nó như một phân bố điểm rèn luyện là sai nghiêm trọng.
+> 3. **Bộ quy tắc chỉ chấm được 50/100 thang điểm.** 40/100 là mặc định cố định (C2 không có
+>    bảng kỷ luật, C4 phần nền), 10/100 của C5 không bao giờ cấp. Điểm cao nhất đạt được là
+>    **90**, thấp nhất **40**.
+>
+> Bộ quy tắc **tự khai** phần này bằng trường `nguon` của từng tiêu chí và mục `hanChe` —
+> sinh viên đọc tệp là thấy. Hai con số 50/40 tính từ chính bộ quy tắc và có test chốt, nên
+> chúng không lệch được khỏi tệp đang dùng.
+>
+> ❌ **Còn lại:** vế **thủ công** của phép đo #4 chưa có — cần phỏng vấn 1–2 cán bộ CTSV.
+> Việc này người dùng phải tự làm. Và chưa neo lô `SCORE`/`RULESET` nào lên Amoy.
 
 ### Tuần 6 — UI + verifier
 Hoàn thiện 3 luồng PWA · verifier tĩnh · deploy.
@@ -547,6 +576,11 @@ Kiểm tra **đúng ngày**, không hoãn. Mỗi cổng có hành động cắt 
 | **Cuối tuần 2** | Chưa demo được điểm danh thật với người lạ | Đang overengineer backend. Đóng băng mọi CRUD, dồn 100% vào điểm danh |
 | **Cuối tuần 3** | Chưa có tx neo trên Amoy | Cắt StatusList, giữ AnchorRegistry + IssuerRegistry. **Đo gas bitmap vs mapping chuyển sang chạy thuần trên Hardhat local** — vẫn ra đủ số liệu cho ch.11.4 mà không cần deploy |
 | **Cuối tuần 5** | Chưa chấm được điểm | Rút ruleset xuống **3 tiêu chí**, ghi rõ vào giới hạn phạm vi |
+
+**✅ Cổng cuối tuần 5 ĐÃ ĐÓNG — 2026-08-06.** Chấm được 500 sinh viên trong 0,7 giây, giữ đủ
+**5 tiêu chí** của Thông tư 16/2015 — **không phải rút xuống 3**. Nhưng phải nói đúng mức: giữ
+đủ 5 tiêu chí về *cấu trúc*, còn về *nguồn dữ liệu* thì chỉ 2,5 tiêu chí được chấm thật
+(C1, C3, và 10/25 của C4). Bộ quy tắc tự khai điều đó thay vì giấu.
 
 **✅ Cổng cuối tuần 3 ĐÃ ĐÓNG — 2026-08-06.** 3 contract deploy + verify trên Amoy · phép đo
 #1 và #2 đủ số liệu · `MerkleService` + test vector Merkle xanh cả hai phía · **giao dịch neo

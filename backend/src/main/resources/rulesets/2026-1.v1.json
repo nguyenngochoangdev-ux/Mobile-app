@@ -1,0 +1,82 @@
+{
+  "version": "2026-1.v1",
+  "semester": "2026-1",
+  "canCu": "Thông tư 16/2015/TT-BGDĐT — thang 100 điểm, năm tiêu chí 20/25/20/25/10",
+  "thang": 100,
+  "ghiChu": "Tệp này là TÀI LIỆU CÔNG KHAI. Sinh viên phải đọc được để tự tính lại điểm của mình và đối chiếu. Nội dung của nó được băm nguyên văn thành ruleset_hash và neo lên chuỗi ở miền RULESET — nên sửa nó sau khi đã công bố điểm là việc phát hiện được.",
+  "tieuChi": [
+    {
+      "ma": "C1",
+      "ten": "Ý thức và kết quả học tập",
+      "toiDa": 20,
+      "nguon": "TU_DONG",
+      "diemNen": 0,
+      "lyDo": "Chấm từ số hoạt động học thuật đã điểm danh (seminar, hội thảo chuyên môn). KHÔNG chấm phần kết quả học tập vì hệ thống không nối với bảng điểm — xem `hanChe` cuối tệp.",
+      "quyTac": [
+        { "ma": "C1.1", "diem": 8, "dieuKien": "soLuot['C1'] >= 1", "moTa": "Tham gia ít nhất 1 hoạt động học thuật" },
+        { "ma": "C1.2", "diem": 6, "dieuKien": "soLuot['C1'] >= 3", "moTa": "Tham gia từ 3 hoạt động học thuật trở lên" },
+        { "ma": "C1.3", "diem": 6, "dieuKien": "soLuotXacMinh['C1'] >= 3", "moTa": "Từ 3 hoạt động được MÁY xác minh (không phải cán bộ nhập tay)" }
+      ]
+    },
+    {
+      "ma": "C2",
+      "ten": "Ý thức chấp hành nội quy, quy chế",
+      "toiDa": 25,
+      "nguon": "MAC_DINH",
+      "diemNen": 25,
+      "lyDo": "Hệ thống KHÔNG có nguồn dữ liệu về vi phạm nội quy — không có bảng kỷ luật, không nối với phòng công tác sinh viên. Cho điểm tối đa mặc định là giả định 'không có vi phạm nào được ghi nhận', KHÔNG phải kết luận 'sinh viên không vi phạm'. Đây là giới hạn phạm vi đã cắt ở tuần 0, không phải thiếu sót của thuật toán.",
+      "quyTac": []
+    },
+    {
+      "ma": "C3",
+      "ten": "Ý thức tham gia hoạt động chính trị, xã hội, văn hoá, thể thao",
+      "toiDa": 20,
+      "nguon": "TU_DONG",
+      "diemNen": 0,
+      "lyDo": "Đây là tiêu chí hệ thống đo được đầy đủ nhất — toàn bộ hoạt động ngoại khoá đều đi qua cơ chế điểm danh.",
+      "quyTac": [
+        { "ma": "C3.1", "diem": 6, "dieuKien": "soLuot['C3'] >= 1", "moTa": "Tham gia ít nhất 1 hoạt động" },
+        { "ma": "C3.2", "diem": 6, "dieuKien": "soLuot['C3'] >= 3", "moTa": "Tham gia từ 3 hoạt động trở lên" },
+        { "ma": "C3.3", "diem": 4, "dieuKien": "diem['C3'] >= 15", "moTa": "Tổng điểm hoạt động từ 15 trở lên" },
+        { "ma": "C3.4", "diem": 4, "dieuKien": "soLuotXacMinh['C3'] >= 3", "moTa": "Từ 3 hoạt động được MÁY xác minh" }
+      ]
+    },
+    {
+      "ma": "C4",
+      "ten": "Ý thức công dân trong quan hệ cộng đồng",
+      "toiDa": 25,
+      "nguon": "HON_HOP",
+      "diemNen": 15,
+      "lyDo": "Điểm nền 15 là phần KHÔNG đo được (quan hệ với cộng đồng nơi cư trú, ý thức công dân) — cùng loại giả định với C2. 10 điểm còn lại chấm được từ hoạt động cộng đồng có điểm danh (hiến máu, tình nguyện).",
+      "quyTac": [
+        { "ma": "C4.1", "diem": 5, "dieuKien": "soLuot['C4'] >= 1", "moTa": "Tham gia ít nhất 1 hoạt động cộng đồng" },
+        { "ma": "C4.2", "diem": 5, "dieuKien": "soLuot['C4'] >= 2", "moTa": "Tham gia từ 2 hoạt động cộng đồng trở lên" }
+      ]
+    },
+    {
+      "ma": "C5",
+      "ten": "Ý thức và kết quả tham gia công tác cán bộ lớp, đoàn thể",
+      "toiDa": 10,
+      "nguon": "MAC_DINH",
+      "diemNen": 0,
+      "lyDo": "Hệ thống không có bảng chức vụ cán bộ lớp/đoàn. Cho 0 điểm mặc định thay vì điểm tối đa: đây là tiêu chí CỘNG THÊM cho người có đóng góp, nên mặc định đúng là 'chưa ghi nhận đóng góp nào', không phải 'có đóng góp đầy đủ'. Cán bộ nhập tay phần này ở phiên bản sau.",
+      "quyTac": []
+    }
+  ],
+  "phanLoai": [
+    { "ma": "XUAT_SAC", "tu": 90, "den": 100 },
+    { "ma": "TOT", "tu": 80, "den": 89 },
+    { "ma": "KHA", "tu": 65, "den": 79 },
+    { "ma": "TRUNG_BINH", "tu": 50, "den": 64 },
+    { "ma": "YEU", "tu": 35, "den": 49 },
+    { "ma": "KEM", "tu": 0, "den": 34 }
+  ],
+  "hanChe": [
+    "C2 và C5 KHÔNG được chấm từ dữ liệu — hệ thống không có nguồn. Điểm của chúng là giá trị mặc định do bộ quy tắc khai, và được ghi rõ trong `nguon`.",
+    "C4 chỉ chấm được 10/25 điểm từ dữ liệu; 15 điểm nền là giả định.",
+    "C1 không chấm phần kết quả học tập vì hệ thống không nối với bảng điểm.",
+    "CỘNG LẠI: 50/100 điểm chấm được từ dữ liệu điểm danh (C1 tối đa 20 + C3 tối đa 20 + C4 tối đa 10); 40/100 là giá trị mặc định cố định (C2 25 + C4 nền 15); 10/100 của C5 không bao giờ được cấp.",
+    "HỆ QUẢ SỐ HỌC phải nêu trong báo cáo, đừng để hội đồng tự tính ra: với bộ quy tắc này điểm CAO NHẤT có thể đạt là 90 và THẤP NHẤT là 40. Sinh viên không tham gia hoạt động nào vẫn được 40 (xếp loại YEU) nhờ điểm mặc định; sinh viên tham gia đầy đủ đạt đúng 90 (XUAT_SAC, sát ngưỡng). Dải điểm thật vì thế hẹp hơn thang 100 rất nhiều, và mọi phân bố xếp loại rút ra từ đây phải đọc kèm điều đó.",
+    "Việc gán sự kiện vào học kỳ dựa trên khoảng ngày theo quy ước (xem migration V8), chưa nối với lịch học chính thức của trường."
+  ]
+}

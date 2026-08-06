@@ -295,18 +295,64 @@ riêng từng sự kiện, token gắn `eventId`, cửa sổ offline 24 giờ.
 
 ## 11.3. Thời gian quy trình chấm điểm
 
-**Trạng thái:** ☐ chưa đo — làm được từ tuần 5
+**Trạng thái:** ◐ **vế tự động đã đo** (2026-08-06) · vế thủ công **chưa** — cần phỏng vấn
+**Tái lập:** `.\scripts\test-backend.ps1 ScoringServiceDbTest`
+**Điều kiện:** MySQL 8.4 trong container, Windows 10, cùng máy dev. Chấm cả 500 sinh viên
+trong **một giao dịch**, gồm cả tính `evidence_hash` cho từng người.
 
 | Chỉ số | Giá trị | Ghi chú |
 |---|---|---|
-| Số sinh viên | 500 (dữ liệu giả) | |
-| Thời gian chấm tự động | ______ giây | Cấu hình máy: ______ |
-| Thời gian làm thủ công | ______ giờ | `[ƯỚC LƯỢNG]` |
+| Số sinh viên | **500** | dữ liệu giả từ seeder |
+| Thời gian chấm tự động | **0,68 – 0,90 giây** | 5 lần chạy liên tiếp sau khi JVM đã ấm |
+| Lần chạy đầu (JVM lạnh) | 2,22 giây | gồm nạp bộ quy tắc, phân tích SpEL lần đầu |
+| Thời gian làm thủ công | ______ giờ | `[ƯỚC LƯỢNG]` — **chưa có** |
 | Nguồn con số thủ công | Phỏng vấn ____ cán bộ CTSV | Cỡ mẫu: ____ |
 
 > ⚠️ Con số thủ công lấy từ phỏng vấn 1–2 người là **bằng chứng yếu**. Phải ghi rõ là
 > ước lượng và nêu cỡ mẫu. Đừng trình bày như kết quả đo có kiểm soát — hội đồng bắt
 > được chỗ thổi phồng rất nhanh, và mất một chỗ là mất niềm tin vào cả bảng.
+
+### ⚠️ Ba điều phải nói kèm con số 0,7 giây, nếu không nó là con số rỗng
+
+**1. Chỉ 4/500 sinh viên có dữ liệu điểm danh.** Toàn hệ thống mới có 6 bản ghi điểm danh
+thật. 496 người còn lại được chấm trên bằng chứng **rỗng** — nhanh vì gần như không có gì để
+tính. Con số 0,7 giây vì thế là **cận dưới**, không phải thời gian chấm một khóa thật.
+
+Ước lượng hợp lý cho dữ liệu đầy đủ: chi phí mỗi sinh viên tăng theo số bản ghi điểm danh của
+họ (tính leaf `ATTEND` cho từng bản), khoảng 10–20 hoạt động/kỳ. Nhưng đó là **ước lượng, chưa
+đo** — đừng viết nó như số đo.
+
+**2. Phân bố xếp loại méo, và nguyên nhân là dữ liệu chứ không phải thuật toán.**
+
+| Xếp loại | Số sinh viên |
+|---|---:|
+| `TRUNG_BINH` | 1 |
+| `YEU` | 499 |
+
+499 người xếp `YEU` vì họ được đúng 40 điểm — **sàn của bộ quy tắc**, hoàn toàn từ điểm mặc
+định. Đây **không** phải kết quả đánh giá; nó là hệ quả của việc không có dữ liệu. Trình bày
+bảng này như một phân bố điểm rèn luyện là sai nghiêm trọng.
+
+**3. Bộ quy tắc chỉ chấm được một nửa thang điểm.**
+
+| Phần | Điểm | Nguồn |
+|---|---:|---|
+| Chấm từ dữ liệu điểm danh | **50/100** | C1 tối đa 20 · C3 tối đa 20 · C4 tối đa 10 |
+| Mặc định cố định | **40/100** | C2 25 (không có bảng kỷ luật) · C4 nền 15 |
+| Không bao giờ cấp | **10/100** | C5 (không có bảng chức vụ cán bộ lớp) |
+
+Hệ quả số học: điểm **cao nhất có thể đạt là 90**, **thấp nhất là 40**. Dải thật hẹp hơn thang
+100 rất nhiều.
+
+Hai con số 50 và 40 **tính từ chính bộ quy tắc** (`RulesetDoc.diemTuDuLieu()` /
+`diemMacDinh()`) và có test chốt, nên chúng không lệch được khỏi tệp quy tắc đang dùng. Bộ quy
+tắc còn **tự khai** phần hạn chế này trong trường `hanChe` của nó — sinh viên đọc tệp là thấy.
+
+> **Đây là chỗ trung thực quan trọng thứ hai của cả chương, sau dòng "vấn đề oracle".**
+> Một hệ thống "chấm điểm rèn luyện tự động" mà thực ra chỉ chấm được một nửa thang điểm là
+> điều hội đồng sẽ hỏi. Trả lời sẵn: hệ thống chấm được đúng phần nó có dữ liệu, và **khai
+> rõ ràng bằng máy** phần nào là đo, phần nào là giả định — chứ không trộn hai thứ lại thành
+> một con số trông như đã được tính.
 
 ---
 
@@ -440,6 +486,8 @@ Diễn giải chuẩn: >68 là trên trung bình, >80 là tốt.
 | 2026-08-06 | **Vòng khép kín CREDENTIAL — đóng mốc tuần 4** | Đăng ký issuer (133.590 gas) + neo lô `CRED` 2026080601 (81.944 gas) ≈ 0,0089 POL. Bundle 1.529 byte **verify 6/6** bằng script Node, ba `eth_call` trên RPC công cộng không key, không chạm backend. Sửa `totalPoints` 15→95 làm **ba lớp độc lập cùng đỏ**. Hạn chế: lô chỉ 1 lá nên proof rỗng. Xem §11.7 | Hoàng |
 | 2026-08-06 | **Neo nhật ký `AUDIT` — đóng luận điểm 1** | 5 thao tác nghiệp vụ thật qua HTTP+JWT → 5 mắt xích → lô `AUDIT` 2026080601 (81.956 gas). **5/5 proof** xác minh được về root đọc từ Amoy; cây 5 lá nên có cả trường hợp nút lẻ bị đẩy lên (proof 1 sibling). Xem §11.8 | Hoàng |
 | 2026-08-06 | **Gas trạng thái ổn định trên Amoy** *(lấp chỗ trống cũ)* | Lô thứ hai của `ATTEND` = **64.028**, của `CRED` = **64.004**. Chi phí khởi tạo miền = **17.940 gas**, trả một lần cho mỗi miền. Quy đổi học kỳ tính lại bằng số Amoy: **1,08 POL** thay vì 0,92 (số local cũ thấp hơn 17%) | Hoàng |
+| 2026-08-06 | **#4 — chấm 500 sinh viên (vế tự động)** | **0,68–0,90 giây** sau khi JVM ấm, 2,22 s lần đầu. `evidence_hash` của **cả 500** bản ghi tái tính được từ bản ghi điểm danh. Vế thủ công **chưa có** — cần phỏng vấn cán bộ CTSV. Ba cảnh báo phải đọc kèm: chỉ 4/500 có dữ liệu · phân bố xếp loại méo do thiếu dữ liệu · bộ quy tắc chỉ chấm được 50/100 thang điểm. Xem §11.3 | Hoàng |
+| 2026-08-06 | **`evidence_hash` + miền `SCORE`/`RULESET`** | Điểm số tái tính lại được bởi người ngoài: `evidenceHash` trả lời "chấm trên dữ liệu nào", `rulesetHash` trả lời "chấm bằng quy tắc nào". Khác EduCTX ở *loại* bằng chứng, không phải quy mô. Xem §11.9 | Hoàng |
 
 ---
 
@@ -629,3 +677,65 @@ của dòng đó thua — xem `docs/canonicalization.md` §14.2.
 | **Cộng** | **210.988** | ≈ 0,0127 POL ở 60 gwei |
 
 Ví còn **0,2201 POL**.
+
+---
+
+## 11.9. `evidence_hash` — điểm số tái tính lại được — 2026-08-06
+
+**Đây là đóng góp học thuật rõ nhất của đề tài**, và giờ nó có mã chạy được cùng test chốt.
+
+### Vấn đề mà nó giải quyết
+
+Một điểm rèn luyện là con số cuối của một phép tính. Câu hỏi mọi hệ thống chấm điểm đều né:
+**phép tính đó chạy trên dữ liệu nào?** Không trả lời được thì "chấm tự động" chỉ là chuyển
+việc tin cán bộ sang tin máy chủ — và neo con số ấy lên blockchain cũng không giúp gì, vì nó
+chứng minh *con số không đổi*, chứ không chứng minh *con số đúng*.
+
+### Cách trả lời
+
+Payload miền `SCORE` mang hai cam kết, mỗi cái trả lời một nửa câu hỏi:
+
+| Trường | Trả lời |
+|---|---|
+| `evidenceHash` | **Chấm trên dữ liệu nào** — keccak của danh sách đã sắp xếp các leaf `ATTEND` đã dùng |
+| `rulesetHash` | **Chấm bằng quy tắc nào** — keccak byte thô của tệp quy tắc, neo riêng ở miền `RULESET` |
+
+Bốn bước một người ngoài làm được, **không bước nào cần máy chủ của trường**:
+
+1. có bản ghi điểm danh của mình kèm `nonce` ⇒ tính ra các leaf `ATTEND`;
+2. sắp xếp, băm ⇒ so với `evidenceHash` đã neo;
+3. tải tệp quy tắc công khai, băm nguyên văn ⇒ so với `rulesetHash` đã neo;
+4. chạy lại phép tính ⇒ phải ra đúng con số đã neo.
+
+### Đã kiểm chứng
+
+| Phép kiểm | Kết quả |
+|---|---|
+| `evidence_hash` của **cả 500** bản ghi tái tính được từ bản ghi điểm danh | ✅ `ScoringServiceDbTest.chamToanKhoa` |
+| Thứ tự đầu vào không ảnh hưởng kết quả | ✅ Java + JS |
+| Đổi / thêm / bớt một bản ghi ⇒ hash đổi | ✅ Java + JS |
+| Lá trùng bị từ chối (một bản ghi bị đếm hai lần) | ✅ Java + JS |
+| Danh sách rỗng hợp lệ, và khác hash của danh sách có phần tử | ✅ Java + JS |
+| Sửa **một khoảng trắng** trong tệp quy tắc ⇒ `rulesetHash` đổi | ✅ Java + JS |
+| Sửa tệp quy tắc sau khi công bố ⇒ nạp lại **bị từ chối** | ✅ |
+| Sửa `json_body` thẳng trong CSDL ⇒ **không neo được** | ✅ |
+
+### Khác biệt với EduCTX — nêu thẳng trong báo cáo
+
+EduCTX (Turkanović et al., IEEE Access 2018) neo **kết quả** — tín chỉ đã được cấp. Đề tài này
+neo thêm **đầu vào của phép tính ra kết quả**. Đó là khác biệt về *loại* bằng chứng, không phải
+về quy mô:
+
+- neo kết quả ⇒ chứng minh được *"con số này không bị sửa"*;
+- neo cả bằng chứng và bộ quy tắc ⇒ chứng minh được *"con số này là hệ quả đúng của những dữ
+  liệu đó và những quy tắc đó"*.
+
+### ⚠️ Hai giới hạn, nói trước khi bị hỏi
+
+1. **`evidence_hash` chứng minh "đã dùng đúng những bản ghi này", KHÔNG chứng minh "không bỏ
+   sót".** Nếu hệ thống lặng lẽ bỏ qua một bản ghi hợp lệ thì bằng chứng vẫn khớp với tập đã
+   dùng. Chống bỏ sót là việc của phép so số lượng, không phải của hàm băm.
+2. **Verifier tĩnh không chạy lại được phép tính.** Nó kiểm được *đúng dữ liệu* và *đúng quy
+   tắc*, nhưng bước 4 cần một bộ đánh giá SpEL — nằm ngoài ràng buộc "chỉ `ethers` +
+   `merkletreejs`" (`PROJECT.md` §4). `kiemDiem()` trong `verifier/src/score.mjs` **nói rõ
+   điều này trong kết quả trả về** thay vì để người dùng tưởng nó đã kiểm hết.

@@ -280,6 +280,78 @@
       }
     },
     {
+      "id": "score-payload-day-du",
+      "why": "LƯỢC ĐỒ SCORE THẬT — đúng 14 trường của ScorePayload.of(). Sinh viên có hoạt động: điểm C1/C3/C4 chấm từ dữ liệu, C2 mặc định 25, C5 mặc định 0. `evidenceHash` cam kết vào tập bản ghi điểm danh đã dùng; `rulesetHash` cam kết vào bộ quy tắc đã dùng. Đây là hợp đồng backend↔verifier.",
+      "domain": "SCORE",
+      "payload": {
+        "studentCode": "B21DCCN002",
+        "semester": "2026-1",
+        "rulesetVersion": "2026-1.v1",
+        "rulesetHash": "0x7c3d2e1f0a9b8c7d6e5f40312233445566778899aabbccddeeff001122334455",
+        "scoredAt": "2026-08-06T08:00:00Z",
+        "c1": 8,
+        "c2": 25,
+        "c3": 12,
+        "c4": 20,
+        "c5": 0,
+        "total": 65,
+        "classification": "KHA",
+        "evidenceHash": "0x3f2e1d0c9b8a79685746352413029f8e7d6c5b4a39281706f5e4d3c2b1a09876",
+        "nonce": "0x6d4b2a0f8e7c5a3918273645d2c1b0a9"
+      },
+      "expected": {
+        "domainBytes8": "0x53434f5245000000",
+        "jcs": "{\"c1\":8,\"c2\":25,\"c3\":12,\"c4\":20,\"c5\":0,\"classification\":\"KHA\",\"evidenceHash\":\"0x3f2e1d0c9b8a79685746352413029f8e7d6c5b4a39281706f5e4d3c2b1a09876\",\"nonce\":\"0x6d4b2a0f8e7c5a3918273645d2c1b0a9\",\"rulesetHash\":\"0x7c3d2e1f0a9b8c7d6e5f40312233445566778899aabbccddeeff001122334455\",\"rulesetVersion\":\"2026-1.v1\",\"scoredAt\":\"2026-08-06T08:00:00Z\",\"semester\":\"2026-1\",\"studentCode\":\"B21DCCN002\",\"total\":65}",
+        "preimageBytes": 404,
+        "leaf": "0xc312dec1d77166f92fa6ae60285208711e126d29bbb89ee91ee83e9e9c6be3bf"
+      }
+    },
+    {
+      "id": "score-payload-khong-hoat-dong",
+      "why": "Sinh viên KHÔNG tham gia hoạt động nào: C1/C3/C5 = 0, chỉ còn điểm mặc định C2 = 25 và điểm nền C4 = 15, tổng 40 — SÀN của bộ quy tắc này. `evidenceHash` là băm của danh sách RỖNG, vẫn là một cam kết kiểm được. classification = YEU.",
+      "domain": "SCORE",
+      "payload": {
+        "studentCode": "B21DCCN199",
+        "semester": "2026-1",
+        "rulesetVersion": "2026-1.v1",
+        "rulesetHash": "0x7c3d2e1f0a9b8c7d6e5f40312233445566778899aabbccddeeff001122334455",
+        "scoredAt": "2026-08-06T08:00:00Z",
+        "c1": 0,
+        "c2": 25,
+        "c3": 0,
+        "c4": 15,
+        "c5": 0,
+        "total": 40,
+        "classification": "YEU",
+        "evidenceHash": "0xb9c8d7e6f5a4938271605f4e3d2c1b0a99887766554433221100ffeeddccbbaa",
+        "nonce": "0x1f0e2d3c4b5a69788796a5b4c3d2e1f0"
+      },
+      "expected": {
+        "domainBytes8": "0x53434f5245000000",
+        "jcs": "{\"c1\":0,\"c2\":25,\"c3\":0,\"c4\":15,\"c5\":0,\"classification\":\"YEU\",\"evidenceHash\":\"0xb9c8d7e6f5a4938271605f4e3d2c1b0a99887766554433221100ffeeddccbbaa\",\"nonce\":\"0x1f0e2d3c4b5a69788796a5b4c3d2e1f0\",\"rulesetHash\":\"0x7c3d2e1f0a9b8c7d6e5f40312233445566778899aabbccddeeff001122334455\",\"rulesetVersion\":\"2026-1.v1\",\"scoredAt\":\"2026-08-06T08:00:00Z\",\"semester\":\"2026-1\",\"studentCode\":\"B21DCCN199\",\"total\":40}",
+        "preimageBytes": 403,
+        "leaf": "0x258939601848823ac90a7685cc2bcc7023517020caa1fa012c0ee1eb93e51378"
+      }
+    },
+    {
+      "id": "ruleset-payload-day-du",
+      "why": "LƯỢC ĐỒ RULESET THẬT — đúng 5 trường của RulesetPayload.of(). Miền nhỏ nhất nhưng bỏ nó thì miền SCORE mất một nửa ý nghĩa: điểm đã neo mà bộ quy tắc giải thích nó lại sửa được là bằng chứng nửa vời.",
+      "domain": "RULESET",
+      "payload": {
+        "version": "2026-1.v1",
+        "semester": "2026-1",
+        "rulesetHash": "0x7c3d2e1f0a9b8c7d6e5f40312233445566778899aabbccddeeff001122334455",
+        "effectiveFrom": "2026-08-06T07:30:00Z",
+        "nonce": "0xc4b3a2918077665544332211f0e1d2c3"
+      },
+      "expected": {
+        "domainBytes8": "0x52554c4553455400",
+        "jcs": "{\"effectiveFrom\":\"2026-08-06T07:30:00Z\",\"nonce\":\"0xc4b3a2918077665544332211f0e1d2c3\",\"rulesetHash\":\"0x7c3d2e1f0a9b8c7d6e5f40312233445566778899aabbccddeeff001122334455\",\"semester\":\"2026-1\",\"version\":\"2026-1.v1\"}",
+        "preimageBytes": 219,
+        "leaf": "0x5125ea0ea215facdd5225e6fd75df251a49c00f4ff225d8d69a27ac9fc8aa2c6"
+      }
+    },
+    {
       "id": "ruleset-sap-xep-khoa",
       "why": "Tra tấn thứ tự khóa theo ĐƠN VỊ MÃ UTF-16: chữ số < chữ hoa < chữ thường < ký tự có dấu. Java String.compareTo và JS Array.sort() đều dùng đúng thứ tự này.",
       "domain": "RULESET",
