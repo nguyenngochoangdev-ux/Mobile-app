@@ -116,7 +116,7 @@ Mấu chốt: **`localhost` là secure context.** Trình duyệt đối xử v�
 Điện thoại cùng Wi-Fi mở `http://<IP-máy-tính>:8080` là thấy giao diện ngay. Nhưng vì là
 `http://`:
 
-- ❌ **không cài được** (không có mục "Cài đặt ứng dụng")
+- ❌ **không cài được** (bảng chọn chỉ mời "Tạo lối tắt", không có "Cài đặt")
 - ❌ **camera không bật được** → không quét QR được
 
 Chỉ dùng để trả lời câu "điện thoại có chạm được vào máy chủ không". Nếu bước này hỏng thì
@@ -139,9 +139,16 @@ Nằm ngoài phạm vi 8 tuần; ghi vào hướng phát triển.
 1. Mở địa chỉ **HTTPS** bằng **Chrome** trên Android (Firefox/Samsung Internet có cài được
    nhưng không sinh WebAPK thật).
 2. Đăng nhập một lần để chắc backend thông.
-3. Menu **⋮** → **Cài đặt ứng dụng** *(hoặc "Thêm vào Màn hình chính")*.
-   - Nếu **không thấy mục đó**, xem phần gỡ rối bên dưới.
-4. Biểu tượng xuất hiện trên màn hình chính. Mở từ đó — **không còn thanh URL**.
+3. Menu **⋮** → **Cài đặt và tạo lối tắt**.
+4. Chrome mở một bảng trượt lên với hai lựa chọn. Chọn **Cài đặt**, đừng chọn "Tạo lối tắt".
+   - Nếu bảng đó **chỉ có "Tạo lối tắt"**, trang chưa đủ điều kiện cài. Xem phần gỡ rối.
+5. Biểu tượng xuất hiện trên màn hình chính. Mở từ đó — **không còn thanh URL**.
+
+> **Tên mục đã đổi, đừng tìm chữ "Cài đặt ứng dụng".** Chrome bản mới gộp hai mục cũ là "Cài
+> đặt ứng dụng" và "Thêm vào Màn hình chính" thành một mục duy nhất tên **"Cài đặt và tạo lối
+> tắt"**. Chữ "Cài đặt ứng dụng" không còn nằm trong menu nữa. Phải bấm vào mục gộp rồi mới
+> thấy lựa chọn cài thật. Đã mất một buổi vì chuyện này: nhìn menu không thấy tên cũ nên tưởng
+> trang hỏng, trong khi mục cài vẫn nằm đó.
 
 ### Kiểm tra đã cài đúng chưa
 
@@ -155,7 +162,8 @@ Nằm ngoài phạm vi 8 tuần; ghi vào hướng phát triển.
 
 | Triệu chứng | Nguyên nhân gần như chắc chắn |
 |---|---|
-| Chỉ có "Thêm lối tắt", **không có** "Cài đặt ứng dụng" | Trang chạy `http://`. Hoặc manifest sai kiểu MIME — xem mục dưới |
+| Menu **không có** mục "Cài đặt ứng dụng" | Không phải lỗi. Tên mục đã đổi thành **"Cài đặt và tạo lối tắt"** — xem mục dưới |
+| Bấm vào mục đó nhưng bảng chọn **chỉ có "Tạo lối tắt"** | Trang chạy `http://`. Hoặc manifest sai kiểu MIME — xem mục dưới |
 | Đã sửa xong mà điện thoại **vẫn** chỉ mời tạo lối tắt | Chrome còn giữ bản cũ trong bộ nhớ đệm. Phải xóa dữ liệu trang, xem mục dưới |
 | Cài được nhưng **đăng nhập lỗi mạng** | App và API khác origin → mixed content. Phải chạy qua bước 1 |
 | Mở app ra **trắng trang** | Đường hầm đã tắt, hoặc backend không chạy |
@@ -163,10 +171,27 @@ Nằm ngoài phạm vi 8 tuần; ghi vào hướng phát triển.
 | Camera không bật được | Chrome chỉ cho camera trên **HTTPS**. Cũng phải cấp quyền cho trang |
 | Sửa giao diện xong app không đổi | Service worker giữ bản cũ. Chạy lại `build-pwa.ps1`, rồi đóng hẳn app và mở lại |
 
+### Trước hết: Chrome đã đổi tên mục cài đặt
+
+Nếu bạn mở menu **⋮** và không thấy chữ "Cài đặt ứng dụng" thì **chưa có gì hỏng cả**. Chrome
+bản mới bỏ hẳn chữ đó. Hai mục cũ giờ gộp làm một, tên là **"Cài đặt và tạo lối tắt"**, nằm gần
+cuối menu ngay trên "Trang cho máy tính".
+
+Bấm vào nó, Chrome mở một bảng trượt từ dưới lên:
+
+| Lựa chọn | Kết quả |
+|---|---|
+| **Cài đặt** | WebAPK thật. Biểu tượng vào ngăn ứng dụng, mở ra **không có** thanh địa chỉ |
+| **Tạo lối tắt** | Chỉ là phím tắt. Mở ra **vẫn còn** thanh địa chỉ |
+
+Chrome chỉ hiện lựa chọn **Cài đặt** khi trang đủ điều kiện. Vậy nên phép thử đúng là *bấm vào
+mục đó rồi xem bảng chọn có gì*, chứ không phải đọc lướt tên các mục trong menu. Chừng nào bảng
+chọn còn thiếu "Cài đặt" thì mới đi tìm nguyên nhân ở các mục bên dưới.
+
 ### Bẫy đã sập thật: manifest sai kiểu MIME
 
-Triệu chứng: menu Chrome trên Android **chỉ có "Thêm lối tắt"**, không có "Cài đặt ứng dụng".
-Lối tắt vẫn mở được app nhưng **còn thanh địa chỉ** — nó không phải WebAPK.
+Triệu chứng: bảng chọn **chỉ mời "Tạo lối tắt"**, không có "Cài đặt". Lối tắt vẫn mở được app
+nhưng **còn thanh địa chỉ** — nó không phải WebAPK.
 
 Nguyên nhân: bảng MIME mặc định của Tomcat không có đuôi `.webmanifest`, nên manifest bị trả
 về `application/octet-stream`. Spring Security lại gắn `X-Content-Type-Options: nosniff` vào

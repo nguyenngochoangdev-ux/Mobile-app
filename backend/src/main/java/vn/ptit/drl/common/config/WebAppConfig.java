@@ -58,8 +58,9 @@ public class WebAppConfig implements WebMvcConfigurer {
    * đoán lại kiểu và bỏ luôn manifest.
    *
    * <p>Hậu quả rất khó lần ra: trang tải bình thường, DevTools không báo lỗi đỏ, nhưng Chrome
-   * trên Android coi trang là <b>không đủ điều kiện cài</b>. Menu mất mục "Cài đặt ứng dụng" và
-   * chỉ còn "Thêm lối tắt" — tức là một shortcut mở trong trình duyệt, không phải WebAPK.
+   * trên Android coi trang là <b>không đủ điều kiện cài</b>. Trong menu, mục "Cài đặt và tạo lối
+   * tắt" vẫn còn, nhưng bấm vào thì bảng chọn chỉ mời "Tạo lối tắt" — một shortcut mở trong
+   * trình duyệt, không phải WebAPK. Lựa chọn "Cài đặt" biến mất.
    *
    * <p>Kiểu đúng theo chuẩn W3C Web App Manifest là {@code application/manifest+json}.
    *

@@ -15,8 +15,9 @@ import org.springframework.boot.web.server.MimeMappings;
  * Security lại gắn {@code X-Content-Type-Options: nosniff} vào mọi phản hồi, nên Chrome không
  * được phép đoán lại kiểu và bỏ luôn manifest.
  *
- * <p>Triệu chứng cực kỳ khó lần: trang tải bình thường, không có lỗi đỏ nào, chỉ có menu Chrome
- * mất mục "Cài đặt ứng dụng" và thay bằng "Thêm lối tắt".
+ * <p>Triệu chứng cực kỳ khó lần: trang tải bình thường, không có lỗi đỏ nào. Chỉ khác đúng một
+ * chỗ, mà chỗ đó phải bấm vào mới thấy. Menu Chrome vẫn có mục "Cài đặt và tạo lối tắt", nhưng
+ * bảng chọn hiện ra chỉ mời "Tạo lối tắt", mất lựa chọn "Cài đặt".
  *
  * <p>Test kiểm thẳng bảng MIME chứ không gọi HTTP. Tệp {@code static/manifest.webmanifest} là sản
  * phẩm của {@code scripts/build-pwa.ps1} và đã bị gitignore, nên test đọc tệp sẽ đỏ trên bản
