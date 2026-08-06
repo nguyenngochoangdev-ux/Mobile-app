@@ -440,20 +440,31 @@ Nhớ: **nonce trong payload** (§2.3), **status index ngẫu nhiên** (§2.3).
 > Đã chạy thật trên **RPC công cộng không key**: cả ba `eth_call` (`getRoot`,
 > `isActiveIssuer`, `isRevoked`) trả lời được từ Amoy.
 >
-> ⚠️ **Mốc chỉ coi là đạt hoàn toàn khi chạy được trên một credential ĐÃ NEO THẬT.** Hiện
-> đường đi đã kiểm chứng đầy đủ nhưng chưa có lô `CRED` nào trên Amoy, và khóa issuer chưa
-> đăng ký trong `IssuerRegistry`. Hai việc đó là **giao dịch ghi lên chuỗi, không hoàn tác
-> được** — xem "Còn lại" bên dưới.
+> ## ✅ MỐC TUẦN 4 ĐÃ ĐÓNG — 2026-08-06
+>
+> Credential #81 của **B21DCCN002**, cấp từ **3 bản ghi điểm danh thật** (15 điểm, 3/3 xác
+> minh bằng máy), neo lên Amoy, và **xác minh được 6/6 bằng script Node không chạm backend**.
+>
+> | Bước | Giao dịch | Gas |
+> |---|---|---|
+> | Đăng ký issuer vào `IssuerRegistry` | [`0x32c420…5df6`](https://amoy.polygonscan.com/tx/0x32c420366f65c2e67473cbbdb1a3ffd97009aafe89b794eea61ea95ad82a5df6) | 133.590 |
+> | Neo lô `CRED` `2026080601` | [`0x0cbaca…e4d6`](https://amoy.polygonscan.com/tx/0x0cbacae962f23e9c56cc8f87a2d46e7f358bcc1ec3c8168aa4aaff032190e4d6) | 81.944 |
+>
+> Tổng ≈ **0,0089 POL**; ví còn 0,2327 POL. Sửa `totalPoints` 15 → 95 trong bundle làm **ba
+> lớp độc lập cùng đỏ** (leaf · chữ ký · Merkle proof). Số liệu đầy đủ:
+> `docs/measurements.md` §11.7.
+>
+> **Bốn hạn chế đã ghi vào §11.7, phải nói ra khi bảo vệ:** lô `CRED` chỉ có **1 lá** nên
+> proof rỗng (bước Merkle là trường hợp biên) · khóa issuer **trùng khóa neo** · chưa lọc
+> theo học kỳ · `StatusList` chưa nối dây.
 >
 > ❌ **Còn lại của tuần 4, theo thứ tự nên làm:**
-> 1. **Chạy thật một vòng trên Amoy** — đăng ký issuer vào `IssuerRegistry`, cấp một
->    credential, neo lô `CRED`, rồi verify bundle của nó. Đây là thứ biến mốc tuần 4 từ
->    "đường đi đã kiểm chứng" thành "đã chạy". Hai giao dịch ghi, **không hoàn tác được**.
-> 2. **Nối dây `StatusList`** — `revoked_at`/`revoke_tx_hash` đã có cột, chưa có luồng gọi
+> 1. **Nối dây `StatusList`** — `revoked_at`/`revoke_tx_hash` đã có cột, chưa có luồng gọi
 >    `setRevoked()`. Không có nó thì `statusListIndex` trong payload chỉ tay vào một bit
 >    không ai bật bao giờ, và phép kiểm thu hồi của verifier luôn trả "còn hiệu lực".
-> 3. **Hash chain `audit_logs`** — miền `AUDIT` mới có cột `nonce`/`leaf_hash` (V2), chưa có
+> 2. **Hash chain `audit_logs`** — miền `AUDIT` mới có cột `nonce`/`leaf_hash` (V2), chưa có
 >    `AnchorSource`. Đây là thứ hiện thực **luận điểm 1** (chống sửa hồi tố), hiện chưa có gì.
+>    Hai dòng threat model còn treo `☐ tuần 4` đều đợi cái này.
 >
 > ⚠️ **Nợ kỹ thuật phát hiện khi làm phần này:** `attendances` **không chụp ảnh** MSSV —
 > `AttendancePayload` đọc qua khóa ngoại. Đổi MSSV làm hỏng mọi proof điểm danh đã neo.

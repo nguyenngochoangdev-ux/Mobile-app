@@ -23,7 +23,8 @@ với Amoy; **chi phí POL thì không** — nó còn phụ thuộc giá gas lú
 
 | N (số leaf) | Gas tổng | Gas/bản ghi | Môi trường | Ngày đo | Tx hash |
 |---|---|---|---|---|---|
-| **4 (lô thật đầu tiên)** | **81.968** | **20.492** | **Amoy** | **2026-08-06** | [`0x1d1ebe…db75`](https://amoy.polygonscan.com/tx/0x1d1ebe0d84320b669fe15243eee4a6a6d58b736cdd204db19ccbc08fa747db75) |
+| **4 — lô `ATTEND` đầu tiên** | **81.968** | **20.492** | **Amoy** | **2026-08-06** | [`0x1d1ebe…db75`](https://amoy.polygonscan.com/tx/0x1d1ebe0d84320b669fe15243eee4a6a6d58b736cdd204db19ccbc08fa747db75) |
+| **1 — lô `CRED` đầu tiên** | **81.944** | **81.944** | **Amoy** | **2026-08-06** | [`0x0cbaca…e4d6`](https://amoy.polygonscan.com/tx/0x0cbacae962f23e9c56cc8f87a2d46e7f358bcc1ec3c8168aa4aaff032190e4d6) |
 | 1 (ghi từng bản) | 54.752 | 54.752 | Hardhat local | 2026-08-05 | — |
 | 10 | 54.752 | 5.475,2 | Hardhat local | 2026-08-05 | — |
 | 100 | 54.752 | 547,5 | Hardhat local | 2026-08-05 | — |
@@ -47,7 +48,13 @@ trả trọn một giao dịch. Gộp lô 5.000 làm chi phí mỗi bản ghi gi
 |---|---:|---:|
 | Hardhat EDR (`npm run gas`) | 71.852 | 54.752 |
 | Hardhat node cục bộ, gọi qua web3j | 71.888 | 54.788 |
-| **Amoy thật** | **81.968** | *(chưa đo — lô thứ hai chưa neo)* |
+| **Amoy thật** | **81.968** (`ATTEND`) · **81.944** (`CRED`) | *(chưa đo — chưa miền nào có lô thứ hai)* |
+
+> **Hai lô đầu của hai miền khác nhau lệch nhau đúng 24 gas** (81.968 vs 81.944), dù một lô
+> có 4 lá còn lô kia 1 lá. Đây là bằng chứng trực tiếp cho phát biểu ở trên: **chi phí neo
+> không phụ thuộc số bản ghi trong lô**. Chênh 24 gas đến từ độ dài calldata của tên miền —
+> `ATTEND` 6 ký tự, `CRED` 4 ký tự, mà `bytes8` đệm `0x00` bên phải, và byte `0x00` trong
+> calldata rẻ hơn byte khác 0 (4 gas so với 16 gas): 2 byte × 12 = 24. Số khớp chính xác.
 
 Hai dòng đầu lệch nhau 36 gas do độ dài calldata của `batchId` khác nhau; điều đó xác nhận
 đường đi qua web3j không thêm chi phí nào. Dòng Amoy cao hơn ~10.000 gas so với local — cùng
@@ -109,9 +116,11 @@ Cột "Thiết kế đề xuất" dùng **ba mức**, không dùng nhị phân c
 | Đổi thiết bị để quét hộ lâu dài | Không chặn | Phải qua cán bộ duyệt, có nhật ký, thiết bị cũ bị thu hồi | Tăng chi phí | ✅ API |
 | **Đưa ảnh chụp QR của bạn cho cán bộ quét hộ** (luồng đảo chiều) | Không chặn | **Không ngăn được** — mã đúng, chữ ký đúng. Chỉ mắt cán bộ chặn được | Tăng chi phí | ✅ API |
 | **Sửa `studentId` trong mã QR của mình để mạo danh** | Không chặn | Chữ ký hỏng ngay, bị từ chối | Ngăn | ✅ API |
-| Giả mạo chứng chỉ khi xin việc | Phải xin xác nhận từ trường | Verify độc lập, không cần trường | Ngăn | ☐ tuần 6 |
+| Giả mạo chứng chỉ khi xin việc | Phải xin xác nhận từ trường | Verify độc lập, không cần trường | Ngăn | ✅ **bundle thật** |
 | Chối bỏ dữ liệu khi khiếu nại | Phụ thuộc nhật ký nội bộ | Có bằng chứng thời điểm on-chain | Phát hiện | ☐ tuần 4 |
-| Máy chủ trường ngừng hoạt động | Mất khả năng xác minh | Verifier vẫn chạy | Ngăn | ☐ tuần 6 |
+| Máy chủ trường ngừng hoạt động | Mất khả năng xác minh | Verifier vẫn chạy | Ngăn | ✅ **bundle thật** |
+| **Sửa nội dung credential trong tệp bundle** | Không áp dụng | Ba lớp độc lập cùng bắt: leaf · chữ ký · Merkle proof | Ngăn | ✅ **bundle thật** |
+| **Trỏ bundle sang contract giả của kẻ tấn công** | Không áp dụng | Verifier dùng địa chỉ tin cậy trong mã nguồn của chính nó, không lấy từ bundle | Ngăn | ✅ test |
 | **Cán bộ nhập liệu sai từ đầu** | **Không chặn** | **Không chặn (vấn đề oracle)** | **Không** | — |
 
 ### Phát biểu đúng mức về device binding
@@ -340,6 +349,7 @@ Diễn giải chuẩn: >68 là trên trung bình, >80 là tốt.
 | 2026-08-05 | #2 — thu hồi bitmap vs mapping (Hardhat local) | Bitmap rẻ hơn **8,47×** khi chỉ số gom cụm nhưng **1,00×** khi rải đều. Kỳ vọng ban đầu sai; đề tài cấp chỉ số ngẫu nhiên nên rơi vào trường hợp xấu nhất | Hoàng |
 | 2026-08-05 | Deploy 3 contract lên Amoy + verify | 1.837.575 gas ≈ 0,0551 POL. Verify được trên cả PolygonScan lẫn Sourcify. Amoy tốn hơn local hằng số 6.720 gas/contract | Hoàng |
 | 2026-08-06 | **Giao dịch `anchor()` thật đầu tiên trên Amoy** | Lô `ATTEND` 2026080501, 4 bản ghi điểm danh thật, 81.968 gas. Proof lấy từ CSDL xác minh được về root đọc từ RPC công cộng **không key**. Đóng cổng kiểm soát cuối tuần 3 | Hoàng |
+| 2026-08-06 | **Vòng khép kín CREDENTIAL — đóng mốc tuần 4** | Đăng ký issuer (133.590 gas) + neo lô `CRED` 2026080601 (81.944 gas) ≈ 0,0089 POL. Bundle 1.529 byte **verify 6/6** bằng script Node, ba `eth_call` trên RPC công cộng không key, không chạm backend. Sửa `totalPoints` 15→95 làm **ba lớp độc lập cùng đỏ**. Hạn chế: lô chỉ 1 lá nên proof rỗng. Xem §11.7 | Hoàng |
 
 ---
 
@@ -383,3 +393,84 @@ công cộng (`PROJECT.md` §2.2) sẽ buộc nó phân trang hàng trăm lần 
 - **4 bản ghi là lô nhỏ.** Cây Merkle 4 lá có 2 tầng; nó **không** chứng minh được hành vi ở
   quy mô lớn. Phần đó đã kiểm riêng: lô 9 lá (số lẻ, có nút bị đẩy lên) trên chuỗi cục bộ, và
   vector `n100-quy-mo-that`.
+
+---
+
+## 11.7. Vòng khép kín CREDENTIAL — 2026-08-06
+
+**Mốc tuần 4 đã đóng.** Một credential thật, cấp từ dữ liệu điểm danh thật, neo lên Amoy, và
+**xác minh được đầy đủ bằng script Node không chạm backend một dòng nào**.
+
+Khác §11.6 ở chỗ nào: §11.6 lấy proof **trực tiếp từ CSDL**, tức là vẫn cần máy chủ của
+trường. Vòng này chạy trên một **tệp bundle** mà sinh viên cầm đi — đúng thứ nhà tuyển dụng
+nhận được.
+
+### Chuỗi mắt xích
+
+| # | Bước | Bằng chứng |
+|---|---|---|
+| 1 | 3 bản ghi điểm danh thật của B21DCCN002, 15 điểm, **3/3 xác minh bằng máy** | tuần 2 |
+| 2 | → đăng ký ví issuer vào `IssuerRegistry` | [`0x32c420…5df6`](https://amoy.polygonscan.com/tx/0x32c420366f65c2e67473cbbdb1a3ffd97009aafe89b794eea61ea95ad82a5df6) · 133.590 gas |
+| 3 | → cấp credential #81, ký secp256k1 trên leaf | `statusListIndex` 953016 (ngẫu nhiên) |
+| 4 | → neo lô `CRED` `2026080601` | [`0x0cbaca…e4d6`](https://amoy.polygonscan.com/tx/0x0cbacae962f23e9c56cc8f87a2d46e7f358bcc1ec3c8168aa4aaff032190e4d6) · 81.944 gas |
+| 5 | → xuất bundle JSON, 1.529 byte | `scripts\credential-now.ps1 B21DCCN002 -Bundle` |
+| 6 | → **6/6 phép kiểm xanh**, ba `eth_call` trên RPC công cộng **không key** | `node scripts/verify-bundle.mjs` · mã thoát 0 |
+| 7 | → sửa `totalPoints` 15 → 95 | **3 phép kiểm độc lập cùng đỏ**, mã thoát 1 |
+
+**Tái lập:**
+
+```
+cd contracts && npm run register-issuer:amoy      # một lần cho mỗi ví issuer
+.\scripts\credential-now.ps1 B21DCCN002           # cấp (chưa chạm chuỗi)
+.\scripts\anchor-now.ps1                          # neo — KHÔNG HOÀN TÁC
+.\scripts\credential-now.ps1 B21DCCN002 -Bundle   # xuất bundle
+cd verifier && node scripts/verify-bundle.mjs ../bundles/B21DCCN002-2026-1.json
+```
+
+### Bước 7 là bước đáng trình bày nhất
+
+Sửa một con số trong bundle làm **ba lớp bảo vệ độc lập** cùng báo đỏ:
+
+| Lớp | Vì sao đỏ |
+|---|---|
+| Leaf hash | payload đổi ⇒ keccak đổi |
+| Chữ ký issuer | phục hồi ra địa chỉ khác `issuerAddress` đã neo |
+| Merkle proof | leaf mới không dẫn về root trên chuỗi |
+
+Ba lớp này **không phụ thuộc nhau**: phá được một vẫn vướng hai cái còn lại. Đây là chỗ nên
+demo trực tiếp trước hội đồng — nó trực quan hơn mọi biểu đồ gas.
+
+Hai phép kiểm còn lại (`IssuerRegistry`, `StatusList`) **vẫn xanh** ở bước 7, và đó là hành vi
+đúng: ví cấp vẫn có quyền, credential vẫn chưa bị thu hồi. Việc phân biệt được *"tệp bị sửa"*
+với *"credential bị thu hồi"* chính là lý do verifier trả về **danh sách phép kiểm** thay vì
+một giá trị đúng/sai.
+
+### ⚠️ Bốn hạn chế phải nói ra, đừng để hội đồng tự tìm
+
+1. **Lô `CRED` chỉ có 1 lá**, nên `root == leaf` và **proof rỗng — bước Merkle là trường hợp
+   biên, không chứng minh gì về cây**. Lý do: chỉ 2 sinh viên trong CSDL có bản ghi điểm danh,
+   và cấp được đúng 1 credential ở thời điểm neo. Hành vi cây nhiều lá đã có bằng chứng ở chỗ
+   khác: lô `ATTEND` 4 lá trên chuỗi (§11.6, 4/4 proof) và fixture 4 lá (`bundle-fixture.json`).
+   **Muốn có lô `CRED` nhiều lá thì cần thêm dữ liệu điểm danh thật** — chính là buổi demo 5
+   người còn nợ.
+2. **Khóa issuer TRÙNG khóa neo** (`0xf32728…F529F`). Quyết định của người làm, có ý thức.
+   Hệ quả: một lần lộ khóa vừa cấp được credential giả vừa neo được root rác. Tách hai khóa
+   là việc nên làm trước khi có người dùng thật; `IssuerSigner` đã cảnh báo lúc khởi động.
+3. **Chưa lọc theo học kỳ.** `events` không có cột học kỳ/năm học, nên `activityCount` và
+   `totalPoints` đếm **toàn bộ** bản ghi điểm danh của sinh viên. Với dữ liệu demo một đợt thì
+   đúng; nhiều kỳ thì gộp. Cố ý không tự chế mốc ngày để chia kỳ — một khoảng ngày đoán mò sẽ
+   thành con số sai trong credential **đã ký và đã neo**, thứ không sửa được.
+4. **`StatusList` chưa nối dây.** Phép kiểm thu hồi đọc bit thật trên chuỗi, nhưng chưa có
+   luồng nào **bật** bit đó. Nên hiện tại nó luôn trả "còn hiệu lực" — đúng, nhưng chưa chứng
+   minh được cơ chế thu hồi hoạt động.
+
+### Chi phí thật của cả vòng
+
+| Khoản | Gas | Giá gas | POL |
+|---|---:|---:|---:|
+| `registerIssuer` (một lần / ví) | 133.590 | 30 gwei | 0,0040 |
+| `anchor` lô `CRED` | 81.944 | 60 gwei | 0,0049 |
+| **Cộng** | **215.534** | | **≈ 0,0089** |
+
+Ví còn **0,2327 POL** sau cả hai giao dịch (trước đó 0,2417). `registerIssuer` là chi phí
+**một lần cho mỗi đơn vị cấp phát**, không lặp lại theo số credential.

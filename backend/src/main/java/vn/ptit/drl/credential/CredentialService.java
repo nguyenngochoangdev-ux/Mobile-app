@@ -225,6 +225,11 @@ public class CredentialService {
     return leaf;
   }
 
+  /** Địa chỉ ví đang dùng để ký — {@code 0x} + 40 hex chữ thường. */
+  public String issuerAddress() {
+    return requireSigner().address();
+  }
+
   private IssuerSigner requireSigner() {
     IssuerSigner signer = signerProvider.getIfAvailable();
     if (signer == null) {
