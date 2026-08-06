@@ -140,6 +140,12 @@ public class ScoringService {
     return phanTich(r.getJsonBody());
   }
 
+  /** Bộ quy tắc mới nhất còn hiệu lực của một học kỳ. */
+  @Transactional(readOnly = true)
+  public java.util.Optional<Ruleset> rulesetCuaHocKy(String semester) {
+    return rulesets.findFirstBySemesterOrderByEffectiveFromDesc(semester);
+  }
+
   // ------------------------------------------------------------------ chấm
 
   /**

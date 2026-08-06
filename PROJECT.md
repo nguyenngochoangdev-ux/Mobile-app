@@ -574,13 +574,28 @@ Hoàn thiện 3 luồng PWA · verifier tĩnh · deploy.
 > `dist/` 1.075 KB, phụ thuộc lúc chạy **chỉ `ethers`**, mở bằng bất kỳ máy chủ tĩnh nào.
 > Chi tiết + ba lỗi bắt được khi dựng: `docs/measurements.md` §11.10.
 >
+> ## ✅ TRANG SINH VIÊN XONG — 2026-08-07
+>
+> `/sv/diem` và `/sv/chung-nhan`, cộng `ScoringController`. Đã chạy thử trong trình duyệt với
+> dữ liệu thật: B21DCCN002 · 54/100 · Trung bình · C1 8/20 · C2 25/25 · C3 6/20 · C4 15/25 ·
+> C5 0/10 — số khớp đúng bộ quy tắc và dữ liệu điểm danh.
+>
+> **Trang điểm cố ý không chỉ hiện con số.** Nó in cả `evidenceHash`, `rulesetHash`, trạng
+> thái neo, và một dòng cảnh báo *"50/100 chấm từ dữ liệu; 40/100 là điểm mặc định"* lấy
+> thẳng từ bộ quy tắc. Giấu chuyện đó đi là để sinh viên tin một con số mà chính hệ thống
+> không đo được.
+>
+> Trang chứng nhận có nút **Tải bundle** — đường duy nhất để bằng chứng ra khỏi hệ thống.
+>
+> Đã thêm `operationId` tường minh cho hai controller: sinh lại client làm `DevicesService
+> .revoke` biến thành `revoke1` (trùng tên với `CredentialController.revoke`), làm hỏng một
+> trang đã chạy được. Sửa gốc thay vì chạy theo tên sinh ra.
+>
 > ❌ **Còn lại của tuần 6:**
-> 1. **Trang credential + điểm cho PWA sinh viên** — xem credential, tải bundle, xem điểm kèm
->    `evidence_hash`. Thiếu nó thì luồng end-to-end đứt ở khúc giữa: sinh viên không có cách
->    nào lấy tệp bundle ra khỏi hệ thống bằng giao diện.
-> 2. **Trang cấp credential + chạy chấm cho cán bộ.**
-> 3. **Quay video end-to-end** — người dùng làm, không code hộ được.
-> 4. Deploy verifier lên GitHub Pages / Vercel.
+> 1. **Trang cấp credential + chạy chấm cho cán bộ** — hiện chỉ gọi được qua API.
+> 2. **Quay video end-to-end** — người dùng làm, không code hộ được.
+> 3. Deploy verifier lên GitHub Pages / Vercel.
+> 4. Neo lô `SCORE`/`RULESET` thật (giao dịch ghi).
 
 ### Tuần 7 — Đo đạc + báo cáo (KHÓA CỨNG)
 Bảng gas · threat model · benchmark thời gian · khảo sát SUS nếu kịp · bản nháp báo cáo hoàn chỉnh.

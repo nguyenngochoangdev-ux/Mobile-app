@@ -67,7 +67,7 @@ public class CredentialController {
   @PostMapping
   @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
   @ResponseStatus(HttpStatus.CREATED)
-  @Operation(summary = "Cấp credential cho một sinh viên",
+  @Operation(operationId = "issueCredential", summary = "Cấp credential cho một sinh viên",
       description = """
           Chụp ảnh MSSV/họ tên/địa chỉ ví, cấp status_list_index ngẫu nhiên, dựng payload
           chuẩn tắc, tính leaf hash và ký bằng khóa của tổ chức. Credential được neo ở lần
@@ -105,7 +105,7 @@ public class CredentialController {
 
   @GetMapping("/me")
   @PreAuthorize("hasRole('STUDENT')")
-  @Operation(summary = "Credential của chính mình")
+  @Operation(operationId = "myCredentials", summary = "Credential của chính mình")
   @Transactional(readOnly = true)
   public List<CredentialResponse> mine(@AuthenticationPrincipal AuthPrincipal principal) {
     return repository.findByStudentIdOrderByIssuedAtDesc(principal.studentId())
@@ -114,7 +114,7 @@ public class CredentialController {
 
   @GetMapping("/student/{studentId}")
   @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
-  @Operation(summary = "Credential của một sinh viên")
+  @Operation(operationId = "credentialsOfStudent", summary = "Credential của một sinh viên")
   @Transactional(readOnly = true)
   public List<CredentialResponse> ofStudent(@PathVariable Long studentId) {
     return repository.findByStudentIdOrderByIssuedAtDesc(studentId)
@@ -123,7 +123,7 @@ public class CredentialController {
 
   @GetMapping("/{id}")
   @PreAuthorize("hasAnyRole('STUDENT','STAFF','ADMIN')")
-  @Operation(summary = "Chi tiết một credential")
+  @Operation(operationId = "getCredential", summary = "Chi tiết một credential")
   @Transactional(readOnly = true)
   public CredentialResponse one(@PathVariable Long id,
                                 @AuthenticationPrincipal AuthPrincipal principal) {
@@ -146,7 +146,7 @@ public class CredentialController {
 
   @PostMapping("/{id}/revoke")
   @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
-  @Operation(summary = "Thu hồi credential (lật bit trên StatusList)",
+  @Operation(operationId = "revokeCredential", summary = "Thu hồi credential (lật bit trên StatusList)",
       description = """
           Gửi giao dịch `setRevoked` lên chuỗi TRƯỚC, ghi CSDL SAU — ngược thứ tự với job neo,
           và đó là chủ ý: nguồn sự thật về thu hồi là bit trên chuỗi, vì đó là thứ duy nhất
@@ -172,7 +172,7 @@ public class CredentialController {
 
   @GetMapping("/{id}/bundle")
   @PreAuthorize("hasAnyRole('STUDENT','STAFF','ADMIN')")
-  @Operation(summary = "Xuất bundle xác minh độc lập",
+  @Operation(operationId = "credentialBundle", summary = "Xuất bundle xác minh độc lập",
       description = """
           Tệp JSON tự chứa: payload đã ký, chữ ký, Merkle proof, batchId và địa chỉ contract.
           Xác minh bằng `cd verifier && node scripts/verify-bundle.mjs <tệp>` — script đó chỉ

@@ -19,7 +19,10 @@ import { messageOf } from '../LoginPage'
 
 const CACHE_KEY = 'drl.myQr'
 
-type Cached = { payload: string; slot: number; savedAt: number }
+// `slot` để nullable cho khớp lược đồ OpenAPI (`slot?: number`). Trước đây khai `number`
+// và gán thẳng `qr.slot` — TypeScript báo lỗi, nhưng luồng dev dùng Vite (không typecheck)
+// nên nó nằm im từ tuần 3. Khai đúng kiểu ở đây rẻ hơn là ép kiểu ở chỗ gán.
+type Cached = { payload: string; slot: number | null; savedAt: number }
 
 function readCache(): Cached | null {
   try {
@@ -60,7 +63,7 @@ export default function MyQrPage() {
         await draw(payload)
         localStorage.setItem(
           CACHE_KEY,
-          JSON.stringify({ payload, slot: qr.slot, savedAt: Date.now() } satisfies Cached),
+          JSON.stringify({ payload, slot: qr.slot ?? null, savedAt: Date.now() } satisfies Cached),
         )
 
         setSlot(qr.slot ?? null)

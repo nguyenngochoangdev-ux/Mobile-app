@@ -6,6 +6,8 @@ import StudentHome from './pages/student/StudentHome'
 import ScanPage from './pages/student/ScanPage'
 import MyQrPage from './pages/student/MyQrPage'
 import DevicesPage from './pages/student/DevicesPage'
+import CredentialsPage from './pages/student/CredentialsPage'
+import ScorePage from './pages/student/ScorePage'
 import StaffEvents from './pages/staff/StaffEvents'
 import StaffEventDetail from './pages/staff/StaffEventDetail'
 import StaffDeviceApproval from './pages/staff/StaffDeviceApproval'
@@ -53,6 +55,8 @@ export default function App() {
         <Route path="/sv/quet" element={<RequireRole roles={['STUDENT']}><ScanPage /></RequireRole>} />
         <Route path="/sv/ma-cua-toi" element={<RequireRole roles={['STUDENT']}><MyQrPage /></RequireRole>} />
         <Route path="/sv/thiet-bi" element={<RequireRole roles={['STUDENT']}><DevicesPage /></RequireRole>} />
+        <Route path="/sv/chung-nhan" element={<RequireRole roles={['STUDENT']}><CredentialsPage /></RequireRole>} />
+        <Route path="/sv/diem" element={<RequireRole roles={['STUDENT']}><ScorePage /></RequireRole>} />
 
         <Route path="/cb/su-kien" element={<RequireRole roles={['STAFF', 'ADMIN']}><StaffEvents /></RequireRole>} />
         <Route path="/cb/su-kien/:eventId" element={<RequireRole roles={['STAFF', 'ADMIN']}><StaffEventDetail /></RequireRole>} />

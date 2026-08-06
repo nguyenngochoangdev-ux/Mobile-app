@@ -1,6 +1,7 @@
 package vn.ptit.drl.scoring;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,6 +13,23 @@ import org.springframework.data.repository.query.Param;
 public interface ScoreRepository extends JpaRepository<Score, Long> {
 
   List<Score> findByRunIdOrderByIdAsc(Long runId);
+
+  /**
+   * Điểm mới nhất của một sinh viên ở một học kỳ.
+   *
+   * <p>Sắp theo {@code run.runAt} giảm dần chứ không theo {@code id}: chấm lại tạo lượt mới,
+   * và thứ sinh viên cần thấy là <b>lượt gần nhất</b>. Dùng {@code id} thì đúng trong hầu hết
+   * trường hợp nhưng sai ngay khi có hai lượt chạy xen kẽ.
+   */
+  Optional<Score> findFirstByStudentIdAndRunSemesterOrderByRunRunAtDesc(
+      Long studentId, String semester);
+
+  /** Điểm mới nhất của một sinh viên, mọi học kỳ, mới trước cũ sau. */
+  @Query("""
+      SELECT s FROM Score s WHERE s.student.id = :studentId
+       ORDER BY s.run.runAt DESC, s.id DESC
+      """)
+  List<Score> findByStudentNewestFirst(@Param("studentId") Long studentId, Pageable pageable);
 
   long countByRunId(Long runId);
 

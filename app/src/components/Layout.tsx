@@ -15,6 +15,8 @@ export default function Layout() {
           // không giấu trong menu con: sinh viên cần tới nó đúng lúc mất sóng hoặc camera
           // hỏng, tức là lúc không đủ kiên nhẫn đi tìm.
           { to: '/sv/ma-cua-toi', label: 'Mã của tôi' },
+          { to: '/sv/diem', label: 'Điểm RL' },
+          { to: '/sv/chung-nhan', label: 'Chứng nhận' },
           { to: '/sv/thiet-bi', label: 'Thiết bị' },
         ]
       : [
