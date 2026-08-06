@@ -12,7 +12,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Cách làm việc
 
-Trả lời bằng tiếng Việt.
+### Tiếng Việt phải đọc trôi
+
+Trả lời bằng tiếng Việt. Viết sao cho người đọc hiểu ngay lần đầu, không phải đọc lại.
+
+- **Câu ngắn, mỗi câu một ý.** Câu nào dài quá hai dòng thì tách đôi.
+- **Đừng bê cấu trúc tiếng Anh sang.** Tránh "thứ mà", "cái mà", "điều đó có nghĩa là",
+  "nó là thứ duy nhất...". Viết như người Việt nói chuyện.
+- **Nói rõ ai làm gì.** Tránh câu trống chủ ngữ.
+- **Hạn chế dấu gạch ngang và ngoặc đơn chèn giữa câu.** Chúng cắt mạch đọc. Tách thành câu
+  riêng thì dễ hiểu hơn.
+- **Thuật ngữ kỹ thuật giữ nguyên tiếng Anh** nếu dịch ra khó hiểu hơn: commit, deploy, hash,
+  proof, bundle. Đừng dịch nửa vời.
+- **Đọc lại trước khi gửi.** Chỗ nào phải đọc hai lần mới hiểu thì viết lại.
+
+Quy tắc này áp dụng cho câu trả lời trong chat. Chú thích trong mã nguồn và tài liệu cũng nên
+theo, nhưng ở đó được phép dài hơn khi cần giải thích lý do.
 
 ### Trung thực kỹ thuật
 - Dựa vào nguồn tin cậy trên internet, không trả lời từ trí nhớ với các câu hỏi về version, EOL, tình trạng bảo trì thư viện, hay quy định pháp luật. Tra rồi mới trả lời.
