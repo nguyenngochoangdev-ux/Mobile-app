@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -64,6 +65,29 @@ public class SecurityConfig {
                     // Spring forward sang /error; nếu đường này bị chặn thì mọi lỗi 500
                     // biến thành 401 và che mất nguyên nhân thật — cực kỳ khó debug.
                     .requestMatchers("/error").permitAll()
+
+                    // ---- PWA phục vụ từ chính backend (xem WebAppConfig) ----------------
+                    //
+                    // Một origin duy nhất cho app và API: điện thoại Android chỉ cài được
+                    // PWA khi trang chạy HTTPS, và nếu API nằm ở origin http:// khác thì
+                    // trình duyệt chặn thẳng vì mixed content.
+                    //
+                    // Mấy đường này KHÔNG có gì bí mật — chúng là mã nguồn giao diện, ai tải
+                    // app về cũng có. Dữ liệu thật vẫn nằm sau /api và vẫn cần JWT.
+                    //
+                    // `/*.png`, `/*.svg`, ... chứ không phải `/**`: một dấu sao kép ở đây sẽ
+                    // mở toàn bộ ứng dụng, và lỗi đó rất khó thấy khi đọc lướt.
+                    .requestMatchers(HttpMethod.GET,
+                            "/", "/index.html", "/manifest.webmanifest",
+                            "/assets/**", "/registerSW.js", "/sw.js", "/workbox-*.js",
+                            "/*.png", "/*.svg", "/*.ico", "/*.webmanifest")
+                        .permitAll()
+                    // Route phía client (React Router). Chúng trả về index.html, không trả
+                    // dữ liệu — chặn chúng chỉ làm app trắng trang khi người dùng tải lại.
+                    .requestMatchers(HttpMethod.GET, "/sv/**", "/cb/**", "/login",
+                            "/trinh-chieu/**")
+                        .permitAll()
+
                     .anyRequest().authenticated())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

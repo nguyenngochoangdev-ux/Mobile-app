@@ -1,0 +1,153 @@
+# Cài app lên Android bằng PWA
+
+**Không cần APK, không cần keystore, không cần CH Play.** Chrome trên Android cài PWA thành
+một ứng dụng thật (WebAPK): có biểu tượng trên màn hình chính, mở toàn màn hình, **không có
+thanh URL**.
+
+> **Vì sao không đóng gói APK.** Đã xét bằng `/scope-guard` hai lần (2026-08-05 và
+> 2026-08-07), kết luận không đổi: TWA **chính là Chrome đang render trang đó**, nên nó không
+> cho thêm gì so với PWA đã cài — kể cả hành vi camera. Đổi lại nó đòi Android SDK, keystore,
+> và một `assetlinks.json` khớp; sai một chỗ là Chrome tụt về Custom Tab **hiện thanh URL**,
+> mất đúng thứ duy nhất APK mang lại. Xem `PROJECT.md` §2.4.
+
+---
+
+## Điều kiện bắt buộc: HTTPS
+
+Chrome **chỉ cho cài** PWA khi trang chạy trên HTTPS (ngoại lệ duy nhất là `localhost`).
+Đây là rào cản thật, không phải thủ tục.
+
+Kèm theo là một cái bẫy ít người lường trước:
+
+> ⚠️ **Nếu app chạy HTTPS mà API chạy `http://192.168.x.x:8080`, trình duyệt CHẶN THẲNG mọi
+> lời gọi API** — lỗi *mixed content*. App cài được, mở lên đẹp, và **đăng nhập không nổi**.
+
+Dự án xử lý bằng cách cho **backend phục vụ luôn giao diện**: một origin duy nhất cho cả app
+lẫn API, nên không có mixed content và cũng không cần CORS.
+Xem `backend/.../common/config/WebAppConfig.java`.
+
+---
+
+## Bước 1 — Đưa giao diện vào backend
+
+```powershell
+.\scripts\build-pwa.ps1
+```
+
+Script build PWA rồi chép sang `backend/src/main/resources/static`. Chạy backend là có luôn
+giao diện:
+
+```powershell
+.\scripts\run-backend.ps1
+# mở http://localhost:8080
+```
+
+Kiểm nhanh trên máy tính trước khi đụng tới điện thoại:
+
+| Đường | Phải trả về |
+|---|---|
+| `/` | trang HTML |
+| `/sv/diem` | **cùng** HTML đó (fallback cho React Router) |
+| `/manifest.webmanifest` | JSON manifest |
+| `/sw.js` | service worker |
+| `/api/scoring/me` | `401` khi chưa đăng nhập |
+
+> Lúc **phát triển** vẫn dùng `npx vite` với proxy như cũ. Bước này chỉ cần khi muốn chạy
+> thật trên điện thoại.
+
+---
+
+## Bước 2 — Đưa lên HTTPS
+
+Chọn **một** trong ba cách. Cách A là nhanh nhất cho buổi demo.
+
+### A. Đường hầm tạm — cho demo, 2 phút
+
+Máy tính vẫn chạy backend; đường hầm cho nó một địa chỉ HTTPS công khai.
+
+```powershell
+# Cần tài khoản Cloudflare (miễn phí) hoặc dùng bản dùng thử không cần đăng nhập
+cloudflared tunnel --url http://localhost:8080
+```
+
+In ra một địa chỉ dạng `https://<ngẫu-nhiên>.trycloudflare.com`. Mở địa chỉ đó **bằng Chrome
+trên điện thoại**.
+
+| | |
+|---|---|
+| **Được** | HTTPS thật, cài được ngay, không cần deploy gì |
+| **Mất** | Địa chỉ đổi mỗi lần chạy lại → app đã cài **trỏ vào địa chỉ chết**. Máy tính phải bật |
+
+> **Cho buổi bảo vệ:** mở đường hầm **trước** buổi, cài app lên điện thoại demo, và **đừng
+> tắt terminal**. Tắt là app trắng trang.
+
+### B. Cùng mạng LAN + chứng chỉ tự ký — không khuyến nghị
+
+Chrome coi chứng chỉ tự ký là không hợp lệ và **từ chối cài PWA**, kể cả khi bấm bỏ qua cảnh
+báo. Chỉ dùng được để xem thử, không cài được. Ghi ra đây để khỏi mất thời gian thử.
+
+### C. Deploy thật — bền, cần thêm việc
+
+Backend + MySQL lên một máy chủ có tên miền và chứng chỉ (Railway, Render, Fly.io, hoặc VPS +
+Caddy tự lấy Let's Encrypt). Đây là cách duy nhất để app sống độc lập với máy tính cá nhân.
+
+Nằm ngoài phạm vi 8 tuần; ghi vào hướng phát triển.
+
+---
+
+## Bước 3 — Cài trên điện thoại
+
+1. Mở địa chỉ **HTTPS** bằng **Chrome** trên Android (Firefox/Samsung Internet có cài được
+   nhưng không sinh WebAPK thật).
+2. Đăng nhập một lần để chắc backend thông.
+3. Menu **⋮** → **Cài đặt ứng dụng** *(hoặc "Thêm vào Màn hình chính")*.
+   - Nếu **không thấy mục đó**, xem phần gỡ rối bên dưới.
+4. Biểu tượng xuất hiện trên màn hình chính. Mở từ đó — **không còn thanh URL**.
+
+### Kiểm tra đã cài đúng chưa
+
+- Mở app từ màn hình chính → **không thấy thanh địa chỉ** ⇒ WebAPK thật.
+- Vẫn thấy thanh địa chỉ mờ ở trên ⇒ chỉ là lối tắt (shortcut), không phải WebAPK. Thường do
+  thiếu HTTPS hoặc manifest không đạt.
+
+---
+
+## Gỡ rối
+
+| Triệu chứng | Nguyên nhân gần như chắc chắn |
+|---|---|
+| Không có mục "Cài đặt ứng dụng" | Trang đang chạy `http://`, không phải `https://` |
+| Cài được nhưng **đăng nhập lỗi mạng** | App và API khác origin → mixed content. Phải chạy qua bước 1 |
+| Mở app ra **trắng trang** | Đường hầm đã tắt, hoặc backend không chạy |
+| Tải lại ở `/sv/diem` bị 404 | Thiếu fallback SPA — kiểm `WebAppConfig` còn không |
+| Camera không bật được | Chrome chỉ cho camera trên **HTTPS**. Cũng phải cấp quyền cho trang |
+| Sửa giao diện xong app không đổi | Service worker giữ bản cũ. Chạy lại `build-pwa.ps1`, rồi đóng hẳn app và mở lại |
+
+---
+
+## Còn thiếu một thứ, thuần thẩm mỹ
+
+Manifest **chưa có icon `maskable`**. Android sẽ bo biểu tượng trong một hình tròn trắng có
+lề, trông kém hơn app thật một chút.
+
+Sửa được trong ~15 phút, nhưng phải **vẽ lại icon có lề**, không phải chỉ gắn cờ: icon hiện
+tại có khung xanh sát mép, gắn `purpose: "maskable"` vào thẳng sẽ **bị cắt bốn góc**. Yêu cầu:
+mọi nội dung nằm gọn trong đường tròn đường kính **80%** của ảnh.
+
+Sau khi có tệp mới, thêm vào `app/vite.config.ts`:
+
+```js
+{ src: '/icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+```
+
+---
+
+## Nói đúng mức trong báo cáo
+
+> Hệ thống truy cập qua trình duyệt và **cài được lên màn hình chính Android dưới dạng PWA
+> (WebAPK)**, chạy toàn màn hình không thanh địa chỉ. Đóng gói thành APK phát hành trên CH
+> Play qua Trusted Web Activity là hướng phát triển; ở phiên bản hiện tại điều đó **không
+> thêm khả năng nào** vì TWA vẫn là Chrome render cùng trang đó.
+
+**Đừng viết** "ứng dụng Android" mà không nói rõ là PWA — hội đồng sẽ hỏi tệp APK đâu, và câu
+trả lời phải là một quyết định có lý do, không phải một chỗ còn thiếu.

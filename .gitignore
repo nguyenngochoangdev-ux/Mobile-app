@@ -60,3 +60,7 @@ mysql-data/
 # Bundle xuat ra cho tung sinh vien — chua ho ten, MSSV, va deviceFp.
 # Du lieu ca nhan that, khong commit. Sinh lai bang scripts\credential-now.ps1 -Bundle.
 bundles/
+
+# PWA da build, chep vao backend de mot origin phuc vu ca app lan API.
+# La ban sao cua app/dist (von da ignore) — sinh lai bang scripts\build-pwa.ps1.
+backend/src/main/resources/static/

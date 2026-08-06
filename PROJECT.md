@@ -168,6 +168,27 @@ Câu ghi vào hướng phát triển: *"Đóng gói PWA thành ứng dụng Andr
 Activity để phát hành trên CH Play là hướng phát triển; ở phiên bản hiện tại hệ thống truy
 cập qua trình duyệt."*
 
+### Xét lại lần hai — 2026-08-07, kết luận KHÔNG ĐỔI
+
+Người dùng yêu cầu đóng gói APK. Chạy lại `/scope-guard`; ước lượng cũ 1–1,5 ngày **giờ không
+còn đúng**, và lý do làm nó tệ hơn chứ không tốt hơn:
+
+- Máy phát triển **không có gì**: không `ANDROID_HOME`, không Android Studio, không `adb` /
+  `sdkmanager` / `gradle` / `keytool`. Phải tải vài GB SDK trước khi viết được dòng nào.
+- TWA vẫn bắt buộc **origin HTTPS đã deploy** + `assetlinks.json` khớp SHA-256 keystore, mà
+  PWA chưa deploy.
+- Hôm nay là **tuần 7 — khóa cứng cho báo cáo**, không có gì cắt được để bù ~2 ngày.
+
+**Thay bằng đường đã có sẵn:** Chrome trên Android cài PWA thành **WebAPK** — biểu tượng trên
+màn hình chính, chạy toàn màn hình, không thanh URL, không cần APK/keystore/CH Play. Nó thiếu
+đúng **một** thứ: HTTPS, vốn đã là việc còn lại của tuần 6.
+
+**✅ Đã làm 2026-08-07:** backend phục vụ luôn PWA (`WebAppConfig` + `scripts/build-pwa.ps1`)
+để **một origin duy nhất** cấp cả app lẫn API. Không có bước này thì app HTTPS gọi API
+`http://192.168.x.x:8080` sẽ bị chặn **mixed content** — cài được nhưng đăng nhập không nổi.
+Đã kiểm: `/` `/sv/diem` `/manifest.webmanifest` `/sw.js` trả 200, `/api/**` vẫn 401 khi chưa
+đăng nhập, fallback SPA khớp `index.html`. Hướng dẫn đầy đủ: `docs/cai-dat-android.md`.
+
 ### 2.5. Quy chế điểm rèn luyện — xác nhận và cảnh báo
 
 Thông tư 16/2015/TT-BGDĐT có hiệu lực từ 28/09/2015, thang 100 điểm chia **20/25/20/25/10** cho năm tiêu chí, phân loại: xuất sắc 90–100, tốt 80–<90, khá 65–<80, trung bình 50–<65, yếu 35–<50, kém <35. Tài liệu ghi đúng.
