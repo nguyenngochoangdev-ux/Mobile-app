@@ -2,6 +2,10 @@ package vn.ptit.drl.common.config;
 
 import java.io.IOException;
 
+import org.springframework.boot.web.server.MimeMappings;
+import org.springframework.boot.web.server.WebServerFactoryCustomizer;
+import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -44,6 +48,43 @@ public class WebAppConfig implements WebMvcConfigurer {
   private static final String[] KHONG_FALLBACK = {
       "api/", "v3/", "swagger-ui", "actuator/", "error"
   };
+
+  /**
+   * Dạy Tomcat kiểu MIME cho {@code .webmanifest}.
+   *
+   * <p>Bảng MIME mặc định của Tomcat <b>không có</b> đuôi này, nên manifest bị trả về
+   * {@code application/octet-stream}. Spring Security đồng thời gắn
+   * {@code X-Content-Type-Options: nosniff} vào mọi phản hồi, nên Chrome <b>không được phép</b>
+   * đoán lại kiểu và bỏ luôn manifest.
+   *
+   * <p>Hậu quả rất khó lần ra: trang tải bình thường, DevTools không báo lỗi đỏ, nhưng Chrome
+   * trên Android coi trang là <b>không đủ điều kiện cài</b>. Menu mất mục "Cài đặt ứng dụng" và
+   * chỉ còn "Thêm lối tắt" — tức là một shortcut mở trong trình duyệt, không phải WebAPK.
+   *
+   * <p>Kiểu đúng theo chuẩn W3C Web App Manifest là {@code application/manifest+json}.
+   *
+   * <h2>Bẫy: phải duyệt DEFAULT, không được sao chép nó</h2>
+   *
+   * <p>{@code setMimeMappings()} <b>thay thế</b> toàn bộ bảng chứ không cộng thêm, nên phải tự
+   * dựng lại bảng mặc định. Nhưng {@code new MimeMappings(MimeMappings.DEFAULT)} cho ra
+   * <b>bảng rỗng</b>: {@code DEFAULT} nạp lười, và constructor sao chép không kích hoạt việc nạp
+   * đó. Đã đo: DEFAULT có 1021 mục, bản sao có 0.
+   *
+   * <p>Duyệt bằng vòng lặp thì việc nạp được kích hoạt và đủ 1021 mục. Mất bảng mặc định còn
+   * nguy hơn lỗi ban đầu — {@code .js} rơi về {@code octet-stream} và trình duyệt từ chối chạy
+   * service worker.
+   */
+  @Bean
+  public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> mimeChoManifest() {
+    return factory -> {
+      MimeMappings bang = new MimeMappings();
+      for (MimeMappings.Mapping macDinh : MimeMappings.DEFAULT) {
+        bang.add(macDinh.getExtension(), macDinh.getMimeType());
+      }
+      bang.add("webmanifest", "application/manifest+json");
+      factory.setMimeMappings(bang);
+    };
+  }
 
   @Override
   public void addResourceHandlers(ResourceHandlerRegistry registry) {

@@ -155,12 +155,59 @@ Nằm ngoài phạm vi 8 tuần; ghi vào hướng phát triển.
 
 | Triệu chứng | Nguyên nhân gần như chắc chắn |
 |---|---|
-| Không có mục "Cài đặt ứng dụng" | Trang đang chạy `http://`, không phải `https://` |
+| Chỉ có "Thêm lối tắt", **không có** "Cài đặt ứng dụng" | Trang chạy `http://`. Hoặc manifest sai kiểu MIME — xem mục dưới |
+| Đã sửa xong mà điện thoại **vẫn** chỉ mời tạo lối tắt | Chrome còn giữ bản cũ trong bộ nhớ đệm. Phải xóa dữ liệu trang, xem mục dưới |
 | Cài được nhưng **đăng nhập lỗi mạng** | App và API khác origin → mixed content. Phải chạy qua bước 1 |
 | Mở app ra **trắng trang** | Đường hầm đã tắt, hoặc backend không chạy |
 | Tải lại ở `/sv/diem` bị 404 | Thiếu fallback SPA — kiểm `WebAppConfig` còn không |
 | Camera không bật được | Chrome chỉ cho camera trên **HTTPS**. Cũng phải cấp quyền cho trang |
 | Sửa giao diện xong app không đổi | Service worker giữ bản cũ. Chạy lại `build-pwa.ps1`, rồi đóng hẳn app và mở lại |
+
+### Bẫy đã sập thật: manifest sai kiểu MIME
+
+Triệu chứng: menu Chrome trên Android **chỉ có "Thêm lối tắt"**, không có "Cài đặt ứng dụng".
+Lối tắt vẫn mở được app nhưng **còn thanh địa chỉ** — nó không phải WebAPK.
+
+Nguyên nhân: bảng MIME mặc định của Tomcat không có đuôi `.webmanifest`, nên manifest bị trả
+về `application/octet-stream`. Spring Security lại gắn `X-Content-Type-Options: nosniff` vào
+mọi phản hồi, nên Chrome không được phép đoán lại kiểu và **bỏ luôn manifest**.
+
+Rất khó lần ra: trang tải bình thường, DevTools không báo lỗi đỏ nào, chỉ mất đúng nút cài.
+
+Đã sửa trong `WebAppConfig.mimeChoManifest()`. Kiểm nhanh:
+
+```bash
+curl -I https://<địa-chỉ>/manifest.webmanifest | grep -i content-type
+# phải ra: application/manifest+json
+```
+
+> ⚠️ **Bên trong bản sửa còn một bẫy thứ hai.** `setMimeMappings()` **thay thế** toàn bộ bảng
+> chứ không cộng thêm, mà `new MimeMappings(MimeMappings.DEFAULT)` lại cho ra **bảng rỗng** vì
+> `DEFAULT` nạp lười. Đo được: DEFAULT có 1021 mục, bản sao có 0. Phải **duyệt bằng vòng lặp**
+> mới kích hoạt việc nạp. Mất bảng mặc định còn hỏng nặng hơn: `.js` rơi về `octet-stream` và
+> trình duyệt từ chối chạy service worker. `WebAppConfigMimeTest` canh cả hai chiều.
+
+### Cách kiểm "trang có đủ điều kiện cài không" mà không cần điện thoại
+
+Mở địa chỉ bằng Chrome trên máy tính, rồi dán vào Console:
+
+```js
+addEventListener('beforeinstallprompt', () => console.log('DU DIEU KIEN CAI'));
+location.reload();
+```
+
+Chrome **chỉ phát** sự kiện này khi trang đạt đủ mọi tiêu chí cài đặt. Không thấy dòng log
+nghĩa là còn thiếu tiêu chí nào đó, và Android sẽ chỉ mời tạo lối tắt.
+
+### Xóa bản cũ trên điện thoại trước khi thử lại
+
+Chrome nhớ manifest và service worker cũ. Sửa xong ở máy chủ mà không xóa thì điện thoại vẫn
+dùng bản hỏng:
+
+1. Gỡ lối tắt đã tạo: giữ biểu tượng trên màn hình chính → **Gỡ cài đặt**.
+2. Chrome → **⋮** → **Cài đặt** → **Cài đặt trang web** → **Toàn bộ trang web** → chọn địa chỉ
+   → **Xóa và đặt lại**.
+3. Mở lại địa chỉ, chờ trang tải xong hẳn, rồi mới mở menu **⋮**.
 
 ---
 
