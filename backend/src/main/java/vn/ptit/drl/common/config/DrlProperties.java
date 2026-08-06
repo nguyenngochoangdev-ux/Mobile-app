@@ -69,6 +69,13 @@ public record DrlProperties(Jwt jwt, Attendance attendance, Anchor anchor, Stora
      *                         Mặc định 2^20 = 1.048.576: với cỡ 50.000 credential thì độ đầy
      *                         ~5%, số lần bốc kỳ vọng ~1,05. Xem
      *                         {@code docs/canonicalization.md} §10.
+     * @param issuerPrivateKey Khóa ký credential của TỔ CHỨC cấp phát. Rỗng thì không cấp
+     *                         được credential, nhưng ứng dụng vẫn khởi động.
+     *                         <p>
+     *                         NÊN KHÁC {@code ANCHOR_PRIVATE_KEY}. Hai khóa hai vai trò: lộ
+     *                         khóa neo thì kẻ tấn công neo được root rác nhưng không cấp được
+     *                         credential giả; lộ khóa issuer thì ngược lại. Gộp một khóa là
+     *                         nhân đôi thiệt hại của một lần lộ mà không tiết kiệm được gì.
      */
-    public record Credential(long statusListPoolSize) {}
+    public record Credential(long statusListPoolSize, String issuerPrivateKey) {}
 }

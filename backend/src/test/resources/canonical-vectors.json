@@ -176,6 +176,62 @@
       }
     },
     {
+      "id": "cred-payload-day-du",
+      "why": "LƯỢC ĐỒ CRED THẬT mà luồng cấp credential dựng ra — đúng 11 trường cấp ngoài của CredentialPayload.of(), trong đó `claims` là object LỒNG nên chốt luôn việc sắp xếp khóa là đệ quy. Bản có hạn dùng, tên sinh viên có dấu tiếng Việt. Đây là hợp đồng backend↔verifier, không phải payload minh hoạ.",
+      "domain": "CRED",
+      "payload": {
+        "credentialId": 17,
+        "type": "HOAT_DONG",
+        "studentCode": "B21DCCN042",
+        "studentName": "Nguyễn Ngọc Hoàng",
+        "issuerOrgId": 3,
+        "issuerAddress": "0xf32728c5c2d0575ea406ad37e2467916c89f529f",
+        "issuedAt": "2026-08-06T10:00:00Z",
+        "expiresAt": "2031-08-06T10:00:00Z",
+        "statusListIndex": 731542,
+        "claims": {
+          "totalPoints": 85,
+          "semester": "2026-1",
+          "activityCount": 12
+        },
+        "nonce": "0x5c1d8e4a2f6b90c37e15a8d4b2f60931"
+      },
+      "expected": {
+        "domainBytes8": "0x4352454400000000",
+        "jcs": "{\"claims\":{\"activityCount\":12,\"semester\":\"2026-1\",\"totalPoints\":85},\"credentialId\":17,\"expiresAt\":\"2031-08-06T10:00:00Z\",\"issuedAt\":\"2026-08-06T10:00:00Z\",\"issuerAddress\":\"0xf32728c5c2d0575ea406ad37e2467916c89f529f\",\"issuerOrgId\":3,\"nonce\":\"0x5c1d8e4a2f6b90c37e15a8d4b2f60931\",\"statusListIndex\":731542,\"studentCode\":\"B21DCCN042\",\"studentName\":\"Nguyễn Ngọc Hoàng\",\"type\":\"HOAT_DONG\"}",
+        "preimageBytes": 396,
+        "leaf": "0x455d59bbe212a19f9b8cf6c2e55f07d2681602fafd06d01a01c2acae2cf29238"
+      }
+    },
+    {
+      "id": "cred-payload-khong-han-va-rong",
+      "why": "Cùng lược đồ nhưng KHÔNG có hạn dùng (`expiresAt` null phải giữ nguyên literal `null` — trường vắng mặt cho ra hash khác), và là sinh viên chưa tham gia hoạt động nào: activityCount = 0, totalPoints = 0. Số 0 trong object lồng là chỗ dễ bị lược bỏ nhất nếu ai đó lỡ dùng serializer bỏ giá trị rỗng.",
+      "domain": "CRED",
+      "payload": {
+        "credentialId": 18,
+        "type": "HOAT_DONG",
+        "studentCode": "B21DCCN199",
+        "studentName": "Lê Thị Ánh Nguyệt",
+        "issuerOrgId": 3,
+        "issuerAddress": "0xf32728c5c2d0575ea406ad37e2467916c89f529f",
+        "issuedAt": "2026-08-06T10:00:00Z",
+        "expiresAt": null,
+        "statusListIndex": 4,
+        "claims": {
+          "totalPoints": 0,
+          "semester": "2026-1",
+          "activityCount": 0
+        },
+        "nonce": "0xb7e34c1908af52d6e0c94b73a815f2d0"
+      },
+      "expected": {
+        "domainBytes8": "0x4352454400000000",
+        "jcs": "{\"claims\":{\"activityCount\":0,\"semester\":\"2026-1\",\"totalPoints\":0},\"credentialId\":18,\"expiresAt\":null,\"issuedAt\":\"2026-08-06T10:00:00Z\",\"issuerAddress\":\"0xf32728c5c2d0575ea406ad37e2467916c89f529f\",\"issuerOrgId\":3,\"nonce\":\"0xb7e34c1908af52d6e0c94b73a815f2d0\",\"statusListIndex\":4,\"studentCode\":\"B21DCCN199\",\"studentName\":\"Lê Thị Ánh Nguyệt\",\"type\":\"HOAT_DONG\"}",
+        "preimageBytes": 372,
+        "leaf": "0xb1eb13e4c7d6a1e05baa896a42647e24d2c44b214028de24889cbf6a1ae4c2db"
+      }
+    },
+    {
       "id": "ruleset-sap-xep-khoa",
       "why": "Tra tấn thứ tự khóa theo ĐƠN VỊ MÃ UTF-16: chữ số < chữ hoa < chữ thường < ký tự có dấu. Java String.compareTo và JS Array.sort() đều dùng đúng thứ tự này.",
       "domain": "RULESET",

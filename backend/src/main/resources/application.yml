@@ -104,6 +104,15 @@ drl:
     # 2^20 = 1.048.576. Với ~50.000 credential thì độ đầy ~5%, bốc kỳ vọng ~1,05 lần.
     status-list-pool-size: ${STATUS_LIST_POOL_SIZE:1048576}
 
+    # Khóa ký credential của TỔ CHỨC cấp phát. Để trống thì không cấp được credential,
+    # nhưng ứng dụng vẫn khởi động — phần lớn thời gian phát triển không cần tới nó.
+    #
+    # NÊN KHÁC ANCHOR_PRIVATE_KEY. Hai khóa hai vai trò: lộ khóa neo thì neo được root rác
+    # nhưng không cấp được credential giả; lộ khóa issuer thì ngược lại. Gộp một khóa là
+    # nhân đôi thiệt hại của một lần lộ mà không tiết kiệm gì. IssuerSigner cảnh báo lúc
+    # khởi động nếu hai khóa trùng nhau.
+    issuer-private-key: ${ISSUER_PRIVATE_KEY:}
+
   storage:
     upload-dir: ${UPLOAD_DIR:./uploads}
 

@@ -1,0 +1,39 @@
+-- V5 — Bo cot `credentials.payload_hash`.
+--
+-- =============================================================================
+-- VI SAO CO V5 THAY VI SUA V4
+-- =============================================================================
+--
+-- V4 DA CHAY tren CSDL phat trien. Flyway bam checksum toan bo noi dung file da
+-- ap dung, ke ca chu thich -- sua V4 bay gio se lam moi lan khoi dong sau bao
+-- "Migration checksum mismatch" va tu choi chay.
+--
+-- Cach "chua" bang cach xoa CSDL roi chay lai tu dau la KHONG DUOC o repo nay:
+-- `anchor_batches` dang giu 1 lo DA NEO THAT tren Amoy (giao dich 0x1d1ebe...).
+-- Xoa CSDL lam lo do mo coi -- giao dich van nam tren chuoi vinh vien nhung
+-- khong con ban ghi nao noi no voi 4 bang chung diem danh, tuc la mat bang chung
+-- cua cong kiem soat tuan 3. Xem docs/measurements.md 11.6.
+--
+-- =============================================================================
+-- VI SAO BO `payload_hash`
+-- =============================================================================
+--
+-- V1 khai `payload_hash BINARY(32) NOT NULL` truoc khi cong thuc leaf duoc chot.
+-- Sau khi chot (docs/canonicalization.md 1) thi no vua THUA vua NGUY HIEM:
+--
+--   leaf_hash     = keccak256( bytes8('CRED') || 0x3A || UTF-8(JCS(payload)) )
+--   payload_hash  = keccak256( ... cua chinh payload do, thieu tien to mien ... )
+--
+-- Hai gia tri bam cung mot noi dung. Giu ca hai nghia la co hai thu phai khop
+-- nhau va co the TROI KHOI NHAU -- dung loai loi ma ca tang canonicalization
+-- sinh ra de chan. Khong cho nao trong ma nguon doc no (da grep: chi V1 va
+-- docs/erd.md nhac ten).
+--
+-- Nguy hiem cu the neu de nguyen: cot NOT NULL khong co gia tri mac dinh va
+-- KHONG duoc entity `Credential` anh xa, nen moi INSERT credential se bi MySQL
+-- o che do strict tu choi voi "Field 'payload_hash' doesn't have a default
+-- value". Loi nay chi lo ra luc cap credential dau tien.
+--
+-- An toan vi bang dang rong -- da kiem: SELECT COUNT(*) FROM credentials = 0.
+
+ALTER TABLE credentials DROP COLUMN payload_hash;

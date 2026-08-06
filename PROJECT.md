@@ -417,6 +417,32 @@ Job neo hằng đêm · hash chain audit log · VC + chữ ký issuer · StatusL
 Nhớ: **nonce trong payload** (§2.3), **status index ngẫu nhiên** (§2.3).
 
 > **Mốc:** bundle credential verify được offline bằng script Node, không chạm backend.
+>
+> **Trạng thái 2026-08-06 — luồng cấp credential đã xong, mốc thì CHƯA đạt.**
+>
+> ✅ **Đã có:** entity `Credential` · `CredentialPayload` (miền `CRED`, 11 trường, hợp đồng
+> backend↔verifier) · `IssuerSigner` (ECDSA secp256k1 trên leaf, 65 byte có recovery id) ·
+> `CredentialService` cấp phát đầy đủ (chụp ảnh → nonce → status index ngẫu nhiên → payload →
+> leaf → ký → lưu) · `CredentialAnchorSource` nên job neo đã nhặt được miền `CRED` ·
+> `CredentialController` 4 endpoint · Flyway V4 + V5.
+>
+> **Bộ vector thứ ba** (`cred-signature-vectors.json`): web3j và ethers ký cùng một leaf ra
+> **giống hệt từng byte**. Đặc tả: `docs/canonicalization.md` §11 và §12.
+> Test: **Java 235 · JS 174**, 0 fail.
+>
+> ❌ **Còn lại của tuần 4, theo thứ tự nên làm:**
+> 1. **Bundle JSON** — đúng thứ cái mốc ở trên đòi. Vỏ mang payload + chữ ký + proof +
+>    `batchId` + địa chỉ contract, để script Node xác minh được mà không chạm backend.
+> 2. **Nối dây `StatusList`** — `revoked_at`/`revoke_tx_hash` đã có cột, chưa có luồng gọi
+>    `setRevoked()`. Không có nó thì `statusListIndex` trong payload chỉ tay vào một bit
+>    không ai bật bao giờ.
+> 3. **Hash chain `audit_logs`** — miền `AUDIT` mới có cột `nonce`/`leaf_hash` (V2), chưa có
+>    `AnchorSource`. Đây là thứ hiện thực **luận điểm 1** (chống sửa hồi tố), hiện chưa có gì.
+>
+> ⚠️ **Nợ kỹ thuật phát hiện khi làm phần này:** `attendances` **không chụp ảnh** MSSV —
+> `AttendancePayload` đọc qua khóa ngoại. Đổi MSSV làm hỏng mọi proof điểm danh đã neo.
+> Chưa sửa (bảng đã có bản ghi đã neo, §9.5 của `docs/canonicalization.md` cấm đụng vào).
+> **Phải viết vào phần hạn chế của báo cáo** — chi tiết ở `docs/canonicalization.md` §11.3.
 
 ### Tuần 5 — Chấm điểm
 Ruleset JSON có version · SpEL evaluator · chạy chấm theo kỳ · `evidence_hash` · neo domain `SCORE` + `RULESET`.

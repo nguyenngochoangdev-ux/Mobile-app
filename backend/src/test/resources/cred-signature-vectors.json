@@ -1,0 +1,73 @@
+{
+  "$schema": "khong-phai-JSON-Schema — bo test vector, doc docs/canonicalization.md truoc khi sua",
+  "spec": "docs/canonicalization.md §12",
+  "formula": "sig = ECDSA_secp256k1( leaf ), 65 byte r||s||v, v thuoc {27,28}. KHONG bam lai, KHONG tien to EIP-191.",
+  "warning": "File nay la HOP DONG giua backend Java va verifier JS. Test do = mot trong hai phia sai, KHONG phai file nay sai. Chi sinh lai bang `npm run gen-cred-sig-vectors` khi co y doi dac ta.",
+  "testPrivateKey": "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+  "testPrivateKeyNote": "Tai khoan #0 mac dinh cua Hardhat — khoa CONG KHAI, ai cung biet. Dung de hai phia ky cung mot thu va so tung byte. KHONG BAO GIO dung lam ISSUER_PRIVATE_KEY that.",
+  "generatedBy": "verifier/scripts/gen-cred-sig-vectors.mjs",
+  "vectors": [
+    {
+      "id": "sig-cred-day-du",
+      "why": "Credential đầy đủ, tên có dấu tiếng Việt. Chữ ký trên chính leaf hash, không băm lại, không tiền tố EIP-191.",
+      "domain": "CRED",
+      "payload": {
+        "credentialId": 17,
+        "type": "HOAT_DONG",
+        "studentCode": "B21DCCN042",
+        "studentName": "Nguyễn Ngọc Hoàng",
+        "issuerOrgId": 3,
+        "issuerAddress": "0xf32728c5c2d0575ea406ad37e2467916c89f529f",
+        "issuedAt": "2026-08-06T10:00:00Z",
+        "expiresAt": "2031-08-06T10:00:00Z",
+        "statusListIndex": 731542,
+        "claims": {
+          "totalPoints": 85,
+          "semester": "2026-1",
+          "activityCount": 12
+        },
+        "nonce": "0x5c1d8e4a2f6b90c37e15a8d4b2f60931"
+      },
+      "expected": {
+        "leaf": "0x455d59bbe212a19f9b8cf6c2e55f07d2681602fafd06d01a01c2acae2cf29238",
+        "signature": "0xd6cb44ffbc4c43ff08686a7f903565ccb20b555034cdcbc6af78ed4da731160f6a82babf795cc79abda16a362390d8ab44d0be51964b897e0b5c2c5c7a6989401b",
+        "signatureBytes": 65,
+        "r": "0xd6cb44ffbc4c43ff08686a7f903565ccb20b555034cdcbc6af78ed4da731160f",
+        "s": "0x6a82babf795cc79abda16a362390d8ab44d0be51964b897e0b5c2c5c7a698940",
+        "v": 27,
+        "signerAddress": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+      }
+    },
+    {
+      "id": "sig-cred-khong-han",
+      "why": "Bản không hạn dùng, các số bằng 0. Leaf khác nên chữ ký khác — chốt rằng chữ ký gắn với NỘI DUNG, không phải với khóa.",
+      "domain": "CRED",
+      "payload": {
+        "credentialId": 18,
+        "type": "HOAT_DONG",
+        "studentCode": "B21DCCN199",
+        "studentName": "Lê Thị Ánh Nguyệt",
+        "issuerOrgId": 3,
+        "issuerAddress": "0xf32728c5c2d0575ea406ad37e2467916c89f529f",
+        "issuedAt": "2026-08-06T10:00:00Z",
+        "expiresAt": null,
+        "statusListIndex": 4,
+        "claims": {
+          "totalPoints": 0,
+          "semester": "2026-1",
+          "activityCount": 0
+        },
+        "nonce": "0xb7e34c1908af52d6e0c94b73a815f2d0"
+      },
+      "expected": {
+        "leaf": "0xb1eb13e4c7d6a1e05baa896a42647e24d2c44b214028de24889cbf6a1ae4c2db",
+        "signature": "0x7aff6357dfc1418cf8f766c34a29e5fef44b41ef74eab9fe74cd1ac3c4ae7492685062857373241f8298638c9764463720c6c3a7e7d71382b0eaec0a2b3b49d01b",
+        "signatureBytes": 65,
+        "r": "0x7aff6357dfc1418cf8f766c34a29e5fef44b41ef74eab9fe74cd1ac3c4ae7492",
+        "s": "0x685062857373241f8298638c9764463720c6c3a7e7d71382b0eaec0a2b3b49d0",
+        "v": 27,
+        "signerAddress": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+      }
+    }
+  ]
+}

@@ -1,8 +1,11 @@
 # Đặc tả canonicalization — nguồn sự thật
 
-**Chốt ngày:** 2026-08-05
-**Trạng thái:** ✅ xanh cả hai phía — **Java 118 test · JS 115 test**
-(leaf hash: 46 + 40 · cây Merkle §8: 72 + 75)
+**Chốt ngày:** 2026-08-05 · cập nhật 2026-08-06 (miền `CRED` + chữ ký issuer)
+**Trạng thái:** ✅ xanh cả hai phía — **Java 165 test · JS 174 test**
+(leaf hash: 62 + 52 · cây Merkle §8: 72 + 75 · payload CRED §11: 13 + 34 · chữ ký §12: 18)
+
+> Tổng test backend là **235** (0 fail, 12 skip — các test cần chuỗi). Con số ở trên chỉ
+> đếm tầng canonicalization.
 
 > Đây là cạm bẫy số 2 trong `CLAUDE.md`: lệch canonicalization làm **mọi Merkle proof
 > fail**, và fail **im lặng** — hash vẫn tính ra bình thường, chỉ là không khớp.
@@ -161,8 +164,14 @@ Ghi lại để không mất thời gian lần hai:
 - [x] `MerkleService` trong module `anchor` — **xong 2026-08-05**, xem §8
 - [x] Test vector thứ hai cho **Merkle proof** — **xong 2026-08-05**, xem §8
 - [x] `status_list_index` cấp **ngẫu nhiên từ pool còn trống** — **xong 2026-08-06**, xem §10
+- [x] Payload miền `CRED` + bộ vector `cred-payload-*` — **xong 2026-08-06**, xem §11
+- [x] Chữ ký issuer + bộ vector thứ ba — **xong 2026-08-06**, xem §12
 
 Tầng canonicalization đã đóng hết mục. Việc còn lại của dự án nằm ở `PROJECT.md`.
+
+Ba miền neo còn lại chưa có payload: `SCORE` (tuần 5) · `AUDIT` và `RULESET` (chưa xếp lịch).
+Mỗi miền là **một hợp đồng mới với verifier**, nên mỗi miền cần một lớp payload phía Java,
+một nửa phía JS, và vector riêng — đúng quy trình §11 dưới đây.
 
 ---
 
@@ -406,8 +415,195 @@ Hệ chạy một instance nên xác suất rất nhỏ, nhưng "rất nhỏ" kh
 không làm được khi các bản ghi chưa kịp ghi xuống CSDL. Dùng khi cấp credential hàng loạt
 cuối kỳ (tuần 5, chấm 500 sinh viên).
 
-### 10.6. Còn phải nối dây ở tuần 4
+### 10.6. ~~Còn phải nối dây ở tuần 4~~ — **đã nối, 2026-08-06**
 
-Phần thuật toán và phần truy vấn CSDL đã xong và chạy được. Cái chưa có là **nơi gọi nó**:
-entity `Credential` và luồng cấp phát credential là việc của tuần 4. Cố ý chưa dựng entity
-bây giờ để không chốt sớm các quyết định về VC, chữ ký và bundle.
+Entity `Credential` và `CredentialService` đã gọi `StatusListIndexService.allocate()`. Chỉ số
+được cấp **trước** khi dựng payload, vì nó nằm *trong* payload được neo — xem §11.2.
+
+`CredentialService.allocateIndexAndPersist` thử lại tối đa 5 lần khi đụng
+`uk_cred_status_index`, đúng như §10.5 đòi hỏi. Test `chiSoNgauNhien` trong
+`CredentialIssueDbTest` cấp 6 credential thật xuống MySQL và chốt rằng dãy chỉ số **không
+tăng dần** — nếu ai đó "đơn giản hóa" thành bộ đếm thì test đỏ.
+
+---
+
+## 11. Payload miền `CRED`
+
+**Chốt ngày:** 2026-08-06 · Java 13 test · JS 34 test
+
+| | Java | JS |
+|---|---|---|
+| Hiện thực | `credential/CredentialPayload.java` | `verifier/src/cred.mjs` |
+| Test | `CredentialPayloadVectorTest.java` | `verifier/test/cred.test.mjs` |
+| Vector | `canonical-vectors.json`, tiền tố `cred-payload` | |
+
+### 11.1. Mười một trường, trong đó `claims` là object lồng
+
+```
+credentialId · type · studentCode · studentName · issuerOrgId · issuerAddress
+issuedAt · expiresAt · statusListIndex · claims · nonce
+```
+
+`claims` của loại `HOAT_DONG`: `semester` · `activityCount` · `totalPoints`.
+
+Đây là payload đầu tiên có **object lồng**, nên nó là chỗ đầu tiên quy tắc "sắp xếp khóa đệ
+quy" (§4 quy tắc 1) thật sự có tác dụng trên đường đi thật. Vector `score-nested` đã chốt quy
+tắc đó từ tuần 3 nên rủi ro không mới.
+
+Lược đồ `claims` **tách theo loại**, không dùng một tập trường chung. Tập chung buộc mọi loại
+mang trường `null` của các loại khác, mà `null` và trường vắng mặt cho ra hai hash khác nhau
+(§4 quy tắc 6) — tức là nhân đôi số cách hỏng.
+
+### 11.2. Hai trường BẮT BUỘC nằm trong payload, không được để ở vỏ bundle
+
+| Trường | Để ngoài leaf thì hỏng thế nào |
+|---|---|
+| `issuerAddress` | Verifier phục hồi địa chỉ từ chữ ký rồi hỏi `IssuerRegistry`. Nếu địa chỉ chỉ nằm ở vỏ bundle thì sửa nó không phá leaf, và verifier sẽ đi hỏi về **địa chỉ do kẻ tấn công chọn** |
+| `statusListIndex` | Nghiêm trọng hơn: người cầm credential **đã bị thu hồi** chỉ cần trỏ sang một bit chưa bật là verifier báo "còn hiệu lực". **Thu hồi trở thành vô nghĩa** |
+
+Cả hai đã có test chống giả mạo ở `cred.test.mjs` nhóm *"Chữ ký — sửa vào là hỏng"*.
+
+### 11.3. ⚠️ Quy tắc CHỤP ẢNH — và một khoản nợ kỹ thuật có thật
+
+Mọi trường đi vào payload phải là **bản sao chốt tại thời điểm cấp**, không phải giá trị đọc
+qua khóa ngoại. Lý do:
+
+```
+cán bộ sửa tên sinh viên  →  payload đổi  →  leaf hash đổi
+→  MỌI Merkle proof đã neo của sinh viên đó FAIL VĨNH VIỄN, và fail IM LẶNG
+```
+
+`AnchorRegistry` không cho neo lại `(domain, batchId)` nên **không có đường sửa**.
+
+`credentials` đã theo đúng quy tắc: migration V4 thêm `student_code`, `student_name`,
+`issuer_address` làm cột chụp ảnh, và `CredentialPayload.of()` chỉ đọc các cột đó. Test
+`ChupAnh.doiSinhVienKhongDoiLeaf` cố tình cho entity `Student` mang giá trị khác hẳn rồi
+khẳng định leaf không đổi.
+
+> ### 🔴 Nợ kỹ thuật: `attendances` KHÔNG chụp ảnh
+>
+> `AttendancePayload.of()` đọc `a.getStudent().getMssv()` **qua khóa ngoại**. Đổi MSSV của
+> một sinh viên sẽ làm hỏng mọi proof điểm danh đã neo của họ — kể cả lô `2026080501` đang
+> nằm trên Amoy.
+>
+> **Chưa sửa**, và đây là quyết định có ý thức: MSSV gần như không bao giờ đổi, còn sửa bây
+> giờ đòi thêm cột chụp ảnh cho một bảng đã có bản ghi **đã neo** — chính xác là tình huống
+> §9.5 cảnh báo không được đụng vào.
+>
+> **Phải ghi vào phần hạn chế của báo cáo.** Đừng để hội đồng tự tìm ra: đây là loại chi
+> tiết mà một người đọc kỹ sẽ hỏi, và trả lời được nó cho thấy hiểu hệ thống mình xây.
+> Cách sửa đúng nếu có thời gian: thêm cột chụp ảnh, backfill **chỉ các dòng có
+> `leaf_hash IS NULL`**, và để nguyên các dòng đã neo.
+
+### 11.4. Địa chỉ ví: chữ thường, không phải EIP-55
+
+Chốt `0x` + 40 hex **chữ thường**, ở cả ba tầng: `ck_cred_issuer_address` trong CSDL,
+`CredentialPayload.requireLowercaseAddress` phía Java, `requireLowercaseAddress` phía JS.
+
+EIP-55 trộn hoa/thường theo hash của chính địa chỉ. Một phía lưu dạng checksum còn phía kia
+lưu chữ thường là ra hai chuỗi JCS khác nhau — **cùng họ lỗi với nonce chữ hoa**, thứ bộ
+vector đã chặn từ tuần 3.
+
+`ethers.recoverAddress` trả về **dạng checksum**, nên bên gọi phải `.toLowerCase()` trước khi
+so sánh. Nếu quên, phép so luôn sai và mọi credential hợp lệ bị báo là giả.
+
+---
+
+## 12. Chữ ký của tổ chức cấp phát
+
+**Chốt ngày:** 2026-08-06 · Java 18 test · JS (trong 34 test của `cred.test.mjs`)
+
+```
+sig = ECDSA_secp256k1( leaf )      65 byte: r(32) ‖ s(32) ‖ v(1), v ∈ {27, 28}
+```
+
+Ký **thẳng leaf hash**, không băm lại, **không** tiền tố EIP-191.
+
+| | Java | JS |
+|---|---|---|
+| Hiện thực | `credential/IssuerSigner.java` (web3j `Sign`) | `ethers` `SigningKey` / `recoverAddress` |
+| Test | `IssuerSignerVectorTest.java` | `verifier/test/cred.test.mjs` |
+| Vector | `cred-signature-vectors.json` | |
+| Sinh vector | `cd verifier && npm run gen-cred-sig-vectors` | |
+
+### 12.1. Bộ vector thứ ba — vì sao cần
+
+Hai bộ trước chốt hai phía tính ra cùng một **leaf** và cùng một **cây Merkle**. Bộ này chốt
+mắt xích còn lại: hai phía đọc cùng một chữ ký ra **cùng một địa chỉ ví**.
+
+"ECDSA thì ở đâu cũng thế" là sai. Bốn chỗ hai thư viện lệch nhau được, và **cả bốn đều fail
+im lặng** — phục hồi địa chỉ luôn trả về *một* địa chỉ hợp lệ chứ không báo lỗi:
+
+1. có băm lại thông điệp trước khi ký không (web3j: cờ `needToHash`)
+2. có thêm tiền tố EIP-191 `"\x19Ethereum Signed Message:\n32"` không
+3. `v` là 27/28, hay 0/1, hay đã cộng chainId theo EIP-155
+4. `s` có chuẩn hóa về nửa dưới đường cong không
+
+Chọn sai bất kỳ cái nào: verifier phục hồi ra địa chỉ rác, hỏi `IssuerRegistry` về địa chỉ
+rác, nhận về "không có quyền" — **trông y hệt credential giả**.
+
+**Kết quả đo được:** web3j và ethers cho ra chữ ký **giống hệt từng byte** trên cùng một leaf.
+Cả hai dùng `k` tất định theo RFC 6979 và cùng chuẩn hóa `s`. Test `kyRaByteGiongHet` chốt
+điều này — mạnh hơn mức cần cho tính đúng đắn (chỉ cần địa chỉ khớp là đủ), nhưng nó bắt được
+cả những lệch mà phép kiểm địa chỉ bỏ qua.
+
+### 12.2. ⚠️ KHÔNG phải ES256K của JOSE — và vì sao vẫn là lựa chọn đúng
+
+ES256K trong JOSE là ECDSA secp256k1 với **SHA-256**, chữ ký **64 byte** `r‖s`, **không có
+recovery id**. Kiểm chữ ký đó đòi **biết trước khóa công khai** của bên cấp — mà chỗ duy nhất
+có nó là máy chủ của trường, và verifier **bị cấm gọi backend một dòng nào** (`PROJECT.md` §4).
+
+Byte `v` phá thế bí: từ `(leaf, sig)` phục hồi thẳng ra **địa chỉ ví**, rồi hỏi
+`IssuerRegistry` trên chuỗi xem địa chỉ đó có quyền cấp không. Không cần biết trước khóa nào.
+Đây chính là cách hiện thực **luận điểm 3** (`PROJECT.md` §10) — nhiều bên cấp phát, không bên
+nào độc quyền sổ cái.
+
+**Đánh đổi phải ghi vào phần hạn chế của báo cáo:** credential không phải JWS/ES256K hợp lệ
+theo đúng chữ. Nó là chữ ký secp256k1 kiểu Ethereum — mọi ví và thư viện EVM kiểm được, thư
+viện JOSE thì không. Chuyển sang JWS đúng chuẩn là hướng phát triển, và khi đó phải kèm một
+cách công bố khóa công khai không phụ thuộc máy chủ trường (`did:web`, hoặc để
+`IssuerRegistry` lưu khóa thay vì địa chỉ).
+
+### 12.3. Ký digest thô — vì sao an toàn ở đây
+
+Ký một digest 32 byte tùy ý bằng khóa cũng dùng gửi giao dịch là mẫu nguy hiểm quen thuộc: kẻ
+tấn công dụ ký một giá trị hóa ra là hash của một giao dịch.
+
+Ở đây rủi ro bị chặn bằng **cấu trúc**: digest luôn là keccak của tiền ảnh bắt đầu bằng
+`bytes8("CRED") ‖ ':'` rồi tới JSON chuẩn tắc, nên không đầu vào nào của bên gọi biến nó
+thành hash RLP của một giao dịch. Đây đúng là mẫu EIP-712 dùng.
+
+**Vẫn nên tách khóa issuer khỏi khóa neo.** Lộ khóa neo → neo được root rác nhưng không cấp
+được credential giả. Lộ khóa issuer → ngược lại. Gộp một khóa là nhân đôi thiệt hại của một
+lần lộ mà không tiết kiệm gì. `IssuerSigner.warnIfSameAsAnchorKey` cảnh báo lúc khởi động.
+
+### 12.4. Chữ ký KHÔNG nằm trong payload — và không cần
+
+Không **thể**, vì chữ ký ký chính leaf; đưa nó vào payload là vòng tròn.
+
+Không **cần**, vì hai thứ chứng minh hai điều khác nhau:
+
+| | Chứng minh gì |
+|---|---|
+| leaf + proof + root trên chuỗi | Bản ghi **tồn tại từ lúc nào** và **không sửa được** |
+| chữ ký | **Ai** phát biểu |
+
+Cái sau không cần cái trước bảo vệ: sửa chữ ký thì nó hết verify.
+
+`revokedAt` cũng **không** neo — trạng thái thu hồi thay đổi được sau khi cấp, còn leaf thì
+không. Nguồn sự thật về thu hồi là bit trên `StatusList`, đọc bằng một `eth_call`. Đó chính
+là lý do `statusListIndex` **phải** neo (§11.2).
+
+### 12.5. `recoverAddress` KHÔNG phải phép kiểm chữ ký
+
+Hàm này **luôn** trả về một địa chỉ nào đó với bất kỳ chữ ký đúng định dạng nào. Phép kiểm
+thật gồm **ba bước, thiếu bước nào cũng hỏng**:
+
+1. leaf tính lại từ payload → verify được về root trên chuỗi qua Merkle proof
+2. địa chỉ phục hồi từ chữ ký **khớp** `issuerAddress` trong payload
+3. địa chỉ đó **có quyền** trong `IssuerRegistry`
+
+`CredentialService.persistWithProof` chạy bước 2 ngay lúc cấp: nó phục hồi địa chỉ từ chữ ký
+vừa tạo và so với payload, ném lỗi nếu lệch. Tốn ~1 ms mỗi lần cấp; đổi lại một credential ký
+sai **không bao giờ** ra khỏi hàm đó. Nếu để lọt, chỗ phát hiện tiếp theo là nhà tuyển dụng
+bấm "xác minh" và thấy đỏ — muộn nhất có thể.

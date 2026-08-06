@@ -70,13 +70,51 @@ attendances(id, event_id, student_id, checkin_at, checkout_at, method,
 ## Nhóm 3 — Chứng chỉ số
 
 ```
-credentials(id, student_id, issuer_org_id, type, payload_json, payload_hash,
-            issued_at, expires_at, status_list_index, signature,
-            nonce, leaf_hash, created_at)
+credentials(id, student_id, student_code, student_name,
+            issuer_org_id, issuer_address,
+            type, semester, activity_count, total_points,
+            payload_json, issued_at, expires_at,
+            revoked_at, revoke_tx_hash,
+            status_list_index, signature, nonce, leaf_hash, created_at)
+
+  -- CHỤP ẢNH (V4) — KHÔNG đọc qua khóa ngoại.
+  student_code, student_name, issuer_address:
+      bản sao chốt lúc cấp. Đọc qua khóa ngoại thì đổi tên một sinh viên sẽ
+      làm MỌI Merkle proof đã neo của họ fail vĩnh viễn, và fail im lặng —
+      AnchorRegistry không cho neo lại nên không có đường sửa.
+      Xem docs/canonicalization.md §11.3.
+  issuer_address: '0x' + 40 hex CHỮ THƯỜNG (ck_cred_issuer_address).
+      Dạng checksum EIP-55 bị cấm — nó làm JCS ra hai chuỗi khác nhau
+      giữa hai phía.
+
+  -- NỘI DUNG PHÁT BIỂU, chốt lúc cấp.
+  semester, activity_count, total_points:
+      thành `claims` trong payload neo. Tham gia thêm hoạt động sau đó thì
+      cấp credential MỚI, không sửa bản cũ.
+
+  -- BẰNG CHỨNG.
+  payload_json: đúng chuỗi JCS(payload) đã bam và đã ký. Bản đối chứng
+      chống trôi lược đồ — job neo dựng lại rồi so từng byte.
+  leaf_hash: tính NGAY lúc cấp (khác attendances.leaf_hash do job neo điền
+      sau), vì `signature` ký chính nó.
+  signature: ECDSA secp256k1 trên leaf_hash, 65 byte r||s||v, v ∈ {27,28}.
+      KHÔNG phải ES256K của JOSE — recovery id là thứ cho verifier phục hồi
+      địa chỉ ví mà không cần biết trước khóa công khai, tức là không cần
+      gọi backend. Xem docs/canonicalization.md §12.2.
+
+  -- THU HỒI.
   status_list_index: cấp NGẪU NHIÊN từ pool còn trống, KHÔNG tuần tự.
-                     Cấp tuần tự làm sự kiện StatusChanged(index) trên chuỗi
-                     lộ thứ tự cấp phát và tương quan với danh sách sinh viên.
-  signature: chữ ký ES256K bằng khóa của issuer_org (không phải khóa sinh viên)
+      Cấp tuần tự làm sự kiện StatusChanged(index) trên chuỗi lộ thứ tự
+      cấp phát và tương quan với danh sách sinh viên (PROJECT.md §2.3).
+      NẰM TRONG payload được ký — để ngoài thì người cầm credential đã bị
+      thu hồi chỉ cần trỏ verifier sang một bit chưa bật.
+  revoked_at, revoke_tx_hash: chỉ đặt SAU khi giao dịch setRevoked() lên
+      chuỗi. Nguồn sự thật là bit trên StatusList, không phải hai cột này.
+
+  -- ĐÃ BỎ.
+  payload_hash: bỏ ở V5. Nó bam cùng nội dung với leaf_hash (chỉ thiếu tiền
+      tố miền) nên vừa thừa vừa có thể trôi khỏi leaf_hash. Cột NOT NULL
+      không được entity ánh xạ còn làm mọi INSERT credential thất bại.
 ```
 
 ## Nhóm 4 — Chấm điểm rèn luyện
