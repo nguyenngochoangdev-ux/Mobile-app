@@ -1,7 +1,7 @@
 # Đặc tả canonicalization — nguồn sự thật
 
-**Chốt ngày:** 2026-08-05 · cập nhật 2026-08-06 (miền `CRED`, chữ ký issuer, bundle)
-**Trạng thái:** ✅ xanh cả hai phía — **Java 243 test · JS 211 test**, 0 fail
+**Chốt ngày:** 2026-08-05 · cập nhật 2026-08-06 (miền `CRED` và `AUDIT`, chữ ký, bundle)
+**Trạng thái:** ✅ xanh cả hai phía — **Java 299 test · JS 254 test**, 0 fail
 
 | Tầng | Mục | Java | JS |
 |---|---|---|---|
@@ -9,7 +9,10 @@
 | cây Merkle | §8 | 72 | 75 |
 | payload `CRED` | §11 | 13 | 34 |
 | chữ ký issuer | §12 | 18 | — |
-| **bundle** | **§13** | **8** | **37** |
+| bundle | §13 | 8 | 37 |
+| **chuỗi băm `AUDIT`** | **§14** | **34** | **37** |
+
+Ba miền neo đã có payload: `ATTEND` · `CRED` · `AUDIT`. Còn `SCORE` và `RULESET` (tuần 5).
 
 > Đây là cạm bẫy số 2 trong `CLAUDE.md`: lệch canonicalization làm **mọi Merkle proof
 > fail**, và fail **im lặng** — hash vẫn tính ra bình thường, chỉ là không khớp.
@@ -113,7 +116,7 @@ Tương tự phía JS: verifier bị ràng buộc cứng chỉ được có `eth
 
 ## 5. Bộ test vector
 
-Có **bốn** bộ vector, mỗi bộ một file, **tất cả đều do phía JS sinh** và cả hai phía cùng đọc:
+Có **năm** bộ vector, mỗi bộ một file, **tất cả đều do phía JS sinh** và cả hai phía cùng đọc:
 
 | Bộ | File | Chốt cái gì | Mục |
 |---|---|---|---|
@@ -121,9 +124,14 @@ Có **bốn** bộ vector, mỗi bộ một file, **tất cả đều do phía J
 | 2 | `merkle-vectors.json` | **cây Merkle** (root + proof) | §8 |
 | 3 | `cred-signature-vectors.json` | **chữ ký issuer** (leaf → địa chỉ ví) | §12 |
 | 4 | `bundle-fixture.json` | **cả tệp bundle** | §13 |
+| 5 | `audit-chain-vectors.json` | **mắt xích** của chuỗi băm nhật ký | §14 |
 
-Ba bộ đầu chốt từng **phép tính**; bộ 4 chốt cái **vỏ** gói chúng lại. Phía JS sinh vector và
+Bộ 1–3 và 5 chốt từng **phép tính**; bộ 4 chốt cái **vỏ** gói chúng lại. Phía JS sinh vector và
 phía Java phải khớp — chứ không phải ngược lại — để Java không bao giờ "tự chấm bài mình".
+
+Bộ 5 còn mang **sáu biến thể bị phá cố ý** (sửa nội dung · sửa rồi tính lại hash · xóa · chèn ·
+cắt chuỗi · đảo thứ tự), mỗi biến thể phải bị từ chối. Phần đó quan trọng ngang phần chuỗi hợp
+lệ: một hàm `verifyChain` luôn trả `true` cũng làm mọi test chuỗi hợp lệ xanh.
 
 Phần dưới đây nói về bộ 1.
 
@@ -726,3 +734,128 @@ Hệ quả: `recomputeAndVerifyLeaf` luôn sai ⇒ **không xuất được bund
 Hai cột JSON còn lại đã kiểm và **không** cần đổi: `anchor_leaves.proof_json` là một **mảng**
 (MySQL giữ nguyên thứ tự phần tử, chỉ sắp xếp lại khóa của object), và `audit_logs.before_json`
 / `after_json` không đi vào phép bam nào.
+
+---
+
+## 14. Chuỗi băm nhật ký — miền `AUDIT`
+
+**Chốt ngày:** 2026-08-06 · Java 34 test · JS 37 test
+
+Đây là thứ hiện thực **luận điểm 1** (`PROJECT.md` §10): không *ngăn* được quản trị viên sửa
+dữ liệu quá khứ, nhưng *chứng minh* được là họ đã sửa.
+
+| | Java | JS |
+|---|---|---|
+| Mắt xích | `audit/AuditHasher.java` | `verifier/src/audit.mjs` |
+| Payload neo | `audit/AuditPayload.java` | cùng file |
+| Ghi + kiểm | `audit/AuditService.java` | `verifyChain()` |
+| Test | `AuditChainVectorTest` · `AuditServiceDbTest` | `verifier/test/audit.test.mjs` |
+| Vector | `audit-chain-vectors.json` · `canonical-vectors.json` (`audit-payload*`) | |
+| Sinh vector | `cd verifier && npm run gen-audit-chain-vectors` | |
+
+### 14.1. Hai công thức, đừng dùng nhầm
+
+```
+hash = keccak256( prevHash(32 byte) ‖ UTF-8(JCS(record)) )        MẮT XÍCH
+leaf = keccak256( bytes8('AUDIT') ‖ ':' ‖ UTF-8(JCS(payload)) )   LÁ Merkle
+```
+
+| | Chứng minh điều gì |
+|---|---|
+| Mắt xích | Không ai **chèn / xóa / sửa** bản ghi quá khứ |
+| Lá | **Một** bản ghi cụ thể đã tồn tại vào lúc lô được neo |
+
+`prevHash` nằm **ngoài** JSON — nối vào trước dưới dạng 32 byte thô. `nonce` thì ngược lại:
+nó phục vụ lá, không phục vụ mắt xích.
+
+### 14.2. ⚠️ Chuỗi băm MỘT MÌNH không đủ — và phải nói thẳng điều đó
+
+Test `AuditServiceDbTest.tinhLaiCaChuoiThiKhongBat` **cố tình chứng minh chỗ thua**: kẻ tấn
+công có toàn quyền CSDL sửa một bản ghi rồi **tính lại toàn bộ chuỗi** từ đó về sau, và
+`verifyChain()` lại xanh hoàn toàn.
+
+Cái chặn được việc đó là **root đã nằm trên chuỗi công khai** — không tính lại được nữa. Nên
+phát biểu đúng mức là:
+
+> **Chuỗi băm làm việc sửa hồi tố trở nên tốn kém; việc neo làm nó bất khả thi đối với khoảng
+> thời gian đã neo.**
+
+Hệ quả trực tiếp: **khoảng cách giữa hai lần neo chính là cửa sổ mà việc sửa vẫn giấu được.**
+Job chạy 02:00 hằng đêm ⇒ cửa sổ 24 giờ. Thu hẹp nó chỉ tốn thêm giao dịch, không tốn thiết
+kế — chi phí neo không phụ thuộc số bản ghi trong lô (§11.1 của `measurements.md`), nên neo
+mỗi giờ đắt gấp 24 lần mà vẫn là con số nhỏ. **Đây là một cái núm đánh đổi định lượng được,
+nên nêu trong báo cáo.**
+
+Có một test khẳng định chuỗi tính lại được **thật sự** qua mặt `verifyChain`. Nếu test đó
+chuyển sang đỏ thì hoặc chuỗi tính lại sai, hoặc `verifyChain` đang dựa vào thứ gì đó ngoài
+chính chuỗi — cả hai đều cần xem lại.
+
+### 14.3. `before`/`after` vào bằng KECCAK CỦA BYTE, không qua JCS
+
+Hai cột đó chứa JSON **tuỳ ý** do tầng nghiệp vụ sinh. Đưa chúng qua `Jcs` nghĩa là một giá
+trị nằm ngoài tập con mà `Jcs` chấp nhận (§4) sẽ **ném lỗi giữa lúc ghi nhật ký** — tức là một
+thao tác nghiệp vụ bình thường bị chặn bởi tầng ghi log. Sai hoàn toàn về thứ tự ưu tiên.
+
+Băm byte thô thì không có gì để từ chối, mà vẫn cam kết đúng nội dung. Cái giá: người kiểm
+toán phải có **đúng byte**, không phải "một JSON tương đương".
+
+**Hệ quả riêng tư, và đây là phần đáng viết:** payload được neo chỉ mang `beforeHash` /
+`afterHash`, **không mang nội dung**. Cây Merkle vì thế không bao giờ chạm dữ liệu cá nhân, kể
+cả gián tiếp — trong khi vẫn chứng minh được nội dung không đổi. Quan trọng vì lá của một bản
+ghi xuất hiện trong proof của **bản ghi khác**; nếu payload mang nội dung thì mọi proof là một
+cửa sổ nhìn vào dữ liệu người khác. Có test chốt: `payloadKhongLoNoiDung`.
+
+### 14.4. `prevHash` null — hai quy ước ở hai chỗ, có chủ ý
+
+| Chỗ | `prevHash` của bản ghi đầu chuỗi |
+|---|---|
+| Lúc **băm mắt xích** | thay bằng **32 byte `0x00`** |
+| Trong **payload được neo** | giữ nguyên **`null`** |
+
+Lúc băm: đệm `0x00` giữ đúng **một** công thức. Cách khác là bỏ hẳn `prevHash` khỏi tiền ảnh,
+nhưng như vậy bản ghi đầu tiên dùng công thức khác mọi bản ghi sau — hai nhánh mã trong hàm
+nhạy cảm nhất. Có test chốt rằng `null` và 32 byte `0x00` cho **cùng** một mắt xích.
+
+Trong payload: `null` nói đúng sự thật *"đây là bản ghi đầu chuỗi"*, còn một chuỗi 64 số 0
+trông như một hash thật và sẽ bị người đọc hiểu nhầm.
+
+### 14.5. Ghi nối tiếp, và một khiếm khuyết đã biết
+
+Mắt xích mới phụ thuộc mắt xích **cuối cùng**. Hai luồng cùng đọc "bản ghi cuối" rồi cùng ghi
+sẽ tạo hai bản ghi trỏ về cùng một cha — chuỗi thành **cái cây**, và xóa một nhánh không làm
+đứt xích ở nhánh còn lại.
+
+Ba lớp chặn: hệ chạy **một instance** (`PROJECT.md` §4) · `AuditService.record` là
+`synchronized` · ràng buộc `uk_audit_prev_hash` (V7).
+
+> **Khiếm khuyết:** MySQL cho phép nhiều `NULL` trong một `UNIQUE`, nên ràng buộc đó **không**
+> chặn được hai bản ghi *đầu tiên* cùng lúc. Chỉ xảy ra khi nhật ký còn rỗng, và
+> `synchronized` đã chặn ở tầng ứng dụng. Ghi ra đây thay vì giả vờ là không có.
+
+### 14.6. Ghi nhật ký chạy trong giao dịch CỦA BÊN GỌI
+
+`Propagation.REQUIRED`, cố ý. Thao tác nghiệp vụ cuộn lại thì mắt xích cũng cuộn theo — nếu
+không, chuỗi sẽ có một bản ghi nói về một sự kiện chưa từng xảy ra.
+
+Đánh đổi: lỗi trong lúc ghi nhật ký làm hỏng cả thao tác nghiệp vụ. Chấp nhận có ý thức — hệ
+thống mà *"ghi log thất bại thì thôi bỏ qua"* thì nhật ký của nó không dùng làm bằng chứng
+được.
+
+### 14.7. ⚠️ Lại kiểu cột `JSON` của MySQL — lần thứ hai
+
+`before_json` / `after_json` cũng dính đúng bẫy của §13.4: MySQL sắp xếp lại khóa theo **độ
+dài** và chèn dấu cách, nên byte đọc ra khác byte đã băm ⇒ **đứt cả chuỗi ngay từ bản ghi đầu
+tiên**. Migration **V7** đổi sang `LONGTEXT`.
+
+Lần này chặn cả họ, không chỉ chỗ đang dùng. **Quy tắc chung, ghi lại để lần thứ ba không xảy
+ra:**
+
+| Cột JSON | Kiểu |
+|---|---|
+| Byte của nó **đi vào một phép băm** | **BẮT BUỘC `LONGTEXT`** |
+| Chỉ để đọc / truy vấn | kiểu `JSON` vẫn tốt hơn |
+
+Đã rà soát toàn bộ lược đồ: `credentials.payload_json` (V6) · `audit_logs.before_json` /
+`after_json` (V7) · `rulesets.json_body` (V7, đổi trước khi miền `RULESET` được dùng ở tuần 5,
+lúc bảng còn rỗng). `anchor_leaves.proof_json` **giữ nguyên kiểu `JSON`** — nội dung là một
+**mảng**, mà MySQL giữ nguyên thứ tự phần tử, và byte của nó không đi vào phép băm nào.

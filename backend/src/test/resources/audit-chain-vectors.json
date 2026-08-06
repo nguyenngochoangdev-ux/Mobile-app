@@ -1,0 +1,539 @@
+{
+  "$schema": "khong-phai-JSON-Schema — bo test vector, doc docs/canonicalization.md truoc khi sua",
+  "spec": "docs/canonicalization.md §14",
+  "formula": "hash = keccak256( prevHash(32 byte) || UTF-8(JCS(record)) ); prevHash NULL -> 32 byte 0x00",
+  "warning": "File nay la HOP DONG giua backend Java va verifier JS. Test do = mot trong hai phia sai, KHONG phai file nay sai. Chi sinh lai bang `npm run gen-audit-chain-vectors` khi co y doi dac ta.",
+  "generatedBy": "verifier/scripts/gen-audit-chain-vectors.mjs",
+  "genesisPrevHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "chuoi": [
+    {
+      "seq": 1,
+      "beforeJson": "{\"status\":\"PENDING\"}",
+      "afterJson": "{\"status\":\"ACTIVE\",\"approvedBy\":3}",
+      "payload": {
+        "seq": 1,
+        "action": "DEVICE_APPROVE",
+        "entity": "student_devices",
+        "entityId": 12,
+        "actorId": 3,
+        "at": "2026-08-04T02:10:00Z",
+        "beforeHash": "0x749917e771bedd9369849c5846fe028c3aafa046b8e51ae1a575206b90f08b46",
+        "afterHash": "0xd3a1569d080040a4be64c2b46f5dbc7ccdeaf08d19ddfde9d76af08d7f470d6e",
+        "prevHash": null,
+        "hash": "0x9e39b8c94dfb117e96c6bbb51ae7fd9111cfb652e34a5aca4bad5df9d328a596",
+        "nonce": "0x9f86d081884c7d659a2feaa0c55ad015"
+      },
+      "expected": {
+        "chainRecordJcs": "{\"action\":\"DEVICE_APPROVE\",\"actorId\":3,\"afterHash\":\"0xd3a1569d080040a4be64c2b46f5dbc7ccdeaf08d19ddfde9d76af08d7f470d6e\",\"at\":\"2026-08-04T02:10:00Z\",\"beforeHash\":\"0x749917e771bedd9369849c5846fe028c3aafa046b8e51ae1a575206b90f08b46\",\"entity\":\"student_devices\",\"entityId\":12}",
+        "hash": "0x9e39b8c94dfb117e96c6bbb51ae7fd9111cfb652e34a5aca4bad5df9d328a596",
+        "leaf": "0xdedd55af9df06fc564d3c054695c5cc5c2714ed242d5f7a5e5f828b0c55ac7a1"
+      }
+    },
+    {
+      "seq": 2,
+      "beforeJson": null,
+      "afterJson": "{\"method\":\"MANUAL\",\"verified\":false,\"ghiChu\":\"Sinh viên quên điện thoại\"}",
+      "payload": {
+        "seq": 2,
+        "action": "ATTENDANCE_MANUAL",
+        "entity": "attendances",
+        "entityId": 5,
+        "actorId": 3,
+        "at": "2026-08-04T10:57:04Z",
+        "beforeHash": null,
+        "afterHash": "0x80666135924378a33d53a900889de3124f294ff19afb9b78a374d10a91305012",
+        "prevHash": "0x9e39b8c94dfb117e96c6bbb51ae7fd9111cfb652e34a5aca4bad5df9d328a596",
+        "hash": "0xa98e93ee4b9adbc461af51bb0f8032d0902b0a7f403f783a7f336406382b6222",
+        "nonce": "0x3b8c1f42a7d90e5643f1c2b8a90d7e64"
+      },
+      "expected": {
+        "chainRecordJcs": "{\"action\":\"ATTENDANCE_MANUAL\",\"actorId\":3,\"afterHash\":\"0x80666135924378a33d53a900889de3124f294ff19afb9b78a374d10a91305012\",\"at\":\"2026-08-04T10:57:04Z\",\"beforeHash\":null,\"entity\":\"attendances\",\"entityId\":5}",
+        "hash": "0xa98e93ee4b9adbc461af51bb0f8032d0902b0a7f403f783a7f336406382b6222",
+        "leaf": "0xf586bf4774d0b9b6c21713d615bca9f71530811c86e5b880afb56947b98d9665"
+      }
+    },
+    {
+      "seq": 3,
+      "beforeJson": null,
+      "afterJson": "{\"studentCode\":\"B21DCCN002\",\"activityCount\":3,\"totalPoints\":15}",
+      "payload": {
+        "seq": 3,
+        "action": "CREDENTIAL_ISSUE",
+        "entity": "credentials",
+        "entityId": 81,
+        "actorId": null,
+        "at": "2026-08-06T03:28:20Z",
+        "beforeHash": null,
+        "afterHash": "0x6bb7bda73f2f4e1bac06f9d543ece222187bb58b96cb8fe868a044c999d50c48",
+        "prevHash": "0xa98e93ee4b9adbc461af51bb0f8032d0902b0a7f403f783a7f336406382b6222",
+        "hash": "0x6da7ff68ffb170d7819f3cf65426c5c222ff8d5d9d58f4a680020da66db3ca5e",
+        "nonce": "0x74a40e0f493b112d51f09ade5cab9d44"
+      },
+      "expected": {
+        "chainRecordJcs": "{\"action\":\"CREDENTIAL_ISSUE\",\"actorId\":null,\"afterHash\":\"0x6bb7bda73f2f4e1bac06f9d543ece222187bb58b96cb8fe868a044c999d50c48\",\"at\":\"2026-08-06T03:28:20Z\",\"beforeHash\":null,\"entity\":\"credentials\",\"entityId\":81}",
+        "hash": "0x6da7ff68ffb170d7819f3cf65426c5c222ff8d5d9d58f4a680020da66db3ca5e",
+        "leaf": "0x73cd60c38975e9f01a4da1366ba580932e1d9545c1a5caf3c27809fc0a94e679"
+      }
+    },
+    {
+      "seq": 4,
+      "beforeJson": null,
+      "afterJson": "{ \"domain\": \"CRED\",  \"batchId\": 2026080601 }",
+      "payload": {
+        "seq": 4,
+        "action": "ANCHOR_BATCH",
+        "entity": "anchor_batches",
+        "entityId": 2,
+        "actorId": null,
+        "at": "2026-08-06T03:37:01Z",
+        "beforeHash": null,
+        "afterHash": "0x45b5b369b8666c9b5d962fc487b7079afb2ef3e0dcb0c723d53632b1a5962792",
+        "prevHash": "0x6da7ff68ffb170d7819f3cf65426c5c222ff8d5d9d58f4a680020da66db3ca5e",
+        "hash": "0xddfd2ec30a506a47444db7dee9ac4c70e40b5976ba2fe23562070ef2d8a491b3",
+        "nonce": "0x0403c6481c937c9f1ffacbf727fbe58b"
+      },
+      "expected": {
+        "chainRecordJcs": "{\"action\":\"ANCHOR_BATCH\",\"actorId\":null,\"afterHash\":\"0x45b5b369b8666c9b5d962fc487b7079afb2ef3e0dcb0c723d53632b1a5962792\",\"at\":\"2026-08-06T03:37:01Z\",\"beforeHash\":null,\"entity\":\"anchor_batches\",\"entityId\":2}",
+        "hash": "0xddfd2ec30a506a47444db7dee9ac4c70e40b5976ba2fe23562070ef2d8a491b3",
+        "leaf": "0x1daf395b75e28be43c042f53bba21ee470f32bed7df78600cb089b774cfac918"
+      }
+    },
+    {
+      "seq": 5,
+      "beforeJson": "{\"revokedAt\":null}",
+      "afterJson": "{\"revokedAt\":\"2026-08-06T05:00:00Z\",\"reason\":\"Cap nham hoc ky\"}",
+      "payload": {
+        "seq": 5,
+        "action": "CREDENTIAL_REVOKE",
+        "entity": "credentials",
+        "entityId": 81,
+        "actorId": 3,
+        "at": "2026-08-06T05:00:00Z",
+        "beforeHash": "0x52b002d9b586e00855c379d522ac338214490f4a6066fa91c4ad4278e975a8fa",
+        "afterHash": "0xcf30b48e0371aeb8f8664407661aaf2f16d9e6a5772052fd43613c30553fdbe5",
+        "prevHash": "0xddfd2ec30a506a47444db7dee9ac4c70e40b5976ba2fe23562070ef2d8a491b3",
+        "hash": "0x53d4dd564de425f2d9e12d86dadea39bf4b043654c2c2d23cb3944535145ba85",
+        "nonce": "0xdeadbeefcafebabe0123456789abcdef"
+      },
+      "expected": {
+        "chainRecordJcs": "{\"action\":\"CREDENTIAL_REVOKE\",\"actorId\":3,\"afterHash\":\"0xcf30b48e0371aeb8f8664407661aaf2f16d9e6a5772052fd43613c30553fdbe5\",\"at\":\"2026-08-06T05:00:00Z\",\"beforeHash\":\"0x52b002d9b586e00855c379d522ac338214490f4a6066fa91c4ad4278e975a8fa\",\"entity\":\"credentials\",\"entityId\":81}",
+        "hash": "0x53d4dd564de425f2d9e12d86dadea39bf4b043654c2c2d23cb3944535145ba85",
+        "leaf": "0x7cce98dc0ede8014761ca10bd6a8a9fbc26ff4b3aa60ef8c8fb5bec28eb31abb"
+      }
+    }
+  ],
+  "pha": [
+    {
+      "id": "sua-noi-dung",
+      "why": "Sửa `entityId` của bản ghi giữa chuỗi mà quên tính lại hash. Đây là kiểu sửa vụng về nhất, và cũng là kiểu hay gặp nhất khi ai đó sửa thẳng bằng SQL.",
+      "laDauChuoi": true,
+      "expectedError": "NỘI DUNG BỊ SỬA",
+      "payloads": [
+        {
+          "seq": 1,
+          "action": "DEVICE_APPROVE",
+          "entity": "student_devices",
+          "entityId": 12,
+          "actorId": 3,
+          "at": "2026-08-04T02:10:00Z",
+          "beforeHash": "0x749917e771bedd9369849c5846fe028c3aafa046b8e51ae1a575206b90f08b46",
+          "afterHash": "0xd3a1569d080040a4be64c2b46f5dbc7ccdeaf08d19ddfde9d76af08d7f470d6e",
+          "prevHash": null,
+          "hash": "0x9e39b8c94dfb117e96c6bbb51ae7fd9111cfb652e34a5aca4bad5df9d328a596",
+          "nonce": "0x9f86d081884c7d659a2feaa0c55ad015"
+        },
+        {
+          "seq": 2,
+          "action": "ATTENDANCE_MANUAL",
+          "entity": "attendances",
+          "entityId": 5,
+          "actorId": 3,
+          "at": "2026-08-04T10:57:04Z",
+          "beforeHash": null,
+          "afterHash": "0x80666135924378a33d53a900889de3124f294ff19afb9b78a374d10a91305012",
+          "prevHash": "0x9e39b8c94dfb117e96c6bbb51ae7fd9111cfb652e34a5aca4bad5df9d328a596",
+          "hash": "0xa98e93ee4b9adbc461af51bb0f8032d0902b0a7f403f783a7f336406382b6222",
+          "nonce": "0x3b8c1f42a7d90e5643f1c2b8a90d7e64"
+        },
+        {
+          "seq": 3,
+          "action": "CREDENTIAL_ISSUE",
+          "entity": "credentials",
+          "entityId": 999,
+          "actorId": null,
+          "at": "2026-08-06T03:28:20Z",
+          "beforeHash": null,
+          "afterHash": "0x6bb7bda73f2f4e1bac06f9d543ece222187bb58b96cb8fe868a044c999d50c48",
+          "prevHash": "0xa98e93ee4b9adbc461af51bb0f8032d0902b0a7f403f783a7f336406382b6222",
+          "hash": "0x6da7ff68ffb170d7819f3cf65426c5c222ff8d5d9d58f4a680020da66db3ca5e",
+          "nonce": "0x74a40e0f493b112d51f09ade5cab9d44"
+        },
+        {
+          "seq": 4,
+          "action": "ANCHOR_BATCH",
+          "entity": "anchor_batches",
+          "entityId": 2,
+          "actorId": null,
+          "at": "2026-08-06T03:37:01Z",
+          "beforeHash": null,
+          "afterHash": "0x45b5b369b8666c9b5d962fc487b7079afb2ef3e0dcb0c723d53632b1a5962792",
+          "prevHash": "0x6da7ff68ffb170d7819f3cf65426c5c222ff8d5d9d58f4a680020da66db3ca5e",
+          "hash": "0xddfd2ec30a506a47444db7dee9ac4c70e40b5976ba2fe23562070ef2d8a491b3",
+          "nonce": "0x0403c6481c937c9f1ffacbf727fbe58b"
+        },
+        {
+          "seq": 5,
+          "action": "CREDENTIAL_REVOKE",
+          "entity": "credentials",
+          "entityId": 81,
+          "actorId": 3,
+          "at": "2026-08-06T05:00:00Z",
+          "beforeHash": "0x52b002d9b586e00855c379d522ac338214490f4a6066fa91c4ad4278e975a8fa",
+          "afterHash": "0xcf30b48e0371aeb8f8664407661aaf2f16d9e6a5772052fd43613c30553fdbe5",
+          "prevHash": "0xddfd2ec30a506a47444db7dee9ac4c70e40b5976ba2fe23562070ef2d8a491b3",
+          "hash": "0x53d4dd564de425f2d9e12d86dadea39bf4b043654c2c2d23cb3944535145ba85",
+          "nonce": "0xdeadbeefcafebabe0123456789abcdef"
+        }
+      ]
+    },
+    {
+      "id": "sua-noi-dung-va-tinh-lai-hash",
+      "why": "Sửa nội dung VÀ tính lại hash cho bản ghi đó — hash của chính nó khớp, nhưng prevHash của bản ghi SAU thì không. Đây là lý do phải kiểm cả hai thứ, không chỉ hash.",
+      "laDauChuoi": true,
+      "expectedError": "ĐỨT XÍCH",
+      "payloads": [
+        {
+          "seq": 1,
+          "action": "DEVICE_APPROVE",
+          "entity": "student_devices",
+          "entityId": 12,
+          "actorId": 3,
+          "at": "2026-08-04T02:10:00Z",
+          "beforeHash": "0x749917e771bedd9369849c5846fe028c3aafa046b8e51ae1a575206b90f08b46",
+          "afterHash": "0xd3a1569d080040a4be64c2b46f5dbc7ccdeaf08d19ddfde9d76af08d7f470d6e",
+          "prevHash": null,
+          "hash": "0x9e39b8c94dfb117e96c6bbb51ae7fd9111cfb652e34a5aca4bad5df9d328a596",
+          "nonce": "0x9f86d081884c7d659a2feaa0c55ad015"
+        },
+        {
+          "seq": 2,
+          "action": "ATTENDANCE_MANUAL",
+          "entity": "attendances",
+          "entityId": 5,
+          "actorId": 3,
+          "at": "2026-08-04T10:57:04Z",
+          "beforeHash": null,
+          "afterHash": "0x80666135924378a33d53a900889de3124f294ff19afb9b78a374d10a91305012",
+          "prevHash": "0x9e39b8c94dfb117e96c6bbb51ae7fd9111cfb652e34a5aca4bad5df9d328a596",
+          "hash": "0xa98e93ee4b9adbc461af51bb0f8032d0902b0a7f403f783a7f336406382b6222",
+          "nonce": "0x3b8c1f42a7d90e5643f1c2b8a90d7e64"
+        },
+        {
+          "seq": 3,
+          "action": "CREDENTIAL_ISSUE",
+          "entity": "credentials",
+          "entityId": 999,
+          "actorId": null,
+          "at": "2026-08-06T03:28:20Z",
+          "beforeHash": null,
+          "afterHash": "0x6bb7bda73f2f4e1bac06f9d543ece222187bb58b96cb8fe868a044c999d50c48",
+          "prevHash": "0xa98e93ee4b9adbc461af51bb0f8032d0902b0a7f403f783a7f336406382b6222",
+          "hash": "0xb5638fdfcf0a8733c05ff400a4d68060610b0e122693dc5f8760e2b90efd4893",
+          "nonce": "0x74a40e0f493b112d51f09ade5cab9d44"
+        },
+        {
+          "seq": 4,
+          "action": "ANCHOR_BATCH",
+          "entity": "anchor_batches",
+          "entityId": 2,
+          "actorId": null,
+          "at": "2026-08-06T03:37:01Z",
+          "beforeHash": null,
+          "afterHash": "0x45b5b369b8666c9b5d962fc487b7079afb2ef3e0dcb0c723d53632b1a5962792",
+          "prevHash": "0x6da7ff68ffb170d7819f3cf65426c5c222ff8d5d9d58f4a680020da66db3ca5e",
+          "hash": "0xddfd2ec30a506a47444db7dee9ac4c70e40b5976ba2fe23562070ef2d8a491b3",
+          "nonce": "0x0403c6481c937c9f1ffacbf727fbe58b"
+        },
+        {
+          "seq": 5,
+          "action": "CREDENTIAL_REVOKE",
+          "entity": "credentials",
+          "entityId": 81,
+          "actorId": 3,
+          "at": "2026-08-06T05:00:00Z",
+          "beforeHash": "0x52b002d9b586e00855c379d522ac338214490f4a6066fa91c4ad4278e975a8fa",
+          "afterHash": "0xcf30b48e0371aeb8f8664407661aaf2f16d9e6a5772052fd43613c30553fdbe5",
+          "prevHash": "0xddfd2ec30a506a47444db7dee9ac4c70e40b5976ba2fe23562070ef2d8a491b3",
+          "hash": "0x53d4dd564de425f2d9e12d86dadea39bf4b043654c2c2d23cb3944535145ba85",
+          "nonce": "0xdeadbeefcafebabe0123456789abcdef"
+        }
+      ]
+    },
+    {
+      "id": "xoa-mot-ban-ghi-giua-chuoi",
+      "why": "Gỡ hẳn một bản ghi ra. Không có phép kiểm prevHash thì việc này hoàn toàn vô hình.",
+      "laDauChuoi": true,
+      "expectedError": "ĐỨT XÍCH",
+      "payloads": [
+        {
+          "seq": 1,
+          "action": "DEVICE_APPROVE",
+          "entity": "student_devices",
+          "entityId": 12,
+          "actorId": 3,
+          "at": "2026-08-04T02:10:00Z",
+          "beforeHash": "0x749917e771bedd9369849c5846fe028c3aafa046b8e51ae1a575206b90f08b46",
+          "afterHash": "0xd3a1569d080040a4be64c2b46f5dbc7ccdeaf08d19ddfde9d76af08d7f470d6e",
+          "prevHash": null,
+          "hash": "0x9e39b8c94dfb117e96c6bbb51ae7fd9111cfb652e34a5aca4bad5df9d328a596",
+          "nonce": "0x9f86d081884c7d659a2feaa0c55ad015"
+        },
+        {
+          "seq": 2,
+          "action": "ATTENDANCE_MANUAL",
+          "entity": "attendances",
+          "entityId": 5,
+          "actorId": 3,
+          "at": "2026-08-04T10:57:04Z",
+          "beforeHash": null,
+          "afterHash": "0x80666135924378a33d53a900889de3124f294ff19afb9b78a374d10a91305012",
+          "prevHash": "0x9e39b8c94dfb117e96c6bbb51ae7fd9111cfb652e34a5aca4bad5df9d328a596",
+          "hash": "0xa98e93ee4b9adbc461af51bb0f8032d0902b0a7f403f783a7f336406382b6222",
+          "nonce": "0x3b8c1f42a7d90e5643f1c2b8a90d7e64"
+        },
+        {
+          "seq": 4,
+          "action": "ANCHOR_BATCH",
+          "entity": "anchor_batches",
+          "entityId": 2,
+          "actorId": null,
+          "at": "2026-08-06T03:37:01Z",
+          "beforeHash": null,
+          "afterHash": "0x45b5b369b8666c9b5d962fc487b7079afb2ef3e0dcb0c723d53632b1a5962792",
+          "prevHash": "0x6da7ff68ffb170d7819f3cf65426c5c222ff8d5d9d58f4a680020da66db3ca5e",
+          "hash": "0xddfd2ec30a506a47444db7dee9ac4c70e40b5976ba2fe23562070ef2d8a491b3",
+          "nonce": "0x0403c6481c937c9f1ffacbf727fbe58b"
+        },
+        {
+          "seq": 5,
+          "action": "CREDENTIAL_REVOKE",
+          "entity": "credentials",
+          "entityId": 81,
+          "actorId": 3,
+          "at": "2026-08-06T05:00:00Z",
+          "beforeHash": "0x52b002d9b586e00855c379d522ac338214490f4a6066fa91c4ad4278e975a8fa",
+          "afterHash": "0xcf30b48e0371aeb8f8664407661aaf2f16d9e6a5772052fd43613c30553fdbe5",
+          "prevHash": "0xddfd2ec30a506a47444db7dee9ac4c70e40b5976ba2fe23562070ef2d8a491b3",
+          "hash": "0x53d4dd564de425f2d9e12d86dadea39bf4b043654c2c2d23cb3944535145ba85",
+          "nonce": "0xdeadbeefcafebabe0123456789abcdef"
+        }
+      ]
+    },
+    {
+      "id": "chen-ban-ghi-la",
+      "why": "Chèn thêm một bản ghi giả vào giữa.",
+      "laDauChuoi": true,
+      "expectedError": "ĐỨT XÍCH",
+      "payloads": [
+        {
+          "seq": 1,
+          "action": "DEVICE_APPROVE",
+          "entity": "student_devices",
+          "entityId": 12,
+          "actorId": 3,
+          "at": "2026-08-04T02:10:00Z",
+          "beforeHash": "0x749917e771bedd9369849c5846fe028c3aafa046b8e51ae1a575206b90f08b46",
+          "afterHash": "0xd3a1569d080040a4be64c2b46f5dbc7ccdeaf08d19ddfde9d76af08d7f470d6e",
+          "prevHash": null,
+          "hash": "0x9e39b8c94dfb117e96c6bbb51ae7fd9111cfb652e34a5aca4bad5df9d328a596",
+          "nonce": "0x9f86d081884c7d659a2feaa0c55ad015"
+        },
+        {
+          "seq": 2,
+          "action": "ATTENDANCE_MANUAL",
+          "entity": "attendances",
+          "entityId": 5,
+          "actorId": 3,
+          "at": "2026-08-04T10:57:04Z",
+          "beforeHash": null,
+          "afterHash": "0x80666135924378a33d53a900889de3124f294ff19afb9b78a374d10a91305012",
+          "prevHash": "0x9e39b8c94dfb117e96c6bbb51ae7fd9111cfb652e34a5aca4bad5df9d328a596",
+          "hash": "0xa98e93ee4b9adbc461af51bb0f8032d0902b0a7f403f783a7f336406382b6222",
+          "nonce": "0x3b8c1f42a7d90e5643f1c2b8a90d7e64"
+        },
+        {
+          "seq": 25,
+          "action": "CREDENTIAL_ISSUE",
+          "entity": "attendances",
+          "entityId": 5,
+          "actorId": 3,
+          "at": "2026-08-04T10:57:04Z",
+          "beforeHash": null,
+          "afterHash": "0x80666135924378a33d53a900889de3124f294ff19afb9b78a374d10a91305012",
+          "prevHash": "0x9e39b8c94dfb117e96c6bbb51ae7fd9111cfb652e34a5aca4bad5df9d328a596",
+          "hash": "0xf5b13c37584b0a03b2a5b94edb4c64bbf47e651d808b71419993e40dc7ded48a",
+          "nonce": "0x3b8c1f42a7d90e5643f1c2b8a90d7e64"
+        },
+        {
+          "seq": 3,
+          "action": "CREDENTIAL_ISSUE",
+          "entity": "credentials",
+          "entityId": 81,
+          "actorId": null,
+          "at": "2026-08-06T03:28:20Z",
+          "beforeHash": null,
+          "afterHash": "0x6bb7bda73f2f4e1bac06f9d543ece222187bb58b96cb8fe868a044c999d50c48",
+          "prevHash": "0xa98e93ee4b9adbc461af51bb0f8032d0902b0a7f403f783a7f336406382b6222",
+          "hash": "0x6da7ff68ffb170d7819f3cf65426c5c222ff8d5d9d58f4a680020da66db3ca5e",
+          "nonce": "0x74a40e0f493b112d51f09ade5cab9d44"
+        },
+        {
+          "seq": 4,
+          "action": "ANCHOR_BATCH",
+          "entity": "anchor_batches",
+          "entityId": 2,
+          "actorId": null,
+          "at": "2026-08-06T03:37:01Z",
+          "beforeHash": null,
+          "afterHash": "0x45b5b369b8666c9b5d962fc487b7079afb2ef3e0dcb0c723d53632b1a5962792",
+          "prevHash": "0x6da7ff68ffb170d7819f3cf65426c5c222ff8d5d9d58f4a680020da66db3ca5e",
+          "hash": "0xddfd2ec30a506a47444db7dee9ac4c70e40b5976ba2fe23562070ef2d8a491b3",
+          "nonce": "0x0403c6481c937c9f1ffacbf727fbe58b"
+        },
+        {
+          "seq": 5,
+          "action": "CREDENTIAL_REVOKE",
+          "entity": "credentials",
+          "entityId": 81,
+          "actorId": 3,
+          "at": "2026-08-06T05:00:00Z",
+          "beforeHash": "0x52b002d9b586e00855c379d522ac338214490f4a6066fa91c4ad4278e975a8fa",
+          "afterHash": "0xcf30b48e0371aeb8f8664407661aaf2f16d9e6a5772052fd43613c30553fdbe5",
+          "prevHash": "0xddfd2ec30a506a47444db7dee9ac4c70e40b5976ba2fe23562070ef2d8a491b3",
+          "hash": "0x53d4dd564de425f2d9e12d86dadea39bf4b043654c2c2d23cb3944535145ba85",
+          "nonce": "0xdeadbeefcafebabe0123456789abcdef"
+        }
+      ]
+    },
+    {
+      "id": "cat-chuoi-roi-bat-dau-lai",
+      "why": "Bỏ hai bản ghi đầu rồi đặt prevHash của bản ghi mới đầu tiên thành null, làm như nó là gốc chuỗi. Bắt được vì bên gọi biết đây có phải đầu chuỗi thật hay không.",
+      "laDauChuoi": false,
+      "expectedError": "ĐỨT XÍCH",
+      "payloads": [
+        {
+          "seq": 3,
+          "action": "CREDENTIAL_ISSUE",
+          "entity": "credentials",
+          "entityId": 81,
+          "actorId": null,
+          "at": "2026-08-06T03:28:20Z",
+          "beforeHash": null,
+          "afterHash": "0x6bb7bda73f2f4e1bac06f9d543ece222187bb58b96cb8fe868a044c999d50c48",
+          "prevHash": null,
+          "hash": "0x9dca3ec879bfeb73e98f27a728a37c9d9cc2cf4e555b9e75e1b965d48c00badd",
+          "nonce": "0x74a40e0f493b112d51f09ade5cab9d44"
+        },
+        {
+          "seq": 4,
+          "action": "ANCHOR_BATCH",
+          "entity": "anchor_batches",
+          "entityId": 2,
+          "actorId": null,
+          "at": "2026-08-06T03:37:01Z",
+          "beforeHash": null,
+          "afterHash": "0x45b5b369b8666c9b5d962fc487b7079afb2ef3e0dcb0c723d53632b1a5962792",
+          "prevHash": "0x6da7ff68ffb170d7819f3cf65426c5c222ff8d5d9d58f4a680020da66db3ca5e",
+          "hash": "0xddfd2ec30a506a47444db7dee9ac4c70e40b5976ba2fe23562070ef2d8a491b3",
+          "nonce": "0x0403c6481c937c9f1ffacbf727fbe58b"
+        },
+        {
+          "seq": 5,
+          "action": "CREDENTIAL_REVOKE",
+          "entity": "credentials",
+          "entityId": 81,
+          "actorId": 3,
+          "at": "2026-08-06T05:00:00Z",
+          "beforeHash": "0x52b002d9b586e00855c379d522ac338214490f4a6066fa91c4ad4278e975a8fa",
+          "afterHash": "0xcf30b48e0371aeb8f8664407661aaf2f16d9e6a5772052fd43613c30553fdbe5",
+          "prevHash": "0xddfd2ec30a506a47444db7dee9ac4c70e40b5976ba2fe23562070ef2d8a491b3",
+          "hash": "0x53d4dd564de425f2d9e12d86dadea39bf4b043654c2c2d23cb3944535145ba85",
+          "nonce": "0xdeadbeefcafebabe0123456789abcdef"
+        }
+      ]
+    },
+    {
+      "id": "doi-thu-tu",
+      "why": "Đảo hai bản ghi liền nhau.",
+      "laDauChuoi": true,
+      "expectedError": "ĐỨT XÍCH",
+      "payloads": [
+        {
+          "seq": 1,
+          "action": "DEVICE_APPROVE",
+          "entity": "student_devices",
+          "entityId": 12,
+          "actorId": 3,
+          "at": "2026-08-04T02:10:00Z",
+          "beforeHash": "0x749917e771bedd9369849c5846fe028c3aafa046b8e51ae1a575206b90f08b46",
+          "afterHash": "0xd3a1569d080040a4be64c2b46f5dbc7ccdeaf08d19ddfde9d76af08d7f470d6e",
+          "prevHash": null,
+          "hash": "0x9e39b8c94dfb117e96c6bbb51ae7fd9111cfb652e34a5aca4bad5df9d328a596",
+          "nonce": "0x9f86d081884c7d659a2feaa0c55ad015"
+        },
+        {
+          "seq": 3,
+          "action": "CREDENTIAL_ISSUE",
+          "entity": "credentials",
+          "entityId": 81,
+          "actorId": null,
+          "at": "2026-08-06T03:28:20Z",
+          "beforeHash": null,
+          "afterHash": "0x6bb7bda73f2f4e1bac06f9d543ece222187bb58b96cb8fe868a044c999d50c48",
+          "prevHash": "0xa98e93ee4b9adbc461af51bb0f8032d0902b0a7f403f783a7f336406382b6222",
+          "hash": "0x6da7ff68ffb170d7819f3cf65426c5c222ff8d5d9d58f4a680020da66db3ca5e",
+          "nonce": "0x74a40e0f493b112d51f09ade5cab9d44"
+        },
+        {
+          "seq": 2,
+          "action": "ATTENDANCE_MANUAL",
+          "entity": "attendances",
+          "entityId": 5,
+          "actorId": 3,
+          "at": "2026-08-04T10:57:04Z",
+          "beforeHash": null,
+          "afterHash": "0x80666135924378a33d53a900889de3124f294ff19afb9b78a374d10a91305012",
+          "prevHash": "0x9e39b8c94dfb117e96c6bbb51ae7fd9111cfb652e34a5aca4bad5df9d328a596",
+          "hash": "0xa98e93ee4b9adbc461af51bb0f8032d0902b0a7f403f783a7f336406382b6222",
+          "nonce": "0x3b8c1f42a7d90e5643f1c2b8a90d7e64"
+        },
+        {
+          "seq": 4,
+          "action": "ANCHOR_BATCH",
+          "entity": "anchor_batches",
+          "entityId": 2,
+          "actorId": null,
+          "at": "2026-08-06T03:37:01Z",
+          "beforeHash": null,
+          "afterHash": "0x45b5b369b8666c9b5d962fc487b7079afb2ef3e0dcb0c723d53632b1a5962792",
+          "prevHash": "0x6da7ff68ffb170d7819f3cf65426c5c222ff8d5d9d58f4a680020da66db3ca5e",
+          "hash": "0xddfd2ec30a506a47444db7dee9ac4c70e40b5976ba2fe23562070ef2d8a491b3",
+          "nonce": "0x0403c6481c937c9f1ffacbf727fbe58b"
+        },
+        {
+          "seq": 5,
+          "action": "CREDENTIAL_REVOKE",
+          "entity": "credentials",
+          "entityId": 81,
+          "actorId": 3,
+          "at": "2026-08-06T05:00:00Z",
+          "beforeHash": "0x52b002d9b586e00855c379d522ac338214490f4a6066fa91c4ad4278e975a8fa",
+          "afterHash": "0xcf30b48e0371aeb8f8664407661aaf2f16d9e6a5772052fd43613c30553fdbe5",
+          "prevHash": "0xddfd2ec30a506a47444db7dee9ac4c70e40b5976ba2fe23562070ef2d8a491b3",
+          "hash": "0x53d4dd564de425f2d9e12d86dadea39bf4b043654c2c2d23cb3944535145ba85",
+          "nonce": "0xdeadbeefcafebabe0123456789abcdef"
+        }
+      ]
+    }
+  ]
+}

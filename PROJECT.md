@@ -471,13 +471,29 @@ Nhớ: **nonce trong payload** (§2.3), **status index ngẫu nhiên** (§2.3).
 > ngược lại (chuỗi xong, CSDL chưa) thì verifier vẫn đúng và `reconcile()` sửa được.
 > Cố ý **không có chế độ "thu hồi cục bộ"**.
 >
-> ❌ **Còn lại của tuần 4:**
-> 1. **Hash chain `audit_logs`** — miền `AUDIT` mới có cột `nonce`/`leaf_hash` (V2), chưa có
->    `AnchorSource`. Đây là thứ hiện thực **luận điểm 1** (chống sửa hồi tố), hiện chưa có gì.
->    Hai dòng threat model còn treo `☐ tuần 4` đều đợi cái này.
-> 2. *(tuỳ chọn)* Thu hồi thật một credential trên Amoy để có số liệu on-chain và ảnh chụp
->    verifier báo "ĐÃ THU HỒI". Một giao dịch ghi, **đảo ngược được** (khác `anchor`) nhưng
->    sự kiện `StatusChanged` thì nằm lại vĩnh viễn.
+> ✅ **Hash chain `audit_logs` xong (2026-08-06)** — **luận điểm 1 giờ có mã chạy được.**
+> `AuditHasher` · `AuditPayload` · `AuditService` · `AuditAnchorSource` + nửa JS
+> `verifier/src/audit.mjs`. Bộ vector thứ năm (`audit-chain-vectors.json`) mang một chuỗi 5
+> mắt xích **cộng sáu biến thể bị phá cố ý**, mỗi biến thể phải bị từ chối.
+> Java 34 · JS 37 test. Đặc tả: `docs/canonicalization.md` §14.
+>
+> Đã kiểm bằng **sửa/xóa/chèn thẳng bằng SQL trên MySQL thật** — đúng mô hình đe dọa (quản
+> trị viên có toàn quyền CSDL).
+>
+> ⚠️ **Chỗ thua đã được chứng minh bằng test, không giấu:** kẻ tấn công **tính lại toàn bộ
+> chuỗi** thì `verifyChain()` lại xanh hoàn toàn. Test `tinhLaiCaChuoiThiKhongBat` tồn tại để
+> chốt điều đó. Phát biểu đúng mức cho báo cáo: *chuỗi băm làm việc sửa hồi tố trở nên **tốn
+> kém**; việc neo làm nó **bất khả thi** đối với khoảng thời gian đã neo.* Cửa sổ còn giấu
+> được = khoảng cách giữa hai lần neo (hiện 24 giờ).
+>
+> **V7** đổi `audit_logs.before_json`/`after_json` và `rulesets.json_body` sang `LONGTEXT` —
+> lần thứ hai dính bẫy kiểu `JSON` của MySQL, lần này chặn cả họ.
+>
+> ❌ **Còn lại, cả hai đều là giao dịch ghi lên Amoy:**
+> 1. **Neo một lô `AUDIT` thật.** Chuỗi băm không có neo thì luận điểm 1 vẫn thiếu mắt xích
+>    cuối. Hai dòng threat model đang ghi `◐ chuỗi ✅, neo ☐` đợi đúng cái này.
+> 2. *(tuỳ chọn)* Thu hồi thật một credential để có ảnh chụp verifier báo "ĐÃ THU HỒI".
+>    Đảo ngược được (khác `anchor`) nhưng sự kiện `StatusChanged` nằm lại vĩnh viễn.
 >
 > ⚠️ **Nợ kỹ thuật phát hiện khi làm phần này:** `attendances` **không chụp ảnh** MSSV —
 > `AttendancePayload` đọc qua khóa ngoại. Đổi MSSV làm hỏng mọi proof điểm danh đã neo.

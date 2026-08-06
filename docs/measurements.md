@@ -107,7 +107,8 @@ Cột "Thiết kế đề xuất" dùng **ba mức**, không dùng nhị phân c
 
 | Mối đe dọa | CSDL truyền thống | Thiết kế đề xuất | Mức | Kiểm chứng |
 |---|---|---|---|---|
-| Quản trị viên sửa dữ liệu quá khứ | Không phát hiện được | Neo Merkle + hash chain nhật ký | Phát hiện | ☐ tuần 4 |
+| Quản trị viên sửa dữ liệu quá khứ **(sửa vụng, không tính lại chuỗi)** | Không phát hiện được | Hash chain nhật ký | Phát hiện | ✅ test SQL thật |
+| Quản trị viên sửa quá khứ **rồi TÍNH LẠI CẢ CHUỖI** | Không phát hiện được | Hash chain **không** bắt được; chỉ root đã neo mới bắt | Phát hiện **chỉ với khoảng đã neo** | ◐ chuỗi ✅, neo ☐ |
 | Chia sẻ **ảnh chụp** mã QR (gửi sau) | Không chặn | QR đổi mỗi 10s, dung sai 1 nhịp | Ngăn | ✅ API |
 | **Chuyển tiếp QR thời gian thực** (chụp và gửi ngay trong 20s) | Không chặn | Không ngăn được. Cần thêm đồng phạm có mặt tại chỗ | Tăng chi phí | ☐ chưa đo |
 | Mượn **tài khoản** (đưa mật khẩu, quét bằng máy khác) | Không chặn | Thiết bị chưa duyệt bị từ chối | Ngăn | ✅ API |
@@ -117,7 +118,7 @@ Cột "Thiết kế đề xuất" dùng **ba mức**, không dùng nhị phân c
 | **Đưa ảnh chụp QR của bạn cho cán bộ quét hộ** (luồng đảo chiều) | Không chặn | **Không ngăn được** — mã đúng, chữ ký đúng. Chỉ mắt cán bộ chặn được | Tăng chi phí | ✅ API |
 | **Sửa `studentId` trong mã QR của mình để mạo danh** | Không chặn | Chữ ký hỏng ngay, bị từ chối | Ngăn | ✅ API |
 | Giả mạo chứng chỉ khi xin việc | Phải xin xác nhận từ trường | Verify độc lập, không cần trường | Ngăn | ✅ **bundle thật** |
-| Chối bỏ dữ liệu khi khiếu nại | Phụ thuộc nhật ký nội bộ | Có bằng chứng thời điểm on-chain | Phát hiện | ☐ tuần 4 |
+| Chối bỏ dữ liệu khi khiếu nại | Phụ thuộc nhật ký nội bộ | Nhật ký có chuỗi băm + neo định kỳ | Phát hiện | ◐ chuỗi ✅, neo ☐ |
 | Máy chủ trường ngừng hoạt động | Mất khả năng xác minh | Verifier vẫn chạy | Ngăn | ✅ **bundle thật** |
 | **Sửa nội dung credential trong tệp bundle** | Không áp dụng | Ba lớp độc lập cùng bắt: leaf · chữ ký · Merkle proof | Ngăn | ✅ **bundle thật** |
 | **Trỏ bundle sang contract giả của kẻ tấn công** | Không áp dụng | Verifier dùng địa chỉ tin cậy trong mã nguồn của chính nó, không lấy từ bundle | Ngăn | ✅ test |
@@ -148,6 +149,24 @@ vì đổi thiết bị phải qua cán bộ duyệt, có nhật ký, và thiế
 Giải pháp đúng cho lớp tấn công này là chứng thực nền tảng (Play Integrity, App Attest)
 hoặc yếu tố sinh trắc tại thời điểm quét — cả hai đều đòi app native, nằm ngoài phạm vi
 PWA của đề tài. **Ghi vào phần hạn chế và hướng phát triển.**
+
+### Hai dòng đầu bảng là chỗ trung thực nhất của cả chương — giữ nguyên
+
+Bản trước gộp chúng thành một dòng *"Quản trị viên sửa dữ liệu quá khứ → Neo Merkle + hash
+chain → Phát hiện"*. **Phát biểu đó quá mạnh.** Tách ra vì hai kịch bản khác nhau hoàn toàn:
+
+- **Sửa vụng** (đổi một dòng bằng SQL, quên tính lại mắt xích) → chuỗi băm bắt ngay. Đã kiểm
+  bằng test sửa/xóa/chèn thẳng bằng SQL trên MySQL thật (`AuditServiceDbTest`).
+- **Sửa rồi tính lại cả chuỗi** → chuỗi băm **không** bắt được, và có một test
+  (`tinhLaiCaChuoiThiKhongBat`) **cố tình chứng minh điều đó**. Thứ duy nhất chặn được là root
+  đã nằm trên chuỗi công khai.
+
+Phát biểu đúng mức: **chuỗi băm làm việc sửa hồi tố trở nên tốn kém; việc neo làm nó bất khả
+thi đối với khoảng thời gian đã neo.** Cửa sổ còn giấu được chính là khoảng cách giữa hai lần
+neo — hiện là 24 giờ (job 02:00). Chi tiết: `docs/canonicalization.md` §14.2.
+
+Cột cuối ghi `◐ chuỗi ✅, neo ☐` vì **chưa có lô `AUDIT` nào trên Amoy**. Đừng đánh dấu ✅ cho
+tới khi có.
 
 ### Ba dòng cần chuẩn bị trả lời khi bảo vệ
 

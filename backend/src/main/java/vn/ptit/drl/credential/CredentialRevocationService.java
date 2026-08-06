@@ -63,6 +63,39 @@ public class CredentialRevocationService {
   private final CredentialRepository credentials;
   private final ObjectProvider<StatusListClient> clientProvider;
   private final JdbcTemplate jdbc;
+  private final vn.ptit.drl.audit.AuditService audit;
+
+  /**
+   * Chuỗi JSON an toàn cho lý do thu hồi.
+   *
+   * <p>Dựng tay vì lớp này không nên kéo Jackson vào chỉ để bọc một chuỗi, nhưng nối thẳng
+   * chuỗi người dùng nhập vào JSON là lỗi kinh điển: một dấu nháy kép trong lý do làm hỏng
+   * cả bản ghi nhật ký, và bản ghi hỏng thì mắt xích của nó vô nghĩa.
+   */
+  private static String jsonString(String s) {
+    if (s == null) {
+      return "null";
+    }
+    StringBuilder b = new StringBuilder("\"");
+    for (int i = 0; i < s.length(); i++) {
+      char ch = s.charAt(i);
+      switch (ch) {
+        case '"' -> b.append("\\\"");
+        case '\\' -> b.append("\\\\");
+        case '\n' -> b.append("\\n");
+        case '\r' -> b.append("\\r");
+        case '\t' -> b.append("\\t");
+        default -> {
+          if (ch < 0x20) {
+            b.append(String.format("\\u%04x", (int) ch));
+          } else {
+            b.append(ch);
+          }
+        }
+      }
+    }
+    return b.append('"').toString();
+  }
 
   /** Kết quả một lần thu hồi, để log và để test đối chiếu. */
   public record Result(long credentialId, long statusListIndex, boolean revoked,
@@ -135,6 +168,14 @@ public class CredentialRevocationService {
     }
 
     ghiCsdl(c, revoked, receipt.getTransactionHash());
+
+    // Ghi nhật ký SAU khi cả chuỗi lẫn CSDL đã xong. Ghi trước là ghi một sự kiện có thể
+    // chưa xảy ra; và vì nhật ký chỉ ghi thêm, không rút lại được.
+    audit.record(revoked ? "CREDENTIAL_REVOKE" : "CREDENTIAL_UNREVOKE", "credentials",
+        credentialId, null,
+        "{\"revoked\":" + truocDo + "}",
+        "{\"revoked\":" + revoked + ",\"txHash\":\"" + receipt.getTransactionHash() + "\""
+            + ",\"lyDo\":" + jsonString(lyDo) + "}");
 
     log.info("Credential {} · revoked={} · tx {} · gas {}",
         credentialId, revoked, receipt.getTransactionHash(), receipt.getGasUsed());

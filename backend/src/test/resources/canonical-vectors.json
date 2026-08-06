@@ -232,6 +232,54 @@
       }
     },
     {
+      "id": "audit-payload-day-du",
+      "why": "LƯỢC ĐỒ AUDIT THẬT — đúng 10 trường của AuditPayload.of(). Bản ghi SỬA một credential: có cả beforeHash lẫn afterHash, có prevHash (không phải bản ghi đầu chuỗi). Đây là hợp đồng backend↔verifier.",
+      "domain": "AUDIT",
+      "payload": {
+        "seq": 42,
+        "action": "CREDENTIAL_REVOKE",
+        "entity": "credentials",
+        "entityId": 81,
+        "actorId": 7,
+        "at": "2026-08-06T04:12:33Z",
+        "beforeHash": "0x1f2e3d4c5b6a798807162534435261708f9eadbc0d1e2f30415263748596a7b8",
+        "afterHash": "0x9a8b7c6d5e4f30211203344556677889aabbccddeeff00112233445566778899",
+        "prevHash": "0x0d1c2b3a49586776859493a2b1c0dfee0f1e2d3c4b5a69788796a5b4c3d2e1f0",
+        "hash": "0xfedcba98765432100123456789abcdeffedcba98765432100123456789abcdef",
+        "nonce": "0x1a2b3c4d5e6f708192a3b4c5d6e7f809"
+      },
+      "expected": {
+        "domainBytes8": "0x4155444954000000",
+        "jcs": "{\"action\":\"CREDENTIAL_REVOKE\",\"actorId\":7,\"afterHash\":\"0x9a8b7c6d5e4f30211203344556677889aabbccddeeff00112233445566778899\",\"at\":\"2026-08-06T04:12:33Z\",\"beforeHash\":\"0x1f2e3d4c5b6a798807162534435261708f9eadbc0d1e2f30415263748596a7b8\",\"entity\":\"credentials\",\"entityId\":81,\"hash\":\"0xfedcba98765432100123456789abcdeffedcba98765432100123456789abcdef\",\"nonce\":\"0x1a2b3c4d5e6f708192a3b4c5d6e7f809\",\"prevHash\":\"0x0d1c2b3a49586776859493a2b1c0dfee0f1e2d3c4b5a69788796a5b4c3d2e1f0\",\"seq\":42}",
+        "preimageBytes": 489,
+        "leaf": "0x2fbf4ad7f51379e4ff36ebf2ec58d8ac9298bed50713fc2b209f510a630f1a82"
+      }
+    },
+    {
+      "id": "audit-payload-dau-chuoi",
+      "why": "Bản ghi ĐẦU TIÊN của cả chuỗi: prevHash null (giữ nguyên literal null, KHÔNG thay bằng 64 số 0 như lúc băm mắt xích — hai chỗ hai quy ước, có chủ ý). Là hành động TẠO MỚI nên beforeHash cũng null. actorId null vì hệ thống tự làm.",
+      "domain": "AUDIT",
+      "payload": {
+        "seq": 1,
+        "action": "CREDENTIAL_ISSUE",
+        "entity": "credentials",
+        "entityId": 81,
+        "actorId": null,
+        "at": "2026-08-06T03:28:20Z",
+        "beforeHash": null,
+        "afterHash": "0x2b3c4d5e6f708192a3b4c5d6e7f8091a0b1c2d3e4f506172839405a6b7c8d9e0",
+        "prevHash": null,
+        "hash": "0x0123456789abcdeffedcba98765432100123456789abcdeffedcba9876543210",
+        "nonce": "0x9f86d081884c7d659a2feaa0c55ad015"
+      },
+      "expected": {
+        "domainBytes8": "0x4155444954000000",
+        "jcs": "{\"action\":\"CREDENTIAL_ISSUE\",\"actorId\":null,\"afterHash\":\"0x2b3c4d5e6f708192a3b4c5d6e7f8091a0b1c2d3e4f506172839405a6b7c8d9e0\",\"at\":\"2026-08-06T03:28:20Z\",\"beforeHash\":null,\"entity\":\"credentials\",\"entityId\":81,\"hash\":\"0x0123456789abcdeffedcba98765432100123456789abcdeffedcba9876543210\",\"nonce\":\"0x9f86d081884c7d659a2feaa0c55ad015\",\"prevHash\":null,\"seq\":1}",
+        "preimageBytes": 362,
+        "leaf": "0xe8fb7250acdaa8410db529ea8f89c27f9f6ff5ad1b4b705d2927749ed8f21572"
+      }
+    },
+    {
       "id": "ruleset-sap-xep-khoa",
       "why": "Tra tấn thứ tự khóa theo ĐƠN VỊ MÃ UTF-16: chữ số < chữ hoa < chữ thường < ký tự có dấu. Java String.compareTo và JS Array.sort() đều dùng đúng thứ tự này.",
       "domain": "RULESET",

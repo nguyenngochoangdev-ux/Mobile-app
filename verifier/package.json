@@ -10,6 +10,7 @@
     "gen-merkle-vectors": "node scripts/gen-merkle-vectors.mjs",
     "gen-cred-sig-vectors": "node scripts/gen-cred-sig-vectors.mjs",
     "gen-bundle-fixture": "node scripts/gen-bundle-fixture.mjs",
+    "gen-audit-chain-vectors": "node scripts/gen-audit-chain-vectors.mjs",
     "verify-bundle": "node scripts/verify-bundle.mjs"
   },
   "//": "RANG BUOC CUNG (PROJECT.md §4): chi duoc co ethers va merkletreejs. Khong them dependency nao khac, ke ca devDependency — test chay bang node:test co san cua Node.",

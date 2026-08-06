@@ -61,6 +61,7 @@ public class CredentialService {
   private final CredentialRepository repository;
   private final StatusListIndexService indexService;
   private final ObjectProvider<IssuerSigner> signerProvider;
+  private final vn.ptit.drl.audit.AuditService audit;
 
   /** Nội dung cần cấp — phần thay đổi theo từng credential. */
   public record Request(Student student, Organization issuerOrg, String semester,
@@ -181,6 +182,13 @@ public class CredentialService {
     saved.setPayloadJson(json);
     saved.setLeafHash(leaf);
     saved.setSignature(sig);
+
+    // Ghi nhật ký TRONG CÙNG giao dịch: nếu việc cấp cuộn lại thì mắt xích cũng phải cuộn
+    // theo, nếu không chuỗi sẽ có một bản ghi nói về một credential chưa từng tồn tại.
+    //
+    // `after` là chính chuỗi JCS đã ký — không dựng lại một bản tóm tắt khác. Nhật ký nói
+    // ĐÚNG thứ đã được ký, không phải một cách diễn đạt gần đúng của nó.
+    audit.record("CREDENTIAL_ISSUE", "credentials", saved.getId(), null, null, json);
 
     // Ba cột này khai updatable = false nên Hibernate KHÔNG sinh UPDATE cho chúng. Phải ghi
     // bằng câu lệnh tường minh. Đây là cái giá của việc chốt cứng tính bất biến ở tầng
