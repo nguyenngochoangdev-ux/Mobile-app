@@ -557,6 +557,30 @@ Ruleset JSON có version · SpEL evaluator · chạy chấm theo kỳ · `eviden
 Hoàn thiện 3 luồng PWA · verifier tĩnh · deploy.
 
 > **Mốc:** end-to-end: điểm danh → credential → điểm → xác minh độc lập. **Quay video luồng này ngay tuần 6**, đừng đợi tuần 8 — nếu tuần 7 có gì hỏng vẫn còn video.
+>
+> ## ✅ VERIFIER TĨNH XONG — 2026-08-06
+>
+> Trang chạy trong trình duyệt, **không gọi máy chủ của trường một dòng nào**. Đã thử thật với
+> bundle thật, đọc Amoy thật:
+>
+> | Thả vào | Kết quả |
+> |---|---|
+> | Bundle thật | **✓ 6/6 — "Xác minh được đầy đủ"** |
+> | Sửa `totalPoints` 15 → 95 | **✗ 3 lớp độc lập cùng đỏ** (leaf · chữ ký · proof) |
+> | Trỏ contract sang địa chỉ lạ | **✗ dừng ngay sau 2 phép kiểm** |
+>
+> **Không có bundler** — `PROJECT.md` §4 cấm thêm dependency kể cả devDependency.
+> `npm run build:web` chỉ chép tệp; `importmap` trỏ tới bản ESM `ethers` đã ship sẵn.
+> `dist/` 1.075 KB, phụ thuộc lúc chạy **chỉ `ethers`**, mở bằng bất kỳ máy chủ tĩnh nào.
+> Chi tiết + ba lỗi bắt được khi dựng: `docs/measurements.md` §11.10.
+>
+> ❌ **Còn lại của tuần 6:**
+> 1. **Trang credential + điểm cho PWA sinh viên** — xem credential, tải bundle, xem điểm kèm
+>    `evidence_hash`. Thiếu nó thì luồng end-to-end đứt ở khúc giữa: sinh viên không có cách
+>    nào lấy tệp bundle ra khỏi hệ thống bằng giao diện.
+> 2. **Trang cấp credential + chạy chấm cho cán bộ.**
+> 3. **Quay video end-to-end** — người dùng làm, không code hộ được.
+> 4. Deploy verifier lên GitHub Pages / Vercel.
 
 ### Tuần 7 — Đo đạc + báo cáo (KHÓA CỨNG)
 Bảng gas · threat model · benchmark thời gian · khảo sát SUS nếu kịp · bản nháp báo cáo hoàn chỉnh.

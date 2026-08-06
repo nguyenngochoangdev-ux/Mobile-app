@@ -41,7 +41,7 @@ import { recoverAddress } from 'ethers';
 
 import { canonicalize } from './jcs.mjs';
 import { leafHash } from './leaf.mjs';
-import { verifyProof } from './merkle.mjs';
+import { verifyProof } from './merkle-verify.mjs';
 import { normalizeCredPayload } from './cred.mjs';
 
 export const BUNDLE_FORMAT = 'drl-credential-bundle';

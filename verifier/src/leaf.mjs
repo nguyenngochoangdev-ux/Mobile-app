@@ -67,7 +67,10 @@ export function leafHash(domain, payload) {
   return keccak256(leafPreimage(domain, payload));
 }
 
-/** Dạng `Buffer` để đưa thẳng vào `merkletreejs`. */
-export function leafBytes(domain, payload) {
-  return Buffer.from(getBytes(leafHash(domain, payload)));
-}
+// `leafBytes()` — trả về `Buffer` để đưa thẳng vào `merkletreejs` — ĐÃ BỎ.
+//
+// Không nơi nào gọi (đã grep toàn repo), nhưng nó kéo `Buffer` — một global của Node — vào
+// module nằm trên đường xác minh của trình duyệt. Mã chết mang theo phụ thuộc là loại mã tệ
+// nhất: không ai đọc nó, và nó vẫn quyết định module này chạy được ở đâu.
+//
+// Phát hiện bằng phép kiểm trong `scripts/build-web.mjs`, không phải bằng mắt.

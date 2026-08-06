@@ -739,3 +739,61 @@ về quy mô:
    tắc*, nhưng bước 4 cần một bộ đánh giá SpEL — nằm ngoài ràng buộc "chỉ `ethers` +
    `merkletreejs`" (`PROJECT.md` §4). `kiemDiem()` trong `verifier/src/score.mjs` **nói rõ
    điều này trong kết quả trả về** thay vì để người dùng tưởng nó đã kiểm hết.
+
+---
+
+## 11.10. Verifier tĩnh — luận điểm 2 có mặt người nhìn được — 2026-08-06
+
+**Trang xác minh chạy trong trình duyệt, không gọi máy chủ của trường một dòng nào.** Đây là
+thứ `PROJECT.md` §3 gọi là *"bằng chứng trực quan nhất khi demo"*, và giờ nó chạy thật trên
+bundle thật, đọc Amoy thật.
+
+**Tái lập:**
+
+```
+cd verifier && npm run build:web
+cd dist && python -m http.server 8090     # rồi thả tệp bundle vào trang
+```
+
+### Ba lần thử, ba kết quả đúng
+
+| Tệp thả vào | Kết quả | Ghi chú |
+|---|---|---|
+| Bundle thật của B21DCCN002 | **✓ 6/6 — "Xác minh được đầy đủ"** | 3 `eth_call` trên RPC công cộng không key |
+| Sửa `totalPoints` 15 → 95 | **✗ 3 phép kiểm đỏ**: leaf · chữ ký · Merkle proof | `IssuerRegistry` và `StatusList` vẫn xanh — đúng |
+| Trỏ `anchorRegistry` sang địa chỉ lạ | **✗ dừng ngay sau 2 phép kiểm** | "BUNDLE TRỎ SANG CONTRACT LẠ" |
+
+**Dòng thứ ba là dòng đáng trình bày nhất.** Trang **dừng hẳn** thay vì chạy tiếp rồi báo "5
+xanh trên 6" — vì bundle trỏ sang contract lạ không phải "gần như hợp lệ", nó là dấu hiệu của
+đúng một thứ. Danh sách địa chỉ tin cậy nằm trong **mã nguồn của trang**, không lấy từ tệp;
+xem `docs/canonicalization.md` §13.3.
+
+### Không có bundler — và đó là một quyết định, không phải sự lười
+
+`PROJECT.md` §4 cấm thêm dependency vào verifier, **kể cả devDependency**. Vite/esbuild đều vi
+phạm. Trang này vì thế là HTML + ES module chạy thẳng, dùng `<script type="importmap">` trỏ tới
+bản ESM mà chính gói `ethers` đã ship. "Build" chỉ là **chép tệp**.
+
+| | |
+|---|---|
+| Kích thước `dist/` | **1.075 KB** (phần lớn là `ethers.js` không rút gọn) |
+| Phụ thuộc lúc chạy | **`ethers`, và không gì khác** |
+| Yêu cầu máy chủ | bất kỳ máy chủ tĩnh nào — không cần Node |
+
+Thứ chạy trên trình duyệt là **đúng những tệp nằm trong repo**, đối chiếu được từng dòng. Với
+một trang mà cả điểm bán hàng là *"nhà tuyển dụng chạy mà không có ai bảo đảm cho họ"*, mỗi gói
+thêm vào là một thứ họ phải tin.
+
+### Ba lỗi bắt được khi dựng, đáng ghi lại
+
+1. **`merkletreejs` không chạy trong trình duyệt** (CJS, cần `Buffer`). Tách `verifyProof`
+   sang `merkle-verify.mjs` — verifier chỉ cần *xác minh*, không cần *dựng* cây. Nhân tiện bỏ
+   `Buffer.compare`, làm phép so **không dấu** hiện ra thành một hàm có tên, đúng chỗ Java
+   từng suýt sai (`docs/canonicalization.md` §8.2).
+2. **`leafBytes()` là mã chết mang theo phụ thuộc Node.** Không nơi nào gọi, nhưng nó kéo
+   `Buffer` vào module nằm trên đường xác minh của trình duyệt. Phép kiểm trong
+   `scripts/build-web.mjs` bắt được, không phải mắt người.
+3. **`.mjs` bị phục vụ là `text/plain`** ⇒ trình duyệt **từ chối chạy** ES module, và trang
+   trắng xóa mà **console không báo gì**. Build đổi đuôi sang `.js` cho `dist/`. Đây là rủi ro
+   triển khai thật, không riêng máy chủ thử — một trang phải chạy được "ở bất kỳ đâu, kể cả
+   sau khi trường ngừng hoạt động" thì không nên phụ thuộc việc máy chủ có biết `.mjs`.

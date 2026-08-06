@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xác minh hồ sơ sinh viên — độc lập với trường</title>
+
+<!--
+  TRANG NÀY KHÔNG GỌI MÁY CHỦ CỦA TRƯỜNG MỘT DÒNG NÀO.
+
+  Nó chỉ nói chuyện với Polygon Amoy qua một endpoint JSON-RPC công cộng không cần API key.
+  Nghĩa là hồ sơ vẫn xác minh được kể cả khi trường đã tắt máy chủ VÀ ngừng trả tiền cho mọi
+  dịch vụ RPC — đó là luận điểm 2 của đề tài (PROJECT.md §10).
+
+  Không có bundler. `importmap` bên dưới trỏ `ethers` tới một tệp ESM đặt cạnh trang này, nên
+  toàn bộ mã chạy được bằng cách mở thư mục trên bất kỳ máy chủ tĩnh nào — kể cả `python -m
+  http.server`. Ràng buộc cứng PROJECT.md §4: verifier chỉ được có `ethers` + `merkletreejs`,
+  không thêm dependency nào, KỂ CẢ devDependency. Một bundler sẽ vi phạm điều đó.
+-->
+<script type="importmap">
+{ "imports": { "ethers": "./vendor/ethers.js" } }
+</script>
+
+<style>
+  :root {
+    --nen: #0f1115; --the: #171a21; --vien: #262b36;
+    --chu: #e6e9ef; --mo: #9aa3b2;
+    --xanh: #3fb950; --do: #f85149; --vang: #d29922; --lam: #58a6ff;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 1.5rem 1rem 4rem;
+    background: var(--nen); color: var(--chu);
+    font: 15px/1.6 ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 46rem; margin: 0 auto; }
+  h1 { font-size: 1.35rem; margin: 0 0 .25rem; }
+  .phu { color: var(--mo); font-size: .9rem; margin: 0 0 1.5rem; }
+  .the {
+    background: var(--the); border: 1px solid var(--vien);
+    border-radius: 10px; padding: 1rem 1.15rem; margin-bottom: 1rem;
+  }
+  .the h2 { font-size: .95rem; margin: 0 0 .75rem; color: var(--mo);
+            text-transform: uppercase; letter-spacing: .04em; }
+  #tha {
+    border: 2px dashed var(--vien); border-radius: 10px;
+    padding: 2rem 1rem; text-align: center; cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  #tha:hover, #tha.keo { border-color: var(--lam); background: #1b2029; }
+  #tha p { margin: .35rem 0; }
+  #tha .to { font-size: 1.05rem; }
+  button {
+    font: inherit; padding: .5rem 1rem; border-radius: 7px; cursor: pointer;
+    background: var(--lam); color: #08101c; border: 0; font-weight: 600;
+  }
+  button.phu2 { background: transparent; color: var(--lam); border: 1px solid var(--vien); }
+  button:disabled { opacity: .5; cursor: default; }
+  .hang { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: .35rem .9rem; margin: 0; }
+  dt { color: var(--mo); }
+  dd { margin: 0; overflow-wrap: anywhere; }
+  .kiem { display: flex; gap: .7rem; padding: .55rem 0; border-top: 1px solid var(--vien); }
+  .kiem:first-child { border-top: 0; }
+  .dau { font-size: 1.1rem; line-height: 1.4; flex: 0 0 1.2rem; }
+  .dat { color: var(--xanh); } .truot { color: var(--do); } .bo { color: var(--mo); }
+  .kiem .mota { flex: 1; }
+  .kiem .chitiet { color: var(--mo); font-size: .87rem; overflow-wrap: anywhere; }
+  .ketluan { padding: .85rem 1rem; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; }
+  .ketluan.dat { background: #10331b; color: var(--xanh); border: 1px solid #1c5c2e; }
+  .ketluan.truot { background: #3a1517; color: var(--do); border: 1px solid #6b2226; }
+  .ketluan.bo { background: #2b2410; color: var(--vang); border: 1px solid #55491d; }
+  code, .ma { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: .85em; }
+  a { color: var(--lam); }
+  .canhbao { border-left: 3px solid var(--vang); padding-left: .8rem; color: var(--mo);
+             font-size: .88rem; }
+  label { color: var(--mo); font-size: .88rem; display: flex; gap: .4rem; align-items: center; }
+  input[type=text] {
+    font: inherit; background: var(--nen); color: var(--chu);
+    border: 1px solid var(--vien); border-radius: 6px; padding: .4rem .6rem; flex: 1;
+  }
+  .an { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Xác minh hồ sơ sinh viên</h1>
+  <p class="phu">
+    Trang này <strong>không gọi máy chủ của trường</strong>. Nó đọc thẳng Polygon Amoy qua một
+    endpoint công cộng không cần API key — nên hồ sơ vẫn kiểm được kể cả khi trường đã ngừng
+    hoạt động.
+  </p>
+
+  <div class="the">
+    <div id="tha">
+      <p class="to">Thả tệp bundle vào đây</p>
+      <p class="phu">hoặc bấm để chọn · tệp <code>.json</code> sinh viên cung cấp</p>
+    </div>
+    <input type="file" id="tep" accept="application/json,.json" class="an">
+
+    <div class="hang" style="margin-top:.9rem">
+      <label style="flex:1">
+        RPC
+        <input type="text" id="rpc" spellcheck="false">
+      </label>
+      <label><input type="checkbox" id="offline"> Chế độ offline</label>
+    </div>
+  </div>
+
+  <div id="ketqua" class="an"></div>
+
+  <div class="the">
+    <h2>Trang này kiểm những gì</h2>
+    <ol style="margin:0; padding-left:1.2rem; color:var(--mo)">
+      <li>Bundle đúng định dạng và phiên bản</li>
+      <li>Địa chỉ contract khớp <strong>danh sách tin cậy của chính trang này</strong> —
+          không lấy từ tệp</li>
+      <li>Leaf hash tính lại từ nội dung credential</li>
+      <li>Chữ ký phục hồi ra đúng ví ghi trong credential</li>
+      <li>Merkle proof dẫn về root <strong>đọc từ blockchain</strong></li>
+      <li>Bên cấp còn quyền, và credential chưa bị thu hồi</li>
+    </ol>
+    <p class="canhbao" style="margin-top:.9rem">
+      Bốn phép đầu chạy hoàn toàn ngoại tuyến. Chỉ phép 5 và 6 cần mạng.
+      <strong>Chế độ offline không bao giờ kết luận "hợp lệ"</strong> — nó chỉ chứng minh tệp
+      nhất quán về mặt mật mã, không chứng minh credential đã được neo hay còn hiệu lực.
+    </p>
+  </div>
+
+  <p class="phu" style="text-align:center">
+    Mã nguồn contract đã công khai và verify trên
+    <a id="lienket" href="#" target="_blank" rel="noopener">PolygonScan</a>.
+  </p>
+</main>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>

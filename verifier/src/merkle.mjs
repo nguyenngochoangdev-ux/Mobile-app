@@ -20,8 +20,9 @@
 import { keccak256, getBytes, hexlify } from 'ethers';
 import { MerkleTree } from 'merkletreejs';
 
-/** keccak256 luôn cho 32 byte. */
-export const HASH_BYTES = 32;
+import { HASH_BYTES } from './merkle-verify.mjs';
+
+export { HASH_BYTES };
 
 /** Hàm băm truyền cho merkletreejs — vào Buffer, ra Buffer. */
 const keccakBuf = (data) => Buffer.from(getBytes(keccak256(data)));
@@ -99,39 +100,12 @@ export function merkleProof(leaves, index) {
 }
 
 /**
- * Xác minh bằng chứng. Đây là phép tính DUY NHẤT verifier cần chạy để đối chiếu một bản
- * ghi với root đã neo trên chuỗi — cố ý viết tay thay vì gọi `MerkleTree.verify`, để nó
- * đọc được y hệt `MerkleService.verify` phía Java và đối chiếu được từng dòng.
+ * Xác minh bằng chứng — **chuyển sang `merkle-verify.mjs`**, re-export để mọi chỗ gọi cũ và
+ * bộ test vector không phải đổi.
+ *
+ * Tách ra vì verifier chạy trong **trình duyệt** chỉ cần xác minh, không cần dựng cây — và
+ * kéo theo `merkletreejs` (CJS, phụ thuộc `Buffer`) vào đó là mang một thư viện thừa tới
+ * đúng nơi cần ít phụ thuộc nhất. Xem javadoc đầu `merkle-verify.mjs`.
  */
-export function verifyProof(leaf, siblings, expectedRoot) {
-  let node;
-  try {
-    node = Buffer.from(getBytes(leaf));
-  } catch {
-    return false;
-  }
-  if (node.length !== HASH_BYTES) return false;
+export { verifyProof, soSanhKhongDau } from './merkle-verify.mjs';
 
-  let root;
-  try {
-    root = Buffer.from(getBytes(expectedRoot));
-  } catch {
-    return false;
-  }
-  if (root.length !== HASH_BYTES) return false;
-
-  for (const s of siblings) {
-    let sib;
-    try {
-      sib = Buffer.from(getBytes(s));
-    } catch {
-      return false;
-    }
-    if (sib.length !== HASH_BYTES) return false;
-
-    // Buffer.compare so sánh KHÔNG DẤU — khớp Arrays.compareUnsigned phía Java.
-    const [first, second] = Buffer.compare(node, sib) <= 0 ? [node, sib] : [sib, node];
-    node = keccakBuf(Buffer.concat([first, second]));
-  }
-  return node.equals(root);
-}
