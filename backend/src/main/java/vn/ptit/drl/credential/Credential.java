@@ -121,7 +121,13 @@ public class Credential {
    * các cột rồi canonical hóa và so với chuỗi này. Lệch một byte là ném lỗi ngay, thay vì
    * neo một leaf khác với leaf đã ký.
    */
-  @Column(name = "payload_json", nullable = false, updatable = false, columnDefinition = "json")
+  // LONGTEXT chứ KHÔNG phải JSON. Kiểu JSON của MySQL phân tích rồi tuần tự hóa lại: nó sắp
+  // xếp khóa theo ĐỘ DÀI và chèn khoảng trắng sau `:` và `,`. JCS sắp xếp theo đơn vị mã
+  // UTF-16 và không có khoảng trắng nào — hai quy ước khác hẳn. Để kiểu JSON thì chuỗi đọc
+  // ra không bao giờ bằng chuỗi đã ký, và không xuất được bundle nào. Xem migration V6.
+  @Column(name = "payload_json", nullable = false, updatable = false,
+      columnDefinition = "longtext")
+  @JdbcTypeCode(SqlTypes.LONGVARCHAR)
   private String payloadJson;
 
   /**

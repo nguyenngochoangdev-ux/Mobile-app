@@ -1,0 +1,54 @@
+-- V6 — `credentials.payload_json`: kieu JSON -> LONGTEXT.
+--
+-- =============================================================================
+-- KIEU `JSON` CUA MYSQL CHUAN HOA LAI NOI DUNG. DO LA LOI O DAY.
+-- =============================================================================
+--
+-- MySQL khong luu chuoi JSON nguyen van. No phan tich ra roi luu o dinh dang nhi
+-- phan rieng, va khi doc lai thi TUAN TU HOA LAI theo quy uoc cua no:
+--
+--   ghi vao:  {"claims":{"activityCount":12,...},"credentialId":41,"expiresAt":null,...}
+--   doc ra:   {"type": "HOAT_DONG", "nonce": "0x5c1d...", "claims": {...}, ...}
+--
+-- Hai thay doi, ca hai deu pha:
+--   1. THU TU KHOA bi sap xep lai theo DO DAI khoa roi moi den thu tu chu cai
+--      (type, nonce, claims, issuedAt, ... credentialId, issuerAddress, statusListIndex).
+--      JCS (RFC 8785) sap xep theo don vi ma UTF-16 -- mot quy uoc HOAN TOAN KHAC.
+--   2. Chen mot dau cach sau moi dau hai cham va dau phay.
+--
+-- Cot nay luu DUNG CHUOI JCS da bam va da KY. Toan bo thiet ke dua tren viec no
+-- giu nguyen tung byte:
+--
+--   - `CredentialService.recomputeAndVerifyLeaf` so chuoi dung lai voi chuoi da
+--     luu de bat troi luoc do. Voi kieu JSON thi phep so nay LUON SAI, tuc la
+--     KHONG CAP DUOC bundle nao het.
+--   - Bundle nhung nguyen van chuoi nay (@JsonRawValue) de verifier kiem duoc
+--     rang payload da o dang chuan tac.
+--
+-- Vi sao khong lo ra som hon: Hibernate giu entity trong persistence context, nen
+-- trong CUNG mot giao dich thi getPayloadJson() tra ve chuoi TRONG BO NHO chu
+-- khong phai chuoi doc tu CSDL. Chi khi clear() persistence context roi doc lai
+-- moi thay. Test CredentialBundleDbTest gieo du lieu bang SQL thuan nen no doc
+-- thang tu CSDL -- va do la ly do no bat duoc.
+--
+-- LONGTEXT giu nguyen tung byte. Cai mat: khong dung duoc ham JSON cua MySQL tren
+-- cot nay (JSON_EXTRACT, ->>, index tren duong dan JSON). Khong noi nao trong ma
+-- nguon dung chung -- payload duoc doc nguyen khoi roi phan tich o tang ung dung,
+-- va cac cot rieng (semester, activity_count, ...) moi la thu de truy van.
+--
+-- Bang dang rong nen doi kieu la an toan. Neu co ban ghi that thi lenh nay VAN
+-- chay duoc nhung noi dung da bi MySQL chuan hoa tu luc ghi, khong khoi phuc
+-- duoc -- luc do phai ky lai, tuc la thu hoi va cap lai.
+
+ALTER TABLE credentials
+    MODIFY COLUMN payload_json LONGTEXT NOT NULL
+        COMMENT 'DUNG chuoi JCS(payload) da bam va da ky. LONGTEXT chu KHONG phai JSON -- kieu JSON cua MySQL sap xep lai khoa va chen khoang trang, xem V6.';
+
+-- Ghi chu ve hai cot JSON con lai, da kiem va KHONG can doi:
+--
+--   anchor_leaves.proof_json  -- la mot MANG. MySQL giu nguyen thu tu phan tu
+--                                cua mang (chi sap xep lai khoa cua object), va
+--                                AnchorProofService.parseProofJson da trim khoang
+--                                trang. An toan.
+--   audit_logs.before_json    -- du lieu de doc, khong di vao bat ky phep bam nao.
+--   audit_logs.after_json        Chuan hoa khong anh huong gi.

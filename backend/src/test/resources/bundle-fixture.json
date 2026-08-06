@@ -1,0 +1,163 @@
+{
+  "$schema": "khong-phai-JSON-Schema — bo fixture, doc docs/canonicalization.md truoc khi sua",
+  "spec": "docs/canonicalization.md §13",
+  "warning": "File nay la HOP DONG giua backend Java va verifier JS. Test do = mot trong hai phia sai, KHONG phai file nay sai. Chi sinh lai bang `npm run gen-bundle-fixture` khi co y doi dac ta.",
+  "generatedBy": "verifier/scripts/gen-bundle-fixture.mjs",
+  "bundle": {
+    "format": "drl-credential-bundle",
+    "version": 1,
+    "exportedAt": "2026-08-06T03:15:00Z",
+    "credential": {
+      "payload": {
+        "claims": {
+          "activityCount": 12,
+          "semester": "2026-1",
+          "totalPoints": 85
+        },
+        "credentialId": 41,
+        "expiresAt": null,
+        "issuedAt": "2026-08-06T02:00:00Z",
+        "issuerAddress": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "issuerOrgId": 3,
+        "nonce": "0x5c1d8e4a2f6b90c37e15a8d4b2f60931",
+        "statusListIndex": 731542,
+        "studentCode": "B21DCCN042",
+        "studentName": "Nguyễn Ngọc Hoàng",
+        "type": "HOAT_DONG"
+      },
+      "signature": "0xbb2d8f3024883154e735cd087313fa5139af87b91126fbae8079fba297aa8b8e30651106e2b141e6d3aa802404488c955cc4f3378fcdd309be236fbcaae199e51b",
+      "leaf": "0x5e62aae46e042dd39aa9739db8bd7c48b0bb3999dd5192c49737eb78ec8b0333"
+    },
+    "anchor": {
+      "domain": "CRED",
+      "batchId": 2026080601,
+      "proof": [
+        "0x9260a16c5331d64007fdfe887399042fe5b616b848e9e3cecb6d645dc79894b4",
+        "0x7c165a5f5c14b4d9251e934f49d51b88711dcf25ed00d8c4009f96d03f4b275c"
+      ],
+      "merkleRoot": "0xf9e94aed19c0bf03b4b29c3670b48313ddebfd7fd89c1e27f3fd671c64fbd273",
+      "txHash": "0xabababababababababababababababababababababababababababababababab",
+      "blockNumber": 26150413,
+      "anchoredAt": "2026-08-06T02:05:00Z"
+    },
+    "chain": {
+      "chainId": 80002,
+      "anchorRegistry": "0x4ac296ad010233799ba3b91b8505269213503faf",
+      "issuerRegistry": "0xd323118fa310a730bc4202fadd8dfa7cea4c5637",
+      "statusList": "0xc8538a8741ce428c4a26f3a06678b6ca10972106"
+    },
+    "doc": "Xac minh doc lap: cd verifier && node scripts/verify-bundle.mjs <tep-nay>. Dia chi contract trong muc `chain` la THONG TIN, verifier dung danh sach tin cay cua rieng no."
+  },
+  "duLieuGieo": {
+    "ghiChu": "Java dung phan nay de gieo credentials + anchor_batches + anchor_leaves, roi khang dinh CredentialBundleService dung ra dung `bundle` o tren.",
+    "testPrivateKey": "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+    "issuerAddress": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "batchIdOnChain": 2026080601,
+    "merkleRoot": "0xf9e94aed19c0bf03b4b29c3670b48313ddebfd7fd89c1e27f3fd671c64fbd273",
+    "txHash": "0xabababababababababababababababababababababababababababababababab",
+    "blockNumber": 26150413,
+    "anchoredAt": "2026-08-06T02:05:00Z",
+    "loDayDu": [
+      {
+        "payload": {
+          "claims": {
+            "activityCount": 12,
+            "semester": "2026-1",
+            "totalPoints": 85
+          },
+          "credentialId": 41,
+          "expiresAt": null,
+          "issuedAt": "2026-08-06T02:00:00Z",
+          "issuerAddress": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+          "issuerOrgId": 3,
+          "nonce": "0x5c1d8e4a2f6b90c37e15a8d4b2f60931",
+          "statusListIndex": 731542,
+          "studentCode": "B21DCCN042",
+          "studentName": "Nguyễn Ngọc Hoàng",
+          "type": "HOAT_DONG"
+        },
+        "payloadJcs": "{\"claims\":{\"activityCount\":12,\"semester\":\"2026-1\",\"totalPoints\":85},\"credentialId\":41,\"expiresAt\":null,\"issuedAt\":\"2026-08-06T02:00:00Z\",\"issuerAddress\":\"0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266\",\"issuerOrgId\":3,\"nonce\":\"0x5c1d8e4a2f6b90c37e15a8d4b2f60931\",\"statusListIndex\":731542,\"studentCode\":\"B21DCCN042\",\"studentName\":\"Nguyễn Ngọc Hoàng\",\"type\":\"HOAT_DONG\"}",
+        "leaf": "0x5e62aae46e042dd39aa9739db8bd7c48b0bb3999dd5192c49737eb78ec8b0333",
+        "proof": [
+          "0x9260a16c5331d64007fdfe887399042fe5b616b848e9e3cecb6d645dc79894b4",
+          "0x7c165a5f5c14b4d9251e934f49d51b88711dcf25ed00d8c4009f96d03f4b275c"
+        ]
+      },
+      {
+        "payload": {
+          "claims": {
+            "activityCount": 7,
+            "semester": "2026-1",
+            "totalPoints": 52
+          },
+          "credentialId": 42,
+          "expiresAt": null,
+          "issuedAt": "2026-08-06T02:00:00Z",
+          "issuerAddress": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+          "issuerOrgId": 3,
+          "nonce": "0xb7e34c1908af52d6e0c94b73a815f2d0",
+          "statusListIndex": 18904,
+          "studentCode": "B21DCCN043",
+          "studentName": "Lê Thị Ánh Nguyệt",
+          "type": "HOAT_DONG"
+        },
+        "payloadJcs": "{\"claims\":{\"activityCount\":7,\"semester\":\"2026-1\",\"totalPoints\":52},\"credentialId\":42,\"expiresAt\":null,\"issuedAt\":\"2026-08-06T02:00:00Z\",\"issuerAddress\":\"0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266\",\"issuerOrgId\":3,\"nonce\":\"0xb7e34c1908af52d6e0c94b73a815f2d0\",\"statusListIndex\":18904,\"studentCode\":\"B21DCCN043\",\"studentName\":\"Lê Thị Ánh Nguyệt\",\"type\":\"HOAT_DONG\"}",
+        "leaf": "0x9260a16c5331d64007fdfe887399042fe5b616b848e9e3cecb6d645dc79894b4",
+        "proof": [
+          "0x5e62aae46e042dd39aa9739db8bd7c48b0bb3999dd5192c49737eb78ec8b0333",
+          "0x7c165a5f5c14b4d9251e934f49d51b88711dcf25ed00d8c4009f96d03f4b275c"
+        ]
+      },
+      {
+        "payload": {
+          "claims": {
+            "activityCount": 3,
+            "semester": "2026-1",
+            "totalPoints": 20
+          },
+          "credentialId": 43,
+          "expiresAt": null,
+          "issuedAt": "2026-08-06T02:00:00Z",
+          "issuerAddress": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+          "issuerOrgId": 3,
+          "nonce": "0x2f9a4b6c8d0e1f30425364758697a8b9",
+          "statusListIndex": 950231,
+          "studentCode": "B21DCCN044",
+          "studentName": "Trần Quốc Đạt",
+          "type": "HOAT_DONG"
+        },
+        "payloadJcs": "{\"claims\":{\"activityCount\":3,\"semester\":\"2026-1\",\"totalPoints\":20},\"credentialId\":43,\"expiresAt\":null,\"issuedAt\":\"2026-08-06T02:00:00Z\",\"issuerAddress\":\"0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266\",\"issuerOrgId\":3,\"nonce\":\"0x2f9a4b6c8d0e1f30425364758697a8b9\",\"statusListIndex\":950231,\"studentCode\":\"B21DCCN044\",\"studentName\":\"Trần Quốc Đạt\",\"type\":\"HOAT_DONG\"}",
+        "leaf": "0x69b8c7eca141514f13787c56ea337bc2a7867b6101312b34ad30183c0562eed2",
+        "proof": [
+          "0x291d6f37dd928c200c3622a0b700a554d278494867f6aaa8acab117e987cd5b3",
+          "0xf8393599070dccb0ca0bcd6e6927b395819e5288f3ebdb2797dcfb24207e199f"
+        ]
+      },
+      {
+        "payload": {
+          "claims": {
+            "activityCount": 21,
+            "semester": "2026-1",
+            "totalPoints": 98
+          },
+          "credentialId": 44,
+          "expiresAt": "2031-08-06T02:00:00Z",
+          "issuedAt": "2026-08-06T02:00:00Z",
+          "issuerAddress": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+          "issuerOrgId": 3,
+          "nonce": "0xc3d4e5f60718293a4b5c6d7e8f901122",
+          "statusListIndex": 402317,
+          "studentCode": "B21DCCN045",
+          "studentName": "Phạm Vũ Hà My",
+          "type": "HOAT_DONG"
+        },
+        "payloadJcs": "{\"claims\":{\"activityCount\":21,\"semester\":\"2026-1\",\"totalPoints\":98},\"credentialId\":44,\"expiresAt\":\"2031-08-06T02:00:00Z\",\"issuedAt\":\"2026-08-06T02:00:00Z\",\"issuerAddress\":\"0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266\",\"issuerOrgId\":3,\"nonce\":\"0xc3d4e5f60718293a4b5c6d7e8f901122\",\"statusListIndex\":402317,\"studentCode\":\"B21DCCN045\",\"studentName\":\"Phạm Vũ Hà My\",\"type\":\"HOAT_DONG\"}",
+        "leaf": "0x291d6f37dd928c200c3622a0b700a554d278494867f6aaa8acab117e987cd5b3",
+        "proof": [
+          "0x69b8c7eca141514f13787c56ea337bc2a7867b6101312b34ad30183c0562eed2",
+          "0xf8393599070dccb0ca0bcd6e6927b395819e5288f3ebdb2797dcfb24207e199f"
+        ]
+      }
+    ]
+  }
+}

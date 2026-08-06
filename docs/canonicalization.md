@@ -1,11 +1,15 @@
 # Đặc tả canonicalization — nguồn sự thật
 
-**Chốt ngày:** 2026-08-05 · cập nhật 2026-08-06 (miền `CRED` + chữ ký issuer)
-**Trạng thái:** ✅ xanh cả hai phía — **Java 165 test · JS 174 test**
-(leaf hash: 62 + 52 · cây Merkle §8: 72 + 75 · payload CRED §11: 13 + 34 · chữ ký §12: 18)
+**Chốt ngày:** 2026-08-05 · cập nhật 2026-08-06 (miền `CRED`, chữ ký issuer, bundle)
+**Trạng thái:** ✅ xanh cả hai phía — **Java 243 test · JS 211 test**, 0 fail
 
-> Tổng test backend là **235** (0 fail, 12 skip — các test cần chuỗi). Con số ở trên chỉ
-> đếm tầng canonicalization.
+| Tầng | Mục | Java | JS |
+|---|---|---|---|
+| leaf hash | §1–§7 | 62 | 52 |
+| cây Merkle | §8 | 72 | 75 |
+| payload `CRED` | §11 | 13 | 34 |
+| chữ ký issuer | §12 | 18 | — |
+| **bundle** | **§13** | **8** | **37** |
 
 > Đây là cạm bẫy số 2 trong `CLAUDE.md`: lệch canonicalization làm **mọi Merkle proof
 > fail**, và fail **im lặng** — hash vẫn tính ra bình thường, chỉ là không khớp.
@@ -109,12 +113,17 @@ Tương tự phía JS: verifier bị ràng buộc cứng chỉ được có `eth
 
 ## 5. Bộ test vector
 
-Có **hai** bộ vector, mỗi bộ một file, cả hai đều do phía JS sinh và cả hai phía cùng đọc:
+Có **bốn** bộ vector, mỗi bộ một file, **tất cả đều do phía JS sinh** và cả hai phía cùng đọc:
 
 | Bộ | File | Chốt cái gì | Mục |
 |---|---|---|---|
 | 1 | `canonical-vectors.json` | **leaf hash** | mục này |
 | 2 | `merkle-vectors.json` | **cây Merkle** (root + proof) | §8 |
+| 3 | `cred-signature-vectors.json` | **chữ ký issuer** (leaf → địa chỉ ví) | §12 |
+| 4 | `bundle-fixture.json` | **cả tệp bundle** | §13 |
+
+Ba bộ đầu chốt từng **phép tính**; bộ 4 chốt cái **vỏ** gói chúng lại. Phía JS sinh vector và
+phía Java phải khớp — chứ không phải ngược lại — để Java không bao giờ "tự chấm bài mình".
 
 Phần dưới đây nói về bộ 1.
 
@@ -607,3 +616,113 @@ thật gồm **ba bước, thiếu bước nào cũng hỏng**:
 vừa tạo và so với payload, ném lỗi nếu lệch. Tốn ~1 ms mỗi lần cấp; đổi lại một credential ký
 sai **không bao giờ** ra khỏi hàm đó. Nếu để lọt, chỗ phát hiện tiếp theo là nhà tuyển dụng
 bấm "xác minh" và thấy đỏ — muộn nhất có thể.
+
+---
+
+## 13. Bundle — tệp sinh viên cầm đi
+
+**Chốt ngày:** 2026-08-06 · Java 8 test · JS 37 test · **đây là mốc của tuần 4**
+
+| | Java | JS |
+|---|---|---|
+| Dựng | `credential/CredentialBundleService.java` | — |
+| Xác minh | — | `verifier/src/bundle.mjs` |
+| CLI | — | `verifier/scripts/verify-bundle.mjs` |
+| Test | `CredentialBundleDbTest.java` | `verifier/test/bundle.test.mjs` |
+| Fixture chung | `backend/src/test/resources/bundle-fixture.json` | |
+| Sinh fixture | `cd verifier && npm run gen-bundle-fixture` | |
+
+```
+node scripts/verify-bundle.mjs <bundle.json>              # đầy đủ, ba eth_call
+node scripts/verify-bundle.mjs <bundle.json> --offline    # bốn phép kiểm không cần mạng
+```
+
+### 13.1. Bộ vector thứ tư, và nó chốt cái gì khác ba bộ trước
+
+Ba bộ trước chốt **phép tính** (leaf · cây Merkle · chữ ký). Bộ này chốt **cái vỏ**: fixture do
+JS sinh, rồi `CredentialBundleDbTest` gieo đúng dữ liệu đó xuống MySQL, gọi
+`CredentialBundleService`, và khẳng định bundle dựng ra **khớp từng trường**.
+
+Thiếu bộ này thì hai phía trôi khỏi nhau — đổi tên một trường, thêm một mục, in số khác kiểu —
+và chỗ phát hiện tiếp theo là nhà tuyển dụng mở tệp ra.
+
+Cây trong fixture có **4 lá**, không phải 1: lô một lá là trường hợp biên (root chính là lá,
+proof rỗng) nên nó không kiểm được gì về phần Merkle. Ba lá kia là credential **của sinh viên
+khác**, đúng như lô thật — và là minh hoạ sống của §3: proof để lộ hash bản ghi người khác,
+chỉ `nonce` mới ngăn vét cạn.
+
+### 13.2. Sáu phép kiểm
+
+| # | Kiểm gì | Cần mạng | Sửa vào thì bị bắt bằng cách nào |
+|---|---|---|---|
+| 1 | Định dạng và phiên bản | không | — |
+| 2 | `chain.*` khớp danh sách **tin cậy của verifier** | không | xem §13.3 |
+| 3 | Leaf tính lại từ payload | không | sửa payload ⇒ leaf đổi |
+| 4 | Chữ ký phục hồi ra đúng `issuerAddress` | không | sửa chữ ký ⇒ địa chỉ khác |
+| 5 | Merkle proof dẫn về root **đọc từ chuỗi** | có | sửa proof/batchId ⇒ không dẫn về |
+| 6 | Bên cấp còn quyền · credential chưa thu hồi | có | — |
+
+Bốn phép đầu chạy hoàn toàn offline.
+
+**`--offline` không bao giờ cho `ok: true`.** Nó chứng minh bundle **nhất quán về mặt mật
+mã**, không chứng minh credential **đã được neo** hay **còn hiệu lực**. Gộp hai thứ đó lại là
+nói dối người dùng, nên `ok` đòi mọi phép kiểm pass **và** không phép nào bị bỏ qua.
+
+Kết quả trả về là **danh sách phép kiểm**, không phải `true/false`: "không xác minh được" có
+sáu nguyên nhân rất khác nhau, và *credential bị thu hồi* là chuyện khác hẳn *bundle bị sửa*.
+
+### 13.3. 🔴 Đường tấn công rẻ nhất vào cả hệ thống
+
+**Địa chỉ contract trong bundle KHÔNG được dùng để xác minh.**
+
+Nếu verifier đọc `getRoot` từ địa chỉ ghi trong bundle thì kẻ tấn công chỉ cần:
+
+1. tự dựng cây Merkle chứa credential giả của mình,
+2. deploy một contract trả về đúng root đó,
+3. ghi địa chỉ contract đó vào bundle.
+
+**Mọi phép kiểm mật mã khác vẫn xanh** — leaf khớp, chữ ký khớp, proof dẫn về root. Không cần
+phá vỡ thuật toán nào.
+
+Vì vậy verifier giữ danh sách địa chỉ tin cậy trong **mã nguồn của chính nó**
+(`verifier/src/trusted-chain.mjs`) và **từ chối** bundle khai địa chỉ khác. Phép kiểm #2 chạy
+trước mọi lời gọi chuỗi và **dừng hẳn** nếu hỏng — không đi tiếp để rồi in ra "5 dấu xanh trên
+6", vì bundle trỏ sang contract lạ không phải "gần như hợp lệ".
+
+Đây là mô hình tin cậy đúng: nhà tuyển dụng tin bản deploy công khai đã verify trên PolygonScan
+và Sourcify, **không** tin tệp ứng viên đưa. Nên viết hẳn một đoạn về chuyện này trong báo cáo
+— nó cho thấy hiểu rằng "có chữ ký số" và "xác minh được" là hai chuyện khác nhau.
+
+Trường `anchor.merkleRoot` và `credential.leaf` cũng **dư thừa có chủ ý**: verifier tính lại
+leaf và đọc root từ chuỗi. Có test khẳng định sửa `merkleRoot` **không** làm bundle hợp lệ trở
+thành không hợp lệ — nếu test đó đỏ thì verifier đang tin sai chỗ.
+
+### 13.4. ⚠️ Kiểu cột `JSON` của MySQL phá byte — bẫy đã sập một lần
+
+`payload_json` lưu **đúng chuỗi JCS đã bam và đã ký**. Cột này ban đầu khai kiểu `JSON`, và
+MySQL **không lưu nguyên văn**: nó phân tích ra, lưu ở định dạng nhị phân riêng, rồi tuần tự
+hóa lại khi đọc —
+
+```
+ghi vào:  {"claims":{"activityCount":12,...},"credentialId":41,...}
+đọc ra:   {"type": "HOAT_DONG", "nonce": "0x5c1d...", "claims": {...}, ...}
+```
+
+Hai thay đổi, cả hai đều phá: **thứ tự khóa sắp xếp lại theo ĐỘ DÀI khóa** (JCS sắp theo đơn vị
+mã UTF-16 — quy ước hoàn toàn khác), và **chèn dấu cách** sau `:` và `,`.
+
+Hệ quả: `recomputeAndVerifyLeaf` luôn sai ⇒ **không xuất được bundle nào**. Migration **V6**
+đổi sang `LONGTEXT`.
+
+> **Vì sao nó không lộ ra sớm hơn — và bài học về test.**
+> Hibernate giữ entity trong persistence context, nên trong **cùng một giao dịch**
+> `getPayloadJson()` trả về chuỗi **trong bộ nhớ**, không phải chuỗi đọc từ CSDL. Test
+> `CredentialIssueDbTest.docLaiTuCsdlVanKhop` bản đầu thiếu `entityManager.clear()` nên nó
+> **so một giá trị với chính nó** và xanh mà không kiểm gì cả.
+>
+> Chỗ bắt được là `CredentialBundleDbTest`, vì nó gieo dữ liệu bằng **SQL thuần** nên buộc
+> phải đọc thẳng từ bảng. Đã thêm `entityManager.clear()` vào test cũ.
+
+Hai cột JSON còn lại đã kiểm và **không** cần đổi: `anchor_leaves.proof_json` là một **mảng**
+(MySQL giữ nguyên thứ tự phần tử, chỉ sắp xếp lại khóa của object), và `audit_logs.before_json`
+/ `after_json` không đi vào phép bam nào.

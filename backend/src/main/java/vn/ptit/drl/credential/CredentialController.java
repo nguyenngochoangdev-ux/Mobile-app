@@ -34,6 +34,7 @@ public class CredentialController {
   private static final HexFormat HEX = HexFormat.of();
 
   private final CredentialService service;
+  private final CredentialBundleService bundleService;
   private final CredentialRepository repository;
   private final StudentRepository studentRepository;
   private final OrganizationRepository organizationRepository;
@@ -135,6 +136,37 @@ public class CredentialController {
       throw new NotFoundException("Không thấy credential " + id);
     }
     return toResponse(c);
+  }
+
+  // ---------------------------------------------------------------- bundle
+
+  @GetMapping("/{id}/bundle")
+  @PreAuthorize("hasAnyRole('STUDENT','STAFF','ADMIN')")
+  @Operation(summary = "Xuất bundle xác minh độc lập",
+      description = """
+          Tệp JSON tự chứa: payload đã ký, chữ ký, Merkle proof, batchId và địa chỉ contract.
+          Xác minh bằng `cd verifier && node scripts/verify-bundle.mjs <tệp>` — script đó chỉ
+          dùng ethers + merkletreejs và KHÔNG gọi backend một dòng nào.
+
+          Địa chỉ contract trong mục `chain` là THÔNG TIN, không phải cấu hình: verifier giữ
+          danh sách địa chỉ tin cậy của riêng nó và từ chối bundle khai địa chỉ khác. Tin
+          địa chỉ trong bundle là cách phá hệ thống rẻ nhất — kẻ tấn công chỉ cần deploy một
+          contract trả về root do mình chọn.
+
+          Chỉ xuất được sau khi credential đã neo và lô đã lên chuỗi.
+          """)
+  @Transactional(readOnly = true)
+  public CredentialBundleService.Bundle bundle(
+      @PathVariable Long id, @AuthenticationPrincipal AuthPrincipal principal) {
+
+    Credential c = repository.findById(id)
+        .orElseThrow(() -> new NotFoundException("Không thấy credential " + id));
+
+    if ("STUDENT".equals(principal.role())
+        && !c.getStudent().getId().equals(principal.studentId())) {
+      throw new NotFoundException("Không thấy credential " + id);
+    }
+    return bundleService.build(id);
   }
 
   // ---------------------------------------------------------------- ánh xạ

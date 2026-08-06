@@ -69,6 +69,7 @@ class CredentialIssueDbTest {
   @Autowired StudentRepository studentRepository;
   @Autowired OrganizationRepository organizationRepository;
   @Autowired JdbcTemplate jdbc;
+  @jakarta.persistence.PersistenceContext jakarta.persistence.EntityManager entityManager;
 
   private Student student;
   private Organization org;
@@ -141,16 +142,29 @@ class CredentialIssueDbTest {
   }
 
   @Test
-  @DisplayName("Đọc lại từ CSDL cho đúng byte đã ghi — DATETIME(3) không làm trôi leaf")
+  @DisplayName("Đọc lại từ CSDL cho đúng byte đã ghi — kiểu cột không được chuẩn hóa lại")
   void docLaiTuCsdlVanKhop() {
     seed();
     Long id = service.issue(request()).getId();
 
-    // Đẩy xuống CSDL rồi xoá khỏi persistence context, buộc lần đọc sau đi thẳng vào bảng.
+    // `entityManager.clear()` là phần QUAN TRỌNG NHẤT của test này, không phải chi tiết dọn
+    // dẹp. Thiếu nó thì `findById` trả về chính thể hiện còn trong persistence context, tức
+    // là so sánh giá trị trong bộ nhớ với chính nó — test xanh mà không kiểm gì cả.
+    //
+    // Bản đầu của test này thiếu đúng dòng đó, và vì thế nó KHÔNG phát hiện ra rằng cột
+    // `payload_json` kiểu JSON của MySQL sắp xếp lại khóa và chèn khoảng trắng. Lỗi đó chỉ
+    // lộ ra ở CredentialBundleDbTest, nơi dữ liệu được gieo bằng SQL thuần. Xem migration V6.
     repository.flush();
-    jdbc.execute("SELECT 1");
+    entityManager.clear();
 
     Credential doclai = repository.findById(id).orElseThrow();
+
+    assertEquals(
+        vn.ptit.drl.anchor.Jcs.canonicalize(CredentialPayload.of(doclai)),
+        doclai.getPayloadJson(),
+        "payload_json đọc từ CSDL khác chuỗi đã ký. Nghi ngờ đầu tiên: kiểu cột đang là JSON"
+            + " thay vì LONGTEXT — MySQL chuẩn hóa lại nội dung cột JSON. Xem V6.");
+
     assertArrayEquals(doclai.getLeafHash(), CredentialService.recomputeAndVerifyLeaf(doclai),
         "Giá trị đọc ra từ CSDL dựng lại payload KHÁC payload đã ký. Nghi ngờ đầu tiên:"
             + " phần mili giây của issued_at.");

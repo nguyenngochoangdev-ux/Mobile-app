@@ -430,12 +430,28 @@ Nhớ: **nonce trong payload** (§2.3), **status index ngẫu nhiên** (§2.3).
 > **giống hệt từng byte**. Đặc tả: `docs/canonicalization.md` §11 và §12.
 > Test: **Java 235 · JS 174**, 0 fail.
 >
+> ✅ **Bundle JSON xong (2026-08-06).** `CredentialBundleService` + `GET /api/credentials/
+> {id}/bundle` phía backend · `verifier/src/bundle.mjs` + `scripts/verify-bundle.mjs` phía
+> verifier, **chỉ dùng `ethers`, không gọi backend một dòng nào**. Sáu phép kiểm, bốn trong
+> số đó chạy được hoàn toàn offline. Bộ vector thứ tư (`bundle-fixture.json`) chốt bundle
+> Java dựng ra **khớp từng trường** với fixture do JS sinh. Đặc tả: `docs/canonicalization.md`
+> §13.
+>
+> Đã chạy thật trên **RPC công cộng không key**: cả ba `eth_call` (`getRoot`,
+> `isActiveIssuer`, `isRevoked`) trả lời được từ Amoy.
+>
+> ⚠️ **Mốc chỉ coi là đạt hoàn toàn khi chạy được trên một credential ĐÃ NEO THẬT.** Hiện
+> đường đi đã kiểm chứng đầy đủ nhưng chưa có lô `CRED` nào trên Amoy, và khóa issuer chưa
+> đăng ký trong `IssuerRegistry`. Hai việc đó là **giao dịch ghi lên chuỗi, không hoàn tác
+> được** — xem "Còn lại" bên dưới.
+>
 > ❌ **Còn lại của tuần 4, theo thứ tự nên làm:**
-> 1. **Bundle JSON** — đúng thứ cái mốc ở trên đòi. Vỏ mang payload + chữ ký + proof +
->    `batchId` + địa chỉ contract, để script Node xác minh được mà không chạm backend.
+> 1. **Chạy thật một vòng trên Amoy** — đăng ký issuer vào `IssuerRegistry`, cấp một
+>    credential, neo lô `CRED`, rồi verify bundle của nó. Đây là thứ biến mốc tuần 4 từ
+>    "đường đi đã kiểm chứng" thành "đã chạy". Hai giao dịch ghi, **không hoàn tác được**.
 > 2. **Nối dây `StatusList`** — `revoked_at`/`revoke_tx_hash` đã có cột, chưa có luồng gọi
 >    `setRevoked()`. Không có nó thì `statusListIndex` trong payload chỉ tay vào một bit
->    không ai bật bao giờ.
+>    không ai bật bao giờ, và phép kiểm thu hồi của verifier luôn trả "còn hiệu lực".
 > 3. **Hash chain `audit_logs`** — miền `AUDIT` mới có cột `nonce`/`leaf_hash` (V2), chưa có
 >    `AnchorSource`. Đây là thứ hiện thực **luận điểm 1** (chống sửa hồi tố), hiện chưa có gì.
 >

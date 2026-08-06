@@ -56,3 +56,59 @@ export function anchorRegistry(rpcUrl, address) {
     },
   };
 }
+
+/** Chỉ hàm đọc. Verifier không bao giờ ghi. */
+export const ISSUER_REGISTRY_ABI = Object.freeze([
+  'function isActiveIssuer(address issuer) view returns (bool)',
+]);
+
+export const STATUS_LIST_ABI = Object.freeze([
+  'function isRevoked(uint256 index) view returns (bool)',
+  'function getWord(uint256 wordIndex) view returns (uint256)',
+]);
+
+/**
+ * Bộ đọc chuỗi đầy đủ cho một bundle — ba `eth_call`, dùng CHUNG một provider.
+ *
+ * Dùng chung provider là có chủ ý: mỗi `JsonRpcProvider` mới là một kết nối mới, và endpoint
+ * công cộng không key thường giới hạn theo số kết nối chứ không chỉ theo số lời gọi.
+ *
+ * Trả về một object thuần với ba hàm — cùng hình dạng mà `verifyBundle` mong đợi, nên test
+ * thay được bằng một bản giả không chạm mạng. Tách như vậy để phần LOGIC xác minh test được
+ * đầy đủ mà không phụ thuộc Amoy còn sống hay không.
+ *
+ * @param rpcUrl    endpoint JSON-RPC, dùng được loại công cộng không key
+ * @param addresses `{ anchorRegistry, issuerRegistry, statusList }` — địa chỉ TIN CẬY của
+ *                  verifier, KHÔNG phải địa chỉ lấy từ bundle. Xem `bundle.mjs`.
+ */
+export function chainReader(rpcUrl, addresses) {
+  const provider = new JsonRpcProvider(rpcUrl);
+
+  const anchor = new Contract(addresses.anchorRegistry, ANCHOR_REGISTRY_ABI, provider);
+  const issuers = new Contract(addresses.issuerRegistry, ISSUER_REGISTRY_ABI, provider);
+  const status = new Contract(addresses.statusList, STATUS_LIST_ABI, provider);
+
+  return {
+    provider,
+
+    async chainId() {
+      return Number((await provider.getNetwork()).chainId);
+    },
+
+    /** Root đã neo, hoặc `null` nếu lô chưa neo. */
+    async getRoot(domain, batchId) {
+      const root = await anchor.getRoot(domainBytes8(domain), BigInt(batchId));
+      return root === ZERO_ROOT ? null : root;
+    },
+
+    /** Địa chỉ này có đang được phép cấp credential không. */
+    async isActiveIssuer(address) {
+      return Boolean(await issuers.isActiveIssuer(address));
+    },
+
+    /** Bit thu hồi tại `index` đã bật chưa. */
+    async isRevoked(index) {
+      return Boolean(await status.isRevoked(BigInt(index)));
+    },
+  };
+}
