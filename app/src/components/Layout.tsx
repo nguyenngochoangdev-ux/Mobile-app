@@ -21,6 +21,8 @@ export default function Layout() {
         ]
       : [
           { to: '/cb/su-kien', label: 'Sự kiện' },
+          { to: '/cb/cham-diem', label: 'Chấm điểm' },
+          { to: '/cb/chung-nhan', label: 'Cấp CN' },
           { to: '/cb/thiet-bi', label: 'Duyệt thiết bị' },
         ]
 

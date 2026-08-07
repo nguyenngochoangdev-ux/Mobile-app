@@ -5,7 +5,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
@@ -40,15 +39,14 @@ import vn.ptit.drl.org.OrganizationRepository;
  * lại, không cấp bản thứ hai. Cấp trùng không bị cây Merkle bắt — mỗi credential có nonce
  * riêng nên hai bản nội dung giống hệt vẫn ra hai lá khác nhau — nên chốt chặn phải nằm ở đây.
  *
- * <h2>⚠️ Giới hạn phải nói rõ: chưa lọc theo học kỳ</h2>
+ * <h2>Đếm theo học kỳ</h2>
  *
- * <p>Bảng {@code events} <b>không có cột học kỳ hay năm học</b>, nên runner này đếm
- * <b>toàn bộ</b> bản ghi điểm danh của sinh viên và gắn nhãn học kỳ do người chạy truyền vào.
- * Với dữ liệu demo (một đợt) thì đúng; với dữ liệu nhiều kỳ thì con số sẽ gộp.
+ * <p>Phép đếm nằm ở {@link CredentialSuggestionService}, dùng chung với giao diện cán bộ, và
+ * lọc theo {@code events.semester}. Hai đường cấp credential vì thế cho cùng một con số.
  *
- * <p>Không tự chế mốc ngày để chia kỳ: một khoảng ngày đoán mò sẽ thành con số sai trong
- * credential đã ký và đã neo — thứ không sửa được. Thêm cột học kỳ cho {@code events} là việc
- * của tuần 5, cùng rule engine. <b>Ghi vào phần hạn chế của báo cáo.</b>
+ * <p>Bản đầu của lớp này đếm toàn bộ mọi kỳ vì {@code events} chưa có cột học kỳ — V8 đã trả
+ * khoản nợ đó. Quy ước gán kỳ nằm trong cột chứ không phải trong mã: đổi lịch học là một lệnh
+ * {@code UPDATE}, không phải một lần deploy. Xem PROJECT.md §5.1.
  */
 @Component
 @Profile("credential-now")
@@ -58,6 +56,7 @@ public class CredentialNowRunner implements ApplicationRunner {
 
   private final CredentialService service;
   private final CredentialBundleService bundleService;
+  private final CredentialSuggestionService suggestions;
   private final CredentialRepository repository;
   private final StudentRepository students;
   private final OrganizationRepository organizations;
@@ -176,31 +175,22 @@ public class CredentialNowRunner implements ApplicationRunner {
   // ---------------------------------------------------------------- cấp
 
   private Credential capMoi(Student student, Organization org) {
-    // Đếm từ dữ liệu điểm danh THẬT. Xem javadoc đầu lớp về việc chưa lọc theo học kỳ.
-    Map<String, Object> tong = jdbc.queryForMap("""
-        SELECT COUNT(*) AS so_hoat_dong, COALESCE(SUM(e.points), 0) AS tong_diem
-          FROM attendances a JOIN events e ON e.id = a.event_id
-         WHERE a.student_id = ?
-        """, student.getId());
+    // Đếm từ dữ liệu điểm danh THẬT, qua CÙNG một phép đếm mà giao diện cán bộ dùng. Xem
+    // javadoc đầu lớp về việc chưa lọc theo học kỳ.
+    var goiY = suggestions.forStudent(student.getId(), semester);
 
-    int soHoatDong = ((Number) tong.get("so_hoat_dong")).intValue();
-    int tongDiem = ((Number) tong.get("tong_diem")).intValue();
-
-    if (soHoatDong == 0) {
+    if (goiY.activityCount() == 0) {
       log.error("Sinh vien {} chua co ban ghi diem danh nao. Khong cap credential rong.", mssv);
       return null;
     }
 
     // Chỉ số chất lượng dữ liệu — đúng thứ PROJECT.md §10 nêu làm đóng góp của đề tài.
-    Long daXacMinh = jdbc.queryForObject(
-        "SELECT COUNT(*) FROM attendances WHERE student_id = ? AND verified = TRUE",
-        Long.class, student.getId());
-
     log.info("Sinh vien {} · {} · {} hoat dong · {} diem · {}/{} xac minh bang may",
-        mssv, student.getFullName(), soHoatDong, tongDiem, daXacMinh, soHoatDong);
+        mssv, student.getFullName(), goiY.activityCount(), goiY.totalPoints(),
+        goiY.verifiedCount(), goiY.activityCount());
 
     return service.issue(new CredentialService.Request(
-        student, org, semester, soHoatDong, tongDiem, null));
+        student, org, semester, goiY.activityCount(), goiY.totalPoints(), null));
   }
 
   // ---------------------------------------------------------------- xuất

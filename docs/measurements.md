@@ -594,13 +594,16 @@ một giá trị đúng/sai.
 2. **Khóa issuer TRÙNG khóa neo** (`0xf32728…F529F`). Quyết định của người làm, có ý thức.
    Hệ quả: một lần lộ khóa vừa cấp được credential giả vừa neo được root rác. Tách hai khóa
    là việc nên làm trước khi có người dùng thật; `IssuerSigner` đã cảnh báo lúc khởi động.
-3. **Chưa lọc theo học kỳ.** `events` không có cột học kỳ/năm học, nên `activityCount` và
-   `totalPoints` đếm **toàn bộ** bản ghi điểm danh của sinh viên. Với dữ liệu demo một đợt thì
-   đúng; nhiều kỳ thì gộp. Cố ý không tự chế mốc ngày để chia kỳ — một khoảng ngày đoán mò sẽ
-   thành con số sai trong credential **đã ký và đã neo**, thứ không sửa được.
-4. **`StatusList` chưa nối dây.** Phép kiểm thu hồi đọc bit thật trên chuỗi, nhưng chưa có
-   luồng nào **bật** bit đó. Nên hiện tại nó luôn trả "còn hiệu lực" — đúng, nhưng chưa chứng
-   minh được cơ chế thu hồi hoạt động.
+3. **Quy ước gán học kỳ là phỏng đoán, chưa phải lịch học của trường.** `events.semester` có
+   từ V8 và `activityCount`/`totalPoints` đã lọc theo cột đó, nên số liệu **không còn gộp mọi
+   kỳ**. Nhưng giá trị khởi đầu của cột do V8 backfill theo khoảng ngày quy ước (tháng 8→1 là
+   HK1). Trường có thể mở kỳ sớm/muộn hơn, có kỳ hè, có sự kiện nằm giữa hai kỳ. Sự kiện không
+   xác định được kỳ để `NULL` và **bị bỏ qua** thay vì đoán bừa — vì đoán bừa ở đây thành con
+   số trong credential **đã ký và đã neo**.
+4. **Thu hồi chưa chạy thật trên Amoy.** `StatusList` đã nối dây (2026-08-06):
+   `POST /api/credentials/{id}/revoke` gửi giao dịch trước, ghi CSDL sau, kiểm chứng trên chuỗi
+   Hardhat cục bộ. Còn thiếu **một lần lật bit thật trên Amoy** kèm ảnh chụp verifier báo "ĐÃ
+   THU HỒI" — thiếu nó thì cơ chế thu hồi mới chứng minh được ở môi trường cục bộ.
 
 ### Chi phí thật của cả vòng
 

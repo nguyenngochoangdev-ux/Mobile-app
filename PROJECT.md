@@ -329,6 +329,60 @@ nckh-drl/
 └── docs/          ERD, threat model, measurements.md, báo cáo
 ```
 
+### 5.1. Không gán cứng dữ liệu trong ứng dụng
+
+**Mọi dữ liệu phải có một nơi lưu thật, và ứng dụng phải đọc ra từ nơi đó.** Không viết thẳng
+giá trị vào mã nguồn.
+
+"Dữ liệu" ở đây gồm cả những thứ hay bị coi là vô hại: nhãn hiển thị, danh mục, trần điểm,
+ngưỡng xếp loại, quy ước học kỳ, danh sách tổ chức, học kỳ mặc định của một ô nhập.
+
+| Loại | Nơi lưu | Ứng dụng đọc bằng |
+|---|---|---|
+| Dữ liệu nghiệp vụ | MySQL | repository → API → client sinh từ OpenAPI |
+| Quy tắc chấm điểm, trần và ngưỡng | `rulesets/*.json` — băm nguyên văn và neo | `GET /api/scoring/rulesets/{semester}` |
+| Cấu hình môi trường | `.env`, `application.yml` | `@Value`, `import.meta.env` |
+
+**Vì sao đây là quy tắc cứng, không phải sở thích.** Ba lý do, nặng dần:
+
+1. **Đổi một con số không được bắt phải deploy lại.** V8 đã viết đúng ý này cho quy ước học kỳ:
+   nằm trong code thì đổi lịch học phải sửa mã và deploy; nằm trong một cột thì chỉ là một lệnh
+   `UPDATE`.
+2. **Hai bản sao của cùng một dữ liệu sẽ trôi khỏi nhau.** Không phải "có thể", mà là sẽ. Và
+   chúng trôi lặng lẽ, vì không có gì so hai bản với nhau.
+3. **Nặng nhất: giá trị gán cứng nói dối về thứ đã neo.** Bộ quy tắc được băm nguyên văn và neo
+   ở miền `RULESET`. Nếu trang điểm vẽ thanh tiến trình theo trần gán cứng trong TypeScript thì
+   con số sinh viên nhìn thấy **không còn là con số đã neo** — nó là con số một lập trình viên
+   gõ vào, tình cờ đang trùng. Ra bộ quy tắc `v2` với trần khác, trang vẫn vẽ theo trần cũ, và
+   không có phép kiểm nào bắt được. Cả luận điểm "điểm này kiểm lại được" sụp ở đúng chỗ đó.
+
+**Ngoại lệ hẹp — hằng số của giao thức, không phải của nghiệp vụ.** `chainId 80002`, nonce 16
+byte, tiền tố miền neo, độ dài chữ ký 65 byte. Đổi chúng thì hệ thống thành một hệ thống khác,
+nên chúng thuộc về mã nguồn. Ranh giới để phân biệt: *nếu nhà trường có thể muốn đổi giá trị
+này mà không cần lập trình viên, nó là dữ liệu.*
+
+**Nợ phát hiện ngày 2026-08-07 — đã trả hết cùng ngày:**
+
+| Chỗ | Gán cứng cái gì | Nguồn thật đang dùng |
+|---|---|---|
+| `ScorePage.tsx` | `TEN_TIEU_CHI`, `TRAN` (20/25/20/25/10), `XEP_LOAI`, thang 100 | `tieuChi[].ten`, `.toiDa`, `.nguon`, `phanLoai[]`, `thang` |
+| `StaffScoring.tsx` | `XEP_LOAI`, thứ tự xếp loại, học kỳ và version mặc định | `phanLoai[]` sắp theo ngưỡng; version lấy từ ruleset của kỳ |
+| `CredentialSuggestionService` | đếm điểm danh **không lọc** `events.semester` | cột đã có từ V8 |
+
+Cả ba đọc qua `app/src/lib/ruleset.ts` (client) và `events.semester` (backend).
+
+Dòng thứ ba là **lỗi thật, không phải nợ thẩm mỹ**: nó làm số hoạt động trong credential gộp
+mọi học kỳ, mà credential thì ký rồi neo vĩnh viễn.
+
+Hai dòng đầu đáng nhắc lại vì chúng cho thấy cách hỏng đặc trưng: `TRAN = { c1: 20, … }` **trùng
+đúng bộ quy tắc** ở thời điểm viết, nên không test nào đỏ và không ai thấy gì sai. Nó chỉ sai
+vào ngày ra bản `v2`, và sai lặng lẽ.
+
+**Ngoại lệ đã dùng, ghi ra để lần sau không tranh cãi lại:** nhãn tiếng Việt của mã xếp loại
+(`XUAT_SAC` → "Xuất sắc") ở lại trong `lib/ruleset.ts`. Bộ quy tắc chỉ khai `ma`/`tu`/`den`,
+không có tên hiển thị; thêm trường `ten` vào tệp là đổi byte của tệp, tức đổi `ruleset_hash`,
+tức làm 500 bản ghi điểm đã chấm không tái tạo được. **Ngưỡng** thì vẫn đọc từ `phanLoai`.
+
 ---
 
 ## 6. Kế hoạch 8 tuần (đã hiệu chỉnh)

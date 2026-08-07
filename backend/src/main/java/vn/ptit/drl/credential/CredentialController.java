@@ -36,6 +36,7 @@ public class CredentialController {
   private final CredentialService service;
   private final CredentialBundleService bundleService;
   private final CredentialRevocationService revocationService;
+  private final CredentialSuggestionService suggestionService;
   private final CredentialRepository repository;
   private final StudentRepository studentRepository;
   private final OrganizationRepository organizationRepository;
@@ -99,6 +100,48 @@ public class CredentialController {
     return toResponse(service.issue(new CredentialService.Request(
         student, org, req.semester(), req.activityCount(), req.totalPoints(),
         req.expiresAt(), principal.userId())));
+  }
+
+  // ---------------------------------------------------------------- gợi ý số liệu
+
+  /**
+   * Số liệu đề xuất, kèm credential đã cấp cho cặp (sinh viên, học kỳ) nếu có.
+   *
+   * @param daCap id credential đã tồn tại, {@code null} nếu chưa có. Giao diện dùng nó để hiện
+   *     "đã cấp rồi" <b>trước</b> khi cán bộ bấm, thay vì để họ điền xong form rồi mới ăn lỗi.
+   */
+  public record SuggestionResponse(Long studentId, String mssv, String fullName, String semester,
+                                   int activityCount, int totalPoints, int verifiedCount,
+                                   Long daCap) {}
+
+  @GetMapping("/goi-y")
+  @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
+  @Operation(operationId = "issueSuggestion", summary = "Số liệu đề xuất trước khi cấp credential",
+      description = """
+          Đếm hoạt động và tổng điểm từ bảng `attendances` để giao diện điền sẵn, thay vì bắt
+          cán bộ gõ tay hai con số sẽ được KÝ VÀ NEO VĨNH VIỄN.
+
+          `verifiedCount` là số bản ghi máy xác minh được (QR). Nó KHÔNG đi vào credential —
+          nó nói cho cán bộ biết bao nhiêu phần của con số kia là đo được và bao nhiêu là do
+          người khai.
+
+          Chỉ đếm sự kiện thuộc đúng học kỳ được hỏi (`events.semester`, có từ V8). Sự kiện
+          chưa xác định được kỳ (`NULL`) bị bỏ qua, giống việc chấm điểm.
+          """)
+  @Transactional(readOnly = true)
+  public SuggestionResponse suggestion(@RequestParam Long studentId,
+                                       @RequestParam String semester) {
+    var student = studentRepository.findById(studentId)
+        .orElseThrow(() -> new NotFoundException("Không thấy sinh viên " + studentId));
+
+    var s = suggestionService.forStudent(studentId, semester);
+    Long daCap = repository
+        .findByStudentIdAndSemesterAndType(studentId, semester, CredentialType.HOAT_DONG)
+        .map(Credential::getId).orElse(null);
+
+    return new SuggestionResponse(
+        student.getId(), student.getMssv(), student.getFullName(), semester,
+        s.activityCount(), s.totalPoints(), s.verifiedCount(), daCap);
   }
 
   // ---------------------------------------------------------------- tra cứu

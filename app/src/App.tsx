@@ -12,6 +12,8 @@ import StaffEvents from './pages/staff/StaffEvents'
 import StaffEventDetail from './pages/staff/StaffEventDetail'
 import StaffDeviceApproval from './pages/staff/StaffDeviceApproval'
 import StaffScanStudent from './pages/staff/StaffScanStudent'
+import StaffScoring from './pages/staff/StaffScoring'
+import StaffCredentials from './pages/staff/StaffCredentials'
 import PresenterPage from './pages/presenter/PresenterPage'
 
 function RequireRole({ roles, children }: { roles: string[]; children: React.ReactNode }) {
@@ -62,6 +64,8 @@ export default function App() {
         <Route path="/cb/su-kien/:eventId" element={<RequireRole roles={['STAFF', 'ADMIN']}><StaffEventDetail /></RequireRole>} />
         <Route path="/cb/su-kien/:eventId/quet" element={<RequireRole roles={['STAFF', 'ADMIN']}><StaffScanStudent /></RequireRole>} />
         <Route path="/cb/thiet-bi" element={<RequireRole roles={['STAFF', 'ADMIN']}><StaffDeviceApproval /></RequireRole>} />
+        <Route path="/cb/cham-diem" element={<RequireRole roles={['STAFF', 'ADMIN']}><StaffScoring /></RequireRole>} />
+        <Route path="/cb/chung-nhan" element={<RequireRole roles={['STAFF', 'ADMIN']}><StaffCredentials /></RequireRole>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
