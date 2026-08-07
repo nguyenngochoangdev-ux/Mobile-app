@@ -189,6 +189,55 @@ màn hình chính, chạy toàn màn hình, không thanh URL, không cần APK/k
 Đã kiểm: `/` `/sv/diem` `/manifest.webmanifest` `/sw.js` trả 200, `/api/**` vẫn 401 khi chưa
 đăng nhập, fallback SPA khớp `index.html`. Hướng dẫn đầy đủ: `docs/cai-dat-android.md`.
 
+### Xét lại lần ba — 2026-08-08: ĐẢO QUYẾT ĐỊNH, APK vào phạm vi
+
+Người dùng quyết định làm APK. Quyền quyết định phạm vi thuộc về người dùng, không thuộc về
+`/scope-guard`. Ghi vào `docs/scope.md` §Nhật ký thay đổi.
+
+**Hai lý do bác bỏ cũ giờ đứng thế nào:**
+
+- Lý do "máy không có toolchain" **đã hết hiệu lực**. Người dùng tự cài Android SDK
+  (`~/.bubblewrap/android_sdk`, build-tools 35 và 36.1), tạo keystore, build và ký APK thật
+  trước khi mở phiên ngày 08-08. Phần đắt nhất đã là chi phí chìm.
+- Lý do "TWA không thêm khả năng nào" **vẫn đúng nguyên**. Nó không phục vụ luận điểm nào
+  trong §10 và không sinh số liệu cho chương 11. Đây là lựa chọn hình thức trình bày, và
+  báo cáo phải phát biểu đúng như vậy.
+
+**Chẩn đoán sự cố ngày 08-08.** App cài xong mở ra báo `ERR_NAME_NOT_RESOLVED`. Đã kiểm từng
+mắt xích, và **toàn bộ cấu hình TWA đều đúng**:
+
+| Mắt xích | Kết quả kiểm |
+|---|---|
+| Vân tay chữ ký APK | `acde5a51…9c1d5a` (đọc bằng `apksigner verify --print-certs`) |
+| `assetlinks.json` khai | **cùng một chuỗi** — khớp tuyệt đối |
+| `SecurityConfig` | `/.well-known/assetlinks.json` đã permit cho cả GET lẫn HEAD |
+| Backend phục vụ | `/manifest.webmanifest` và `/.well-known/assetlinks.json` đều trả 200 |
+
+Hỏng đúng **một** chỗ: domain. Tiến trình `cloudflared` **vẫn đang chạy** và vẫn khai hostname
+cũ qua endpoint metrics, nhưng Cloudflare đã thu hồi quick tunnel — tra DNS thật qua `1.1.1.1`
+trả về `Non-existent domain`.
+
+> ⚠️ **Bẫy cốt lõi, ghi để không lần lại từ đầu: tiến trình tunnel còn sống KHÔNG có nghĩa là
+> domain còn sống.** `cloudflared` không tự biết mình đã bị thu hồi. Mọi phép kiểm dựa vào
+> "tunnel có chạy không" đều cho kết quả xanh trong khi app đã chết. Phép kiểm đúng duy nhất là
+> **phân giải DNS từ ngoài** rồi gọi thật vào domain đó.
+
+**Hệ quả kiến trúc phải chấp nhận:** APK nung cứng domain vào lúc build (`twa-manifest.json`
+→ `host`, `webManifestUrl`, `fullScopeUrl`, `iconUrl`). Đổi domain là **phải build lại và cài
+lại**. Người dùng chọn giữ quick tunnel miễn phí thay vì mua domain cố định, nên cái vòng đó
+lặp lại mỗi lần tunnel chết. `scripts/build-apk.ps1` tự động hoá nó và chặn trước trường hợp
+build ra một APK trỏ vào domain đã chết.
+
+**Câu ghi vào báo cáo — thay câu ở phần hướng phát triển bên trên:**
+
+> *Hệ thống được đóng gói thành ứng dụng Android (APK) qua Trusted Web Activity, cài trực tiếp
+> lên thiết bị. Về bản chất TWA vẫn dùng engine của Chrome để render giao diện web, nên khả
+> năng chức năng tương đương bản PWA; đóng gói APK phục vụ mục đích phân phối và trải nghiệm
+> cài đặt, không mở rộng năng lực hệ thống.*
+
+**Đừng viết** "ứng dụng Android native". Hội đồng hỏi một câu về vòng đời Activity hay JNI là
+lộ ngay. Nói đúng bản chất TWA thì không ai bắt bẻ được.
+
 ### 2.5. Quy chế điểm rèn luyện — xác nhận và cảnh báo
 
 Thông tư 16/2015/TT-BGDĐT có hiệu lực từ 28/09/2015, thang 100 điểm chia **20/25/20/25/10** cho năm tiêu chí, phân loại: xuất sắc 90–100, tốt 80–<90, khá 65–<80, trung bình 50–<65, yếu 35–<50, kém <35. Tài liệu ghi đúng.

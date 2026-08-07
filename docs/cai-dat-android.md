@@ -1,14 +1,46 @@
-# Cài app lên Android bằng PWA
+# Cài app lên Android
 
-**Không cần APK, không cần keystore, không cần CH Play.** Chrome trên Android cài PWA thành
-một ứng dụng thật (WebAPK): có biểu tượng trên màn hình chính, mở toàn màn hình, **không có
-thanh URL**.
+Có **hai đường**, dùng chung một backend và một bản PWA. Cả hai đều bắt buộc HTTPS.
 
-> **Vì sao không đóng gói APK.** Đã xét bằng `/scope-guard` hai lần (2026-08-05 và
-> 2026-08-07), kết luận không đổi: TWA **chính là Chrome đang render trang đó**, nên nó không
-> cho thêm gì so với PWA đã cài — kể cả hành vi camera. Đổi lại nó đòi Android SDK, keystore,
-> và một `assetlinks.json` khớp; sai một chỗ là Chrome tụt về Custom Tab **hiện thanh URL**,
-> mất đúng thứ duy nhất APK mang lại. Xem `PROJECT.md` §2.4.
+| Đường | Khi nào dùng | Lệnh |
+|---|---|---|
+| **APK** (Trusted Web Activity) | Mặc định từ 2026-08-08. Có tệp `.apk` cầm tay, cài không cần Chrome | `.\scripts\build-apk.ps1` |
+| **PWA** (WebAPK qua Chrome) | Dự phòng. Không cần build gì, nhưng phải thao tác trên menu Chrome | `.\scripts\build-pwa.ps1` |
+
+> **Phạm vi đã đổi ngày 2026-08-08.** Trước đó `/scope-guard` từ chối APK hai lần
+> (2026-08-05, 2026-08-07). Người dùng quyết định làm, và quyền quyết định phạm vi thuộc về
+> người dùng. Ghi trong `docs/scope.md` và `PROJECT.md` §2.4.
+>
+> Nói đúng bản chất khi báo cáo: **TWA vẫn là Chrome render trang web đó.** APK không thêm
+> năng lực nào so với PWA, nó chỉ đổi cách phân phối và cách cài. Đừng viết "ứng dụng Android
+> native" — hội đồng hỏi một câu về vòng đời Activity là lộ.
+
+---
+
+## Đọc trước nếu app đang báo lỗi
+
+Nếu app đã cài mà mở ra báo **`ERR_NAME_NOT_RESOLVED`** hoặc trắng trang, gần như chắc chắn là
+domain đường hầm đã chết. Không phải app hỏng.
+
+```powershell
+# 1. Mở đường hầm mới (để nguyên cửa sổ này, đừng tắt)
+cloudflared tunnel --url http://localhost:8080
+
+# 2. Cửa sổ khác: build lại APK trỏ domain mới
+.\scripts\build-apk.ps1
+
+# 3. Chép APK sang điện thoại và cài đè
+```
+
+> ⚠️ **Bẫy cốt lõi: tiến trình `cloudflared` còn chạy KHÔNG có nghĩa là domain còn sống.**
+>
+> Ngày 2026-08-08 đã sập đúng bẫy này. Tiến trình vẫn chạy, vẫn khai hostname cũ qua endpoint
+> metrics, nhưng Cloudflare đã thu hồi đường hầm — tra DNS thật ra `Non-existent domain`.
+> Nhìn Task Manager thấy `cloudflared.exe` nên tưởng mọi thứ bình thường.
+>
+> Phép kiểm đúng duy nhất là **phân giải DNS từ ngoài rồi gọi thật vào domain**.
+> `build-apk.ps1` làm đúng việc đó trước khi build, nên nó không bao giờ sinh ra một APK
+> trỏ vào domain chết.
 
 ---
 
@@ -134,6 +166,77 @@ Nằm ngoài phạm vi 8 tuần; ghi vào hướng phát triển.
 
 ---
 
+## Đường APK — build và cài
+
+### Chạy một lệnh
+
+```powershell
+.\scripts\build-apk.ps1
+```
+
+Script hỏi mật khẩu keystore rồi tự làm hết. Muốn bỏ bước build lại giao diện cho nhanh thì
+thêm `-BoQuaPwa`. Muốn chỉ định thẳng domain thì `-Domain abc.trycloudflare.com`.
+
+Năm bước nó chạy:
+
+| Bước | Việc | Vì sao cần |
+|---|---|---|
+| 1 | Build PWA, chép vào backend | `assetlinks.json` đi theo đường này vào `static/` |
+| 2 | Tìm domain đường hầm **còn sống** | Hỏi `cloudflared` lấy ứng viên, rồi **tự xác nhận bằng DNS + gọi thật** |
+| 3 | Kiểm `manifest.webmanifest` | Sai kiểu MIME là mất nút cài của PWA |
+| 4 | Vá domain vào `twa-manifest.json` | Domain nằm ở **bốn** chỗ: `host`, `webManifestUrl`, `fullScopeUrl`, `iconUrl` |
+| 5 | `bubblewrap update` rồi `build` | `update` phải chạy trước, xem bẫy bên dưới |
+
+Sau khi build, script **so vân tay APK vừa ký với `assetlinks.json` mà domain đang phục vụ**.
+Lệch một ký tự là nó dừng và báo đỏ. Đây là phép kiểm quan trọng nhất, vì lệch vân tay không
+làm app hỏng — app vẫn chạy, chỉ **hiện thanh địa chỉ**, nên rất dễ tưởng là bình thường.
+
+### Cài lên điện thoại
+
+1. Chép `android-twa/app-release-signed.apk` sang điện thoại. USB, Telegram, Drive đều được.
+2. Mở tệp đó trên điện thoại. Android hỏi quyền **"Cài đặt ứng dụng không rõ nguồn gốc"** —
+   cấp cho ứng dụng bạn đang dùng để mở tệp.
+3. Cài đè lên bản cũ được, không cần gỡ. `bubblewrap update` tự tăng `appVersionCode` mỗi lần
+   build, và chữ ký không đổi nên Android chấp nhận.
+
+### Kiểm đã đúng chưa
+
+Mở app từ màn hình chính:
+
+- **Không thấy thanh địa chỉ** ⇒ TWA xác minh thành công, đúng thứ cần đạt.
+- **Thấy thanh địa chỉ, có nút X và nút chia sẻ** ⇒ Chrome đã tụt về **Custom Tab**. Nghĩa là
+  Digital Asset Links không khớp. Chạy lại `build-apk.ps1` và đọc kỹ phần so vân tay ở cuối.
+
+### Ba bẫy đã sập thật
+
+> **1. Tiến trình tunnel còn sống ≠ domain còn sống.** Xem mục đầu tài liệu. Đây là nguyên nhân
+> của sự cố 2026-08-08.
+
+> **2. `bubblewrap build` DỪNG LẠI HỎI khi `twa-manifest.json` đổi.** Nó so với
+> `manifest-checksum.txt`, thấy khác thì hỏi có muốn cập nhật dự án không — và treo script chờ
+> người gõ phím. Vì vậy `build-apk.ps1` luôn chạy **`bubblewrap update` trước**: lệnh đó sinh
+> lại dự án Android, tăng `appVersionCode`, và ghi lại checksum, nên `build` không còn gì để hỏi.
+
+> **3. `Set-Content -Encoding utf8` của PowerShell 5.1 ghi kèm BOM, và `JSON.parse` của Node vỡ
+> vì BOM.** Bẫy này khó thấy vì `Get-Content -Raw` **âm thầm cắt BOM lúc đọc**. Nên một vòng
+> đọc–sửa–ghi tự nó thêm BOM vào file trước đó không có, rồi bubblewrap tắt với lỗi
+> `Unexpected token '﻿' ... is not valid JSON`. Phải dùng
+> `[System.IO.File]::WriteAllText($p, $t, (New-Object System.Text.UTF8Encoding($false)))`.
+> Cùng họ với bẫy cột `JSON` của MySQL trong `docs/canonicalization.md`: công cụ trung gian
+> tự ý sửa byte.
+
+### Mật khẩu keystore
+
+`android-twa/android.keystore` **đã gitignore** cùng cả thư mục `android-twa/`. Mất tệp này là
+**không ký được bản cập nhật nữa** — Android từ chối cài đè khi chữ ký đổi, phải gỡ rồi cài lại
+từ đầu. Sao lưu nó ra ngoài repo, cùng chỗ với backup master key (xem `PROJECT.md` §9).
+
+---
+
+## Đường PWA — cài qua Chrome
+
+Vẫn dùng được, và là phương án dự phòng tốt khi không kịp build APK.
+
 ## Bước 3 — Cài trên điện thoại
 
 1. Mở địa chỉ **HTTPS** bằng **Chrome** trên Android (Firefox/Samsung Internet có cài được
@@ -167,6 +270,10 @@ Nằm ngoài phạm vi 8 tuần; ghi vào hướng phát triển.
 | Đã sửa xong mà điện thoại **vẫn** chỉ mời tạo lối tắt | Chrome còn giữ bản cũ trong bộ nhớ đệm. Phải xóa dữ liệu trang, xem mục dưới |
 | Cài được nhưng **đăng nhập lỗi mạng** | App và API khác origin → mixed content. Phải chạy qua bước 1 |
 | Mở app ra **trắng trang** | Đường hầm đã tắt, hoặc backend không chạy |
+| **APK:** mở ra báo `ERR_NAME_NOT_RESOLVED` | Domain đường hầm đã bị thu hồi. Mở hầm mới rồi chạy lại `build-apk.ps1` |
+| **APK:** mở ra **có thanh địa chỉ** | Chrome tụt về Custom Tab vì `assetlinks.json` không khớp vân tay. `build-apk.ps1` bắt được lỗi này ở bước cuối |
+| **APK:** cài báo "ứng dụng không được cài đặt" | Đang cài đè bản ký bằng keystore **khác**. Gỡ bản cũ rồi cài lại |
+| `build-apk.ps1` báo `Unexpected token '﻿'` | `twa-manifest.json` bị dính BOM. Xem bẫy số 3 ở mục đường APK |
 | Tải lại ở `/sv/diem` bị 404 | Thiếu fallback SPA — kiểm `WebAppConfig` còn không |
 | Camera không bật được | Chrome chỉ cho camera trên **HTTPS**. Cũng phải cấp quyền cho trang |
 | Sửa giao diện xong app không đổi | Service worker giữ bản cũ. Chạy lại `build-pwa.ps1`, rồi đóng hẳn app và mở lại |
@@ -255,10 +362,16 @@ Sau khi có tệp mới, thêm vào `app/vite.config.ts`:
 
 ## Nói đúng mức trong báo cáo
 
-> Hệ thống truy cập qua trình duyệt và **cài được lên màn hình chính Android dưới dạng PWA
-> (WebAPK)**, chạy toàn màn hình không thanh địa chỉ. Đóng gói thành APK phát hành trên CH
-> Play qua Trusted Web Activity là hướng phát triển; ở phiên bản hiện tại điều đó **không
-> thêm khả năng nào** vì TWA vẫn là Chrome render cùng trang đó.
+> Hệ thống được đóng gói thành **ứng dụng Android (APK)** qua Trusted Web Activity, cài trực
+> tiếp lên thiết bị và chạy toàn màn hình không thanh địa chỉ. Về bản chất TWA vẫn dùng engine
+> của Chrome để render giao diện web, nên **khả năng chức năng tương đương bản PWA**; đóng gói
+> APK phục vụ mục đích phân phối và trải nghiệm cài đặt, **không mở rộng năng lực hệ thống**.
+> Phát hành trên CH Play là hướng phát triển.
 
-**Đừng viết** "ứng dụng Android" mà không nói rõ là PWA — hội đồng sẽ hỏi tệp APK đâu, và câu
-trả lời phải là một quyết định có lý do, không phải một chỗ còn thiếu.
+**Đừng viết "ứng dụng Android native".** Hội đồng hỏi một câu về vòng đời Activity, về JNI, hay
+về việc gọi API hệ thống nào là lộ ngay. Nói đúng bản chất TWA thì không ai bắt bẻ được, và nó
+còn cho thấy bạn hiểu công cụ mình dùng.
+
+**Cũng đừng giấu chuyện app phụ thuộc máy tính đang chạy.** Ở phiên bản hiện tại, APK trỏ vào
+một đường hầm HTTPS tạm; tắt máy là app không mở được. Đây là giới hạn triển khai, viết thẳng
+vào phần hạn chế. Deploy lên máy chủ có tên miền cố định là hướng phát triển — xem cách C.

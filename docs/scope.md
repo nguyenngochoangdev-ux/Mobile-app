@@ -75,3 +75,34 @@ Không thảo luận lại, không có ngoại lệ:
 | Ngày | Thay đổi | Lý do | Cắt gì để bù |
 |---|---|---|---|
 | 2026-08-04 | Chốt lần đầu | — | — |
+| 2026-08-08 | **Thêm đóng gói APK/TWA vào phạm vi** | Người dùng quyết, đảo hai lần từ chối trước | Không cắt gì. Xem ghi chú bên dưới |
+
+### Ghi chú cho thay đổi 2026-08-08 — đóng gói APK
+
+Đây là lần thứ ba đề tài xét việc đóng gói APK. Hai lần trước (2026-08-05, 2026-08-07)
+`/scope-guard` đều từ chối. Lần này người dùng quyết định làm, và quyền quyết định phạm vi
+thuộc về người dùng.
+
+**Trả lời trung thực ba câu hỏi bắt buộc, không tô hồng:**
+
+1. *Phục vụ luận điểm nào?* **Không luận điểm nào.** TWA là Chrome đang render đúng trang PWA
+   đó. Nó không chạm vào Merkle, anchor, verifier, hay rule engine.
+2. *Sinh số liệu cho chương 11?* **Không.**
+3. *Tốn mấy ngày?* Ước lượng cũ (~2 ngày) **đã sai theo hướng có lợi**: người dùng đã tự cài
+   Android SDK, tạo keystore, và build xong APK ký thật trước khi mở phiên này. Phần tốn thời
+   gian nhất đã là chi phí chìm. Việc còn lại chỉ là tự động hoá và tài liệu, khoảng nửa ngày.
+
+**Vì vậy không cắt gì để bù.** Nhưng phải ghi rõ cái giá thật, vì nó không nằm ở số ngày:
+
+> APK **nung cứng domain vào trong lúc build**. Dự án dùng quick tunnel
+> (`*.trycloudflare.com`), loại domain đổi mỗi lần chạy lại và bị Cloudflare thu hồi sau vài
+> giờ. Nên **mỗi lần domain đổi là phải build lại APK và cài lại lên điện thoại**. Người dùng
+> đã chọn đường này thay vì mua domain cố định, chấp nhận đánh đổi đó.
+
+**Rủi ro còn lại, không khử được bằng code:** quên bước build lại ngay trước buổi bảo vệ thì
+app mở ra báo `ERR_NAME_NOT_RESOLVED`. Đã xảy ra thật ngày 2026-08-08. Giảm rủi ro bằng
+`scripts/build-apk.ps1` — nó kiểm domain còn sống trước khi build, nhưng **không thay được
+việc phải nhớ chạy nó**.
+
+**Không đổi gì trong lõi.** Backend, contract, canonicalization, verifier, rule engine giữ
+nguyên. APK chỉ là lớp đóng gói ngoài cùng của PWA đã có.

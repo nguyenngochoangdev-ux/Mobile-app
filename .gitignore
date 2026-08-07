@@ -46,6 +46,10 @@ contracts/deployments/localhost.json
 app/src/api/generated/
 backend/src/main/java/**/contracts/generated/
 
+# Dự án Gradle do Bubblewrap sinh ra (TWA) — keystore, APK/AAB, và origin đóng gói vào đây
+# là một tunnel Cloudflare TẠM THỜI, không phải domain thật. Xem PROJECT.md §2.4.
+android-twa/
+
 # === IDE / OS ===
 .idea/
 .vscode/

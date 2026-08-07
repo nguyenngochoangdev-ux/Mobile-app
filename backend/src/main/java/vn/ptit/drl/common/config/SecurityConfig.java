@@ -36,7 +36,12 @@ public class SecurityConfig {
     private static final String[] TAI_NGUYEN_TINH = {
             "/", "/index.html", "/manifest.webmanifest",
             "/assets/**", "/registerSW.js", "/sw.js", "/workbox-*.js",
-            "/*.png", "/*.svg", "/*.ico", "/*.webmanifest"
+            "/*.png", "/*.svg", "/*.ico", "/*.webmanifest",
+            // TWA (Trusted Web Activity) xác minh app bằng cách tự GET đường này và so
+            // SHA-256 chữ ký APK với danh sách khai ở đây. Chrome trên điện thoại gọi nó
+            // TRƯỚC KHI đăng nhập, nên không thể để sau JWT — 401 ở đây làm app luôn hiện
+            // thanh URL (rơi về Custom Tab) dù mọi thứ khác đúng.
+            "/.well-known/assetlinks.json"
     };
 
     private static final String[] ROUTE_CLIENT = {
