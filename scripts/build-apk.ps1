@@ -309,6 +309,230 @@ try {
         }
         Write-Host "     gradle.properties -> java.home = $jdkForward" -ForegroundColor DarkGray
 
+        # GHI LAI LauncherActivity.java + CameraWebViewActivity.java SAU update, TRUOC build.
+        #
+        # Thu vien androidbrowserhelper KHONG cap quyen camera trong che do webview mac dinh —
+        # da xac nhan bang cach doc bytecode that: WebChromeClient noi bo cua WebViewFallbackActivity
+        # chi override onShowCustomView/onHideCustomView, khong co onPermissionRequest, va ham
+        # tao no la private nen khong ke thua de sua. Va tren may khong co Chrome, thu vien tu
+        # chon mot trinh duyet bat ky lam Custom Tab, hien banner ten trinh duyet do.
+        #
+        # CameraWebViewActivity.java (file rieng, KHONG bi bubblewrap dong lai) thay the hoan
+        # toan duong di do bang WebView tu quan ly, tu cap quyen camera runtime, tu gioi han
+        # dieu huong trong dung mot origin. LauncherActivity.java (file BI bubblewrap dong lai
+        # moi lan `update`) override launchTwa() de chuyen thang sang CameraWebViewActivity,
+        # khong bao gio de thu vien chay toi buoc chon trinh duyet — banner khong co co hoi
+        # xuat hien du chi thoang qua.
+        #
+        # `bubblewrap update` GHI DE TOAN BO LauncherActivity.java ve dung ban mac dinh cua no
+        # moi lan chay — da xac nhan bang timestamp thuc te. Vi vay phai ghi lai o day, sau
+        # update, truoc build, moi lan — cung mau voi gradle.properties o tren.
+        $launcherJava = Join-Path $twaDir "app\src\main\java\vn\ptit\drl\twa\LauncherActivity.java"
+        $noiDungLauncher = @'
+package vn.ptit.drl.twa;
+
+import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+
+/**
+ * BI GHI DE moi lan `bubblewrap update` chay — scripts/build-apk.ps1 ghi lai DUNG NOI DUNG NAY
+ * sau moi lan update, truoc build. Sua o day roi quen sua lai trong build-apk.ps1 la sua vo ich.
+ *
+ * Override launchTwa() thay vi onCreate(): onCreate() cua lop cha goi shouldLaunchImmediately()
+ * roi goi launchTwa() qua virtual dispatch, va chinh launchTwa() la noi thu vien chon trinh
+ * duyet (co the tut ve Custom Tab va hien banner ten trinh duyet tren may khong co Chrome).
+ * Khong goi super.launchTwa() la chan dung logic do truoc khi no kip chay. Xem
+ * CameraWebViewActivity.java de biet ly do can WebView rieng.
+ */
+public class LauncherActivity
+        extends com.google.androidbrowserhelper.trusted.LauncherActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+        } else {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+        }
+    }
+
+    @Override
+    protected void launchTwa() {
+        Uri url = getLaunchingUrl();
+        startActivity(new Intent(this, CameraWebViewActivity.class).setData(url));
+        finish();
+    }
+
+    @Override
+    protected Uri getLaunchingUrl() {
+        return super.getLaunchingUrl();
+    }
+}
+'@
+        [System.IO.File]::WriteAllText($launcherJava, $noiDungLauncher, (New-Object System.Text.UTF8Encoding($false)))
+
+        # CameraWebViewActivity.java: gia dinh ban dau la file nay KHONG bi bubblewrap dong vi
+        # no khong nam trong template cua bubblewrap — SAI. `bubblewrap update` XOA SACH ca thu
+        # muc goi Java roi sinh lai tu dau, cuon theo ca file nay. Da bat qua that, phai ghi lai
+        # toan bo noi dung o day, cung mau voi LauncherActivity.java o tren, khong chi kiem
+        # ton tai.
+        $camJava = Join-Path $twaDir "app\src\main\java\vn\ptit\drl\twa\CameraWebViewActivity.java"
+        $noiDungCam = @'
+package vn.ptit.drl.twa;
+
+import android.Manifest;
+import android.app.Activity;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Bundle;
+import android.view.ViewGroup;
+import android.webkit.PermissionRequest;
+import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+/**
+ * WebView nhung rieng, thay cho WebViewFallbackActivity co san cua thu vien androidbrowserhelper.
+ *
+ * Tren may khong co trinh duyet nao khai bao ho tro Trusted Web Activity, thu vien tu chon mot
+ * trinh duyet bat ky de mo Custom Tab — trinh duyet do hien thanh cong cu kem ten cua no.
+ * fallbackType: webview cua chinh thu vien tuong nhu giai duoc chuyen do, nhung WebChromeClient
+ * noi bo cua no (WebViewFallbackActivity) chi override onShowCustomView/onHideCustomView,
+ * KHONG co onPermissionRequest, nen moi yeu cau getUserMedia() (camera quet QR) bi Android tu
+ * choi thang theo mac dinh. Ham tao WebChromeClient cua no la private nen khong ke thua de sua.
+ * Da xac nhan bang cach doc bytecode that cua thu vien, khong doan.
+ *
+ * File nay bi bubblewrap XOA SACH moi lan `update` chay du no khong nam trong template cua no
+ * (update xoa ca thu muc goi Java roi sinh lai). scripts/build-apk.ps1 ghi lai toan bo noi dung
+ * nay sau moi lan update, truoc build.
+ */
+public class CameraWebViewActivity extends Activity {
+
+    private static final int MA_QUYEN_CAMERA = 4210;
+
+    /** Giu lai yeu cau cua WebView trong luc cho nguoi dung tra loi hop thoai xin quyen. */
+    private PermissionRequest yeuCauCameraDangCho;
+
+    private WebView webView;
+
+    /** Origin duy nhat duoc phep dieu huong BEN TRONG WebView nay. Doc tu Intent, khong hardcode. */
+    private String originTinCay;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        Uri url = getIntent().getData();
+        if (url == null) {
+            finish();
+            return;
+        }
+        originTinCay = url.getScheme() + "://" + url.getHost();
+
+        webView = new WebView(this);
+        webView.setLayoutParams(new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        webView.getSettings().setJavaScriptEnabled(true);
+        webView.getSettings().setDomStorageEnabled(true);
+        webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
+
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                Uri uri = request.getUrl();
+                String origin = uri.getScheme() + "://" + uri.getHost();
+                if (origin.equals(originTinCay)) {
+                    return false;
+                }
+                startActivity(new Intent(Intent.ACTION_VIEW, uri));
+                return true;
+            }
+        });
+
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onPermissionRequest(PermissionRequest request) {
+                for (String resource : request.getResources()) {
+                    if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource)) {
+                        yeuCauCameraDangCho = request;
+                        if (ContextCompat.checkSelfPermission(CameraWebViewActivity.this,
+                                Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                            request.grant(request.getResources());
+                        } else {
+                            ActivityCompat.requestPermissions(CameraWebViewActivity.this,
+                                    new String[]{Manifest.permission.CAMERA}, MA_QUYEN_CAMERA);
+                        }
+                        return;
+                    }
+                }
+                request.deny();
+            }
+        });
+
+        setContentView(webView);
+        webView.loadUrl(url.toString());
+    }
+
+    @Override
+    public void onRequestPermissionsResult(
+            int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != MA_QUYEN_CAMERA || yeuCauCameraDangCho == null) {
+            return;
+        }
+        boolean choPhep = grantResults.length > 0
+                && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+        if (choPhep) {
+            yeuCauCameraDangCho.grant(yeuCauCameraDangCho.getResources());
+        } else {
+            yeuCauCameraDangCho.deny();
+        }
+        yeuCauCameraDangCho = null;
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (webView.canGoBack()) {
+            webView.goBack();
+        } else {
+            super.onBackPressed();
+        }
+    }
+}
+'@
+        [System.IO.File]::WriteAllText($camJava, $noiDungCam, (New-Object System.Text.UTF8Encoding($false)))
+
+        # VA AndroidManifest.xml: them quyen CAMERA va khai bao CameraWebViewActivity. CA HAI
+        # deu KHONG co san trong manifest bubblewrap sinh (no nham vao Chrome tu cap quyen qua
+        # tien trinh cua Chrome, khong phai qua app cua minh), va manifest BI GHI DE moi lan
+        # update giong het gradle.properties.
+        $manifestPath = Join-Path $twaDir "app\src\main\AndroidManifest.xml"
+        $noiDungManifest = Get-Content $manifestPath -Raw
+
+        if ($noiDungManifest -notmatch 'android\.permission\.CAMERA') {
+            $noiDungManifest = $noiDungManifest -replace `
+                '(<manifest[^>]*>)', `
+                "`$1`n    <uses-permission android:name=`"android.permission.CAMERA`"/>"
+        }
+        if ($noiDungManifest -notmatch 'CameraWebViewActivity') {
+            $khaiBaoActivity = "        <activity android:name=`".CameraWebViewActivity`"`n" +
+                "            android:exported=`"false`"`n" +
+                "            android:configChanges=`"orientation|screenSize|keyboardHidden`" />`n" +
+                "    </application>"
+            $noiDungManifest = $noiDungManifest -replace '</application>', $khaiBaoActivity
+        }
+        [System.IO.File]::WriteAllText($manifestPath, $noiDungManifest, (New-Object System.Text.UTF8Encoding($false)))
+        Write-Host "     LauncherActivity.java + AndroidManifest.xml -> da va lai (CameraWebViewActivity)" -ForegroundColor DarkGray
+
         # Khong truyen --skipPwaValidation: cai co do con sot trong `bubblewrap help` nhung
         # ban 1.25.0 khong doc no, va build cung khong con chay kiem dinh PWA nua.
         & bubblewrap build --manifest="$manifestTwa" | ForEach-Object { "$_" }

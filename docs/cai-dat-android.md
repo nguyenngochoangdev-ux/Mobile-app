@@ -11,9 +11,11 @@ Có **hai đường**, dùng chung một backend và một bản PWA. Cả hai �
 > (2026-08-05, 2026-08-07). Người dùng quyết định làm, và quyền quyết định phạm vi thuộc về
 > người dùng. Ghi trong `docs/scope.md` và `PROJECT.md` §2.4.
 >
-> Nói đúng bản chất khi báo cáo: **TWA vẫn là Chrome render trang web đó.** APK không thêm
-> năng lực nào so với PWA, nó chỉ đổi cách phân phối và cách cài. Đừng viết "ứng dụng Android
-> native" — hội đồng hỏi một câu về vòng đời Activity là lộ.
+> Nói đúng bản chất khi báo cáo: **về bản chất vẫn là một trang web được render trong một
+> WebView**, dù từ 2026-08-08 không còn chắc chắn Chrome là bên render (xem mục "WebView
+> riêng" bên dưới — lý do phải tự viết). APK không thêm năng lực nào so với PWA, nó chỉ đổi
+> cách phân phối và cách cài. Đừng viết "ứng dụng Android native" — hội đồng hỏi một câu về
+> vòng đời Activity là lộ.
 
 ---
 
@@ -245,6 +247,48 @@ hiểu vì sao nó dài như vậy, và để không gỡ bỏ các bước trô
 > `org.gradle.java.home` sang JDK 64-bit (dùng chung với backend). Nhưng **`bubblewrap update`
 > regenerate `gradle.properties` mỗi lần chạy, xoá sạch dòng vá đó** — nên không thể vá một
 > lần rồi thôi. `build-apk.ps1` ghi lại dòng đó **ngay sau `update`, trước `build`**, mỗi lần.
+
+### WebView riêng — vì sao không để thư viện tự chọn trình duyệt
+
+Trên máy không cài (hoặc tắt) Chrome, mở app hiện dòng **"Đang chạy trên [tên trình duyệt
+khác]"** kèm thanh công cụ — mất đúng thứ APK hứa hẹn.
+
+**Nguyên nhân, xác nhận bằng cách đọc bytecode thật của `androidbrowserhelper:2.6.2`, không
+đoán:** `TwaProviderPicker` quét **mọi trình duyệt đã cài**, ưu tiên trình duyệt nào khai báo
+category `androidx.browser.trusted.category.TrustedWebActivities` trong manifest của chính
+nó. Không tìm được cái nào → tụt về Custom Tab của trình duyệt bất kỳ, hiện banner tên trình
+duyệt đó. Việc này quét *toàn bộ* app đã cài, không riêng trình duyệt mặc định — nên nếu Chrome
+có cài, dù không đặt mặc định, vẫn được tìm thấy. Thấy banner nghĩa là **máy đó không có Chrome
+khả dụng**.
+
+**Đường tắt `fallbackType: webview` của chính thư viện không dùng được.** Nó tự vẽ bằng
+`WebViewFallbackActivity`, nhưng `WebChromeClient` nội bộ của class đó **không override
+`onPermissionRequest`** — hành vi mặc định của Android là từ chối thẳng `getUserMedia()`, nên
+**camera quét QR chết hoàn toàn**. Hàm tạo `WebChromeClient` của nó còn là `private`, không kế
+thừa để sửa được. Không có điểm mở rộng chính thức nào của thư viện cho việc này.
+
+**Đã sửa bằng cách tự viết một Activity WebView riêng** (`CameraWebViewActivity.java`): tự
+quản lý `WebView`, tự override `onPermissionRequest` để xin quyền `CAMERA` runtime rồi
+`request.grant(...)`, tự giới hạn điều hướng trong đúng một origin (`shouldOverrideUrlLoading`
+— thiếu bước này là lỗ hổng thật, WebView có thể bị dẫn sang trang giả mạo mà vẫn trông như
+đang ở trong app). `LauncherActivity.java` override `launchTwa()` (điểm mở rộng `protected`
+chính thức của thư viện, không phải hack) để chuyển thẳng sang Activity này, không bao giờ để
+thư viện chạy tới bước chọn trình duyệt — banner không có cơ hội xuất hiện dù chỉ thoáng qua.
+
+> ⚠️ **Đây là quyết định tốn chi phí thật, đã cân nhắc qua `/scope-guard` và người dùng xác
+> nhận hai lần.** Nó không phục vụ luận điểm blockchain nào, không sinh số liệu cho chương 11
+> — thuần là sửa trải nghiệm trên thiết bị thiếu Chrome. Phương án rẻ hơn nhiều (cài Chrome
+> lên máy demo, 0 dòng code) vẫn là lựa chọn đúng cho **máy dùng để bảo vệ đề tài**. Chỉ giữ
+> `CameraWebViewActivity` cho trường hợp không kiểm soát được máy người dùng cuối.
+
+**Bẫy khi vá — `bubblewrap update` XOÁ SẠCH cả thư mục mã Java rồi sinh lại**, không chỉ ghi
+đè từng file nó biết. Giả định ban đầu "file lạ không bị đụng tới" **sai** — đã bắt được thật
+khi `CameraWebViewActivity.java` biến mất sau một lần `update`, làm build lỗi
+`cannot find symbol`. `build-apk.ps1` giờ **ghi lại toàn bộ nội dung** cả hai file
+(`LauncherActivity.java`, `CameraWebViewActivity.java`) và vá `AndroidManifest.xml` (thêm
+quyền `CAMERA` + khai báo activity) **sau mỗi lần `update`, trước `build`** — cùng khuôn với
+`gradle.properties`. Sửa trực tiếp các file `.java` trong `android-twa/` mà quên sửa lại
+template trong `build-apk.ps1` là sửa vô ích, mất ngay lần build sau.
 
 ### Mật khẩu keystore
 

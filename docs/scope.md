@@ -76,6 +76,26 @@ Không thảo luận lại, không có ngoại lệ:
 |---|---|---|---|
 | 2026-08-04 | Chốt lần đầu | — | — |
 | 2026-08-08 | **Thêm đóng gói APK/TWA vào phạm vi** | Người dùng quyết, đảo hai lần từ chối trước | Không cắt gì. Xem ghi chú bên dưới |
+| 2026-08-08 | **Viết `CameraWebViewActivity` (WebView riêng thay thư viện)** | Máy demo thiếu Chrome làm TWA hiện banner tên trình duyệt khác. Người dùng chọn tự viết sau khi được cảnh báo hai lần về chi phí thật | Không cắt gì — xem ghi chú |
+
+### Ghi chú cho thay đổi 2026-08-08 — WebView riêng (`CameraWebViewActivity`)
+
+Chạy qua `/scope-guard`. Kết luận: **ngoài phạm vi** — không phục vụ luận điểm nào trong §10,
+không sinh số liệu chương 11, thuần là thẩm mỹ hiển thị trên thiết bị thiếu Chrome. Có phương
+án rẻ hơn nhiều (cài Chrome lên máy demo, 0 dòng code).
+
+Ước lượng chi phí ban đầu ("thêm quyền camera") **bị đánh giá thấp** — sau khi đọc bytecode
+thật của `androidbrowserhelper:2.6.2` mới lộ ra: hàm tạo `WebChromeClient` của thư viện là
+`private`, không có điểm mở rộng chính thức nào để chỉ thêm quyền camera. Phải viết lại **toàn
+bộ** một Activity WebView (WebView + WebViewClient + WebChromeClient + xin quyền runtime +
+chặn điều hướng ra ngoài origin). Đã báo lại chi phí thật cho người dùng, người dùng xác nhận
+lần thứ hai vẫn muốn làm.
+
+**Không cắt gì để bù vì chi phí thực tế nhỏ hơn ước lượng theo hướng khác:** viết xong trong
+cùng phiên, không tốn thêm ngày làm việc riêng (không giống trường hợp APK ban đầu vốn ước
+tính theo ngày). Rủi ro thật nằm ở **bảo trì**, không phải ở thời gian viết: `bubblewrap
+update` xoá sạch thư mục mã Java mỗi lần build, nên `build-apk.ps1` phải tự ghi lại toàn bộ
+nội dung hai file Java mỗi lần — đã làm, xem `docs/cai-dat-android.md` mục "WebView riêng".
 
 ### Ghi chú cho thay đổi 2026-08-08 — đóng gói APK
 
