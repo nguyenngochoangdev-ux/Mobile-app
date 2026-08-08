@@ -1,0 +1,86 @@
+# Deploy trang verifier tĩnh lên GitHub Pages.
+#
+# VÌ SAO ĐÁNG DEPLOY: luận điểm 2.2b của đề tài là "xác minh độc lập sau khi sinh viên rời
+# trường". Một trang chạy trên máy tính cá nhân không chứng minh được điều đó. Một địa chỉ
+# công khai, ai mở cũng được, mở lúc máy chủ của trường đã tắt — mới là bằng chứng.
+#
+# RANH GIỚI CỨNG (PROJECT.md §5): verifier KHÔNG gọi backend một dòng nào. Nó đọc thẳng
+# Polygon Amoy qua RPC công cộng. Vì vậy trang này sống hoàn toàn độc lập với backend, và
+# không cần secret nào để deploy.
+#
+# Build ở đây chỉ là CHÉP TỆP. `verifier/scripts/build-web.mjs` không dùng bundler, vì §4 cấm
+# thêm dependency kể cả devDependency — kể cả trong CI. `npm ci` chỉ để lấy `ethers` (bản ESM
+# đã ship sẵn trong gói) và `merkletreejs`.
+#
+# ---------------------------------------------------------------------------------------
+# CẦN LÀM MỘT LẦN TRƯỚC KHI WORKFLOW NÀY CHẠY ĐƯỢC — không tự động hoá được:
+#
+#   Settings -> Pages -> Build and deployment -> Source: chọn "GitHub Actions"
+#
+# Để mặc định ("Deploy from a branch") thì workflow chạy xong vẫn báo lỗi ở bước deploy.
+# ---------------------------------------------------------------------------------------
+
+name: Deploy verifier
+
+on:
+  push:
+    branches: [main]
+    # Chỉ chạy khi phần verifier đổi. Sửa backend hay PWA không cần deploy lại trang này.
+    paths:
+      - 'verifier/**'
+      - '.github/workflows/deploy-verifier.yml'
+  # Cho phép bấm chạy tay từ tab Actions — cần khi muốn deploy lại mà không sửa gì.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Nhiều lần push liên tiếp thì chỉ giữ lần cuối. `cancel-in-progress: false` để một bản deploy
+# đang chạy dở được chạy hết — huỷ giữa chừng có thể để Pages ở trạng thái nửa vời.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: verifier/package-lock.json
+
+      - name: Cai dependency cua verifier
+        working-directory: verifier
+        run: npm ci
+
+      - name: Chay test cua verifier
+        # Chặn deploy khi phép kiểm canonicalization hay Merkle bị đỏ. Deploy một verifier
+        # sai còn tệ hơn không deploy: nó báo "hợp lệ" cho thứ không hợp lệ.
+        working-directory: verifier
+        run: npm test
+
+      - name: Dung trang tinh
+        working-directory: verifier
+        run: npm run build:web
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: verifier/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

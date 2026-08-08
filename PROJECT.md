@@ -715,11 +715,22 @@ Hoàn thiện 3 luồng PWA · verifier tĩnh · deploy.
 > .revoke` biến thành `revoke1` (trùng tên với `CredentialController.revoke`), làm hỏng một
 > trang đã chạy được. Sửa gốc thay vì chạy theo tên sinh ra.
 >
+> ## ✅ TRANG CÁN BỘ XONG — 2026-08-08 (commit `e90f8a0`)
+>
+> `/cb/cham-diem` và `/cb/chung-nhan`, đều có `RequireRole` cho `STAFF`/`ADMIN`. Trước đó hai
+> việc này chỉ gọi được qua API.
+>
+> Cùng lượt trả một khoản nợ đáng kể: **ba chỗ gán cứng dữ liệu lẽ ra phải đọc từ bộ quy tắc**
+> — trần điểm, ngưỡng xếp loại, học kỳ mặc định. Nặng nhất là `CredentialSuggestionService`
+> đếm điểm danh **không lọc `events.semester`**, làm số hoạt động trong credential gộp mọi học
+> kỳ. Đó là lỗi thật, không phải nợ thẩm mỹ, vì credential ký rồi neo vĩnh viễn. Quy tắc chung
+> đã viết thành §5.1.
+>
 > ❌ **Còn lại của tuần 6:**
-> 1. **Trang cấp credential + chạy chấm cho cán bộ** — hiện chỉ gọi được qua API.
-> 2. **Quay video end-to-end** — người dùng làm, không code hộ được.
-> 3. Deploy verifier lên GitHub Pages / Vercel.
-> 4. Neo lô `SCORE`/`RULESET` thật (giao dịch ghi).
+> 1. **Quay video end-to-end** — người dùng làm, không code hộ được.
+> 2. Deploy verifier lên GitHub Pages / Vercel.
+> 3. Neo lô `SCORE`/`RULESET` thật (giao dịch ghi).
+> 4. Thu hồi thật một credential trên Amoy — để có ảnh verifier báo "ĐÃ THU HỒI".
 
 ### Tuần 7 — Đo đạc + báo cáo (KHÓA CỨNG)
 Bảng gas · threat model · benchmark thời gian · khảo sát SUS nếu kịp · bản nháp báo cáo hoàn chỉnh.
