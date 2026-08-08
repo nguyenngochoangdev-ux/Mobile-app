@@ -201,27 +201,41 @@ try {
 }
 
 
-# --- Buoc 4: va domain vao twa-manifest.json ----------------------------------------------
+# --- Buoc 4: va domain + tang version vao twa-manifest.json --------------------------------
 # Thay chuoi thay vi doc-ghi lai JSON: ConvertTo-Json cua PS 5.1 escape ky tu tieng Viet
 # thanh \uXXXX va xao tron thu tu khoa, lam file kho doc va kho so sanh trong git.
-Write-Host "[4/5] Va domain vao twa-manifest.json..." -ForegroundColor Cyan
+Write-Host "[4/5] Va domain + tang version vao twa-manifest.json..." -ForegroundColor Cyan
 
+$noiDung = Get-Content $manifestTwa -Raw
+
+# 4a. Va domain (neu doi).
 if ($domainCu -eq $domainMoi) {
-    Write-Host "     Domain khong doi ($domainMoi). Van build lai de chac chan." -ForegroundColor DarkGray
+    Write-Host "     Domain khong doi ($domainMoi)." -ForegroundColor DarkGray
 } else {
-    $noiDung = Get-Content $manifestTwa -Raw
     $noiDung = $noiDung.Replace($domainCu, $domainMoi)
-
-    # KHONG dung Set-Content -Encoding utf8. Tren PowerShell 5.1 no ghi kem BOM, ma
-    # JSON.parse cua Node VO khi gap BOM:
-    #     SyntaxError: Unexpected token '﻿' ... is not valid JSON
-    # Get-Content -Raw thi lai AM THAM cat BOM luc doc, nen vong doc-sua-ghi tu no them BOM
-    # vao mot file truoc do khong co. Bubblewrap tat luon voi loi parse kho hieu.
-    # WriteAllText voi UTF8Encoding($false) ghi UTF-8 khong BOM.
-    [System.IO.File]::WriteAllText($manifestTwa, $noiDung, (New-Object System.Text.UTF8Encoding($false)))
-    Write-Host "     $domainCu" -ForegroundColor DarkGray
-    Write-Host "  -> $domainMoi" -ForegroundColor Green
+    Write-Host "     Domain: $domainCu -> $domainMoi" -ForegroundColor Green
 }
+
+# 4b. Tu tang appVersionCode va dat appVersionName TRONG JSON, roi buoc 5 goi update voi
+# --skipVersionUpgrade. Vi sao tu lam thay vi de bubblewrap lo:
+#   `bubblewrap update` khong co --appVersionName thi HOI TUONG TAC "versionName for the new
+#   App version", va trong cua so khong co stdin (chay nen) no chet luon voi
+#   ERR_USE_AFTER_CLOSE('readline'). Tu quan version o day thi update chay im, va appVersionCode
+#   VAN tang deu — can cho viec cai de len ban cu (Android tu choi cai de khi versionCode khong
+#   tang). appVersionName chi la chuoi hien thi, dat "1.0.<code>" cho de doc.
+$codeCu = [int]([regex]::Match($noiDung, '"appVersionCode"\s*:\s*(\d+)').Groups[1].Value)
+$codeMoi = $codeCu + 1
+$tenMoi = "1.0.$codeMoi"
+$noiDung = [regex]::Replace($noiDung, '"appVersionCode"\s*:\s*\d+', "`"appVersionCode`": $codeMoi")
+$noiDung = [regex]::Replace($noiDung, '"appVersionName"\s*:\s*"[^"]*"', "`"appVersionName`": `"$tenMoi`"")
+$noiDung = [regex]::Replace($noiDung, '"appVersion"\s*:\s*"[^"]*"', "`"appVersion`": `"$tenMoi`"")
+Write-Host "     Version: code $codeCu -> $codeMoi · name $tenMoi" -ForegroundColor Green
+
+# KHONG dung Set-Content -Encoding utf8. Tren PowerShell 5.1 no ghi kem BOM, ma JSON.parse cua
+# Node VO khi gap BOM: SyntaxError: Unexpected token '﻿' ... is not valid JSON. Get-Content -Raw
+# thi lai AM THAM cat BOM luc doc, nen vong doc-sua-ghi tu no them BOM vao file truoc do khong co.
+# WriteAllText voi UTF8Encoding($false) ghi UTF-8 khong BOM.
+[System.IO.File]::WriteAllText($manifestTwa, $noiDung, (New-Object System.Text.UTF8Encoding($false)))
 
 
 # --- Buoc 5: build + ky -------------------------------------------------------------------
@@ -238,6 +252,25 @@ if (-not $MatKhau) {
 $env:BUBBLEWRAP_KEYSTORE_PASSWORD = $MatKhau
 $env:BUBBLEWRAP_KEY_PASSWORD      = $MatKhau
 
+# bubblewrap goi `gradlew.bat` TRAN (khong co .\) qua cmd.exe. May nay dat bien he thong
+# NoDefaultCurrentDirectoryInExePath=1 — mot thiet lap bao mat khien cmd.exe KHONG chay file
+# tu thu muc hien tai neu chi go ten tran; no chi tim trong PATH. Nen `gradlew.bat` bao
+# "'gradlew.bat' is not recognized" du file nam ngay do. `.\gradlew.bat` thi chay, nhung minh
+# khong sua duoc lenh ben trong bubblewrap. Cach vao duoc: them thu muc android-twa vao PATH
+# de ten tran tim thay qua PATH. Chi song trong tien trinh script nay, khong ro ri ra ngoai.
+$pathCu = $env:PATH
+$env:PATH = "$twaDir;$env:PATH"
+
+# Tim JDK 64-bit cho gradle. Xem khoi va gradle.properties ngay ben duoi de biet vi sao can.
+$jdkHome = $null
+foreach ($ung in @($env:JAVA_HOME, "C:\Program Files\Java\jdk-21",
+                   "C:\Program Files\Eclipse Adoptium\jdk-21", "C:\Program Files\Java\jdk-17")) {
+    if ($ung -and (Test-Path (Join-Path $ung "bin\java.exe"))) { $jdkHome = $ung; break }
+}
+if (-not $jdkHome) {
+    throw "Khong tim thay JDK 64-bit. bubblewrap chi co JDK 17 BAN 32-BIT, khong du heap. Cai JDK 21 hoac dat JAVA_HOME."
+}
+
 Push-Location $twaDir
 try {
     # Ha ErrorActionPreference quanh lenh ngoai: PS 5.1 boc moi dong stderr cua chuong trinh
@@ -246,11 +279,35 @@ try {
     $cu = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     try {
-        # `update` phai chay TRUOC `build`. No sinh lai du an Android tu twa-manifest.json,
-        # tu tang appVersionCode, va ghi lai manifest-checksum.txt. Khong co buoc nay thi
-        # `build` phat hien manifest doi va DUNG LAI HOI nguoi dung — treo script.
-        & bubblewrap update --manifest="$manifestTwa" | ForEach-Object { "$_" }
+        # `update` phai chay TRUOC `build`. No sinh lai du an Android tu twa-manifest.json va
+        # ghi lai manifest-checksum.txt. Khong co buoc nay thi `build` phat hien manifest doi
+        # va DUNG LAI HOI nguoi dung — treo script.
+        #
+        # --skipVersionUpgrade: KHONG cho bubblewrap tu tang version, vi khi tu tang no HOI
+        # tuong tac "versionName for the new App version" va chet o cua so khong co stdin
+        # (ERR_USE_AFTER_CLOSE readline). Version da duoc tang tay trong buoc 4, bubblewrap chi
+        # viec dung so trong JSON.
+        & bubblewrap update --manifest="$manifestTwa" --skipVersionUpgrade | ForEach-Object { "$_" }
         if ($LASTEXITCODE -ne 0) { throw "bubblewrap update that bai (ma thoat $LASTEXITCODE)" }
+
+        # VA LAI gradle.properties SAU update, TRUOC build.
+        #
+        # bubblewrap chi kem mot JDK 17 BAN 32-BIT. Gradle mac dinh xin heap -Xmx1536m, ma JVM
+        # 32-bit khong cap phat noi tren 1.5GB khong gian dia chi lien tuc, nen chet ngay khi
+        # khoi dong daemon: "Could not reserve enough space for 1572864KB object heap". Cach va
+        # la tro `org.gradle.java.home` sang JDK 64-bit (dung chung voi backend Spring Boot).
+        #
+        # Nhung `bubblewrap update` REGENERATE gradle.properties moi lan chay, xoa sach dong vá
+        # do. Nen phai ghi lai NGAY SAU update va TRUOC build, khong the vá mot lan roi thoi.
+        # Dung dau / (forward slash): trong file .properties cua Java, \ la ky tu escape.
+        $gp = Join-Path $twaDir "gradle.properties"
+        $jdkForward = $jdkHome.Replace('\', '/')
+        $noiDungGp = Get-Content $gp -Raw
+        if ($noiDungGp -notmatch 'org\.gradle\.java\.home') {
+            $noiDungGp = $noiDungGp.TrimEnd() + "`norg.gradle.java.home=$jdkForward`n"
+            [System.IO.File]::WriteAllText($gp, $noiDungGp, (New-Object System.Text.UTF8Encoding($false)))
+        }
+        Write-Host "     gradle.properties -> java.home = $jdkForward" -ForegroundColor DarkGray
 
         # Khong truyen --skipPwaValidation: cai co do con sot trong `bubblewrap help` nhung
         # ban 1.25.0 khong doc no, va build cung khong con chay kiem dinh PWA nua.
@@ -261,6 +318,7 @@ try {
     }
 } finally {
     Pop-Location
+    $env:PATH = $pathCu
     # Khong de mat khau song trong moi truong sau khi script ket thuc.
     Remove-Item Env:\BUBBLEWRAP_KEYSTORE_PASSWORD -ErrorAction SilentlyContinue
     Remove-Item Env:\BUBBLEWRAP_KEY_PASSWORD      -ErrorAction SilentlyContinue

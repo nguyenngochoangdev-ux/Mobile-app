@@ -207,15 +207,18 @@ Mở app từ màn hình chính:
 - **Thấy thanh địa chỉ, có nút X và nút chia sẻ** ⇒ Chrome đã tụt về **Custom Tab**. Nghĩa là
   Digital Asset Links không khớp. Chạy lại `build-apk.ps1` và đọc kỹ phần so vân tay ở cuối.
 
-### Ba bẫy đã sập thật
+### Sáu bẫy đã sập thật
+
+Cả sáu đều đã gặp trong lúc dựng `build-apk.ps1`. Script hiện đã xử lý hết, nhưng ghi ra để
+hiểu vì sao nó dài như vậy, và để không gỡ bỏ các bước trông thừa.
 
 > **1. Tiến trình tunnel còn sống ≠ domain còn sống.** Xem mục đầu tài liệu. Đây là nguyên nhân
-> của sự cố 2026-08-08.
+> của sự cố `ERR_NAME_NOT_RESOLVED` ban đầu.
 
 > **2. `bubblewrap build` DỪNG LẠI HỎI khi `twa-manifest.json` đổi.** Nó so với
 > `manifest-checksum.txt`, thấy khác thì hỏi có muốn cập nhật dự án không — và treo script chờ
 > người gõ phím. Vì vậy `build-apk.ps1` luôn chạy **`bubblewrap update` trước**: lệnh đó sinh
-> lại dự án Android, tăng `appVersionCode`, và ghi lại checksum, nên `build` không còn gì để hỏi.
+> lại dự án Android và ghi lại checksum, nên `build` không còn gì để hỏi.
 
 > **3. `Set-Content -Encoding utf8` của PowerShell 5.1 ghi kèm BOM, và `JSON.parse` của Node vỡ
 > vì BOM.** Bẫy này khó thấy vì `Get-Content -Raw` **âm thầm cắt BOM lúc đọc**. Nên một vòng
@@ -225,11 +228,40 @@ Mở app từ màn hình chính:
 > Cùng họ với bẫy cột `JSON` của MySQL trong `docs/canonicalization.md`: công cụ trung gian
 > tự ý sửa byte.
 
+> **4. `bubblewrap update` HỎI TƯƠNG TÁC `versionName` và chết ở cửa sổ không có stdin**
+> (`ERR_USE_AFTER_CLOSE: readline was closed`). Khi để nó tự tăng version mà `appVersionName`
+> không phải dạng số chuẩn, nó dừng hỏi tên bản mới. `build-apk.ps1` tự tăng `appVersionCode`
+> và đặt `appVersionName` **trong JSON ở bước 4**, rồi gọi `update --skipVersionUpgrade` để nó
+> không hỏi. `appVersionCode` vẫn tăng đều — cần cho cài đè bản cũ.
+
+> **5. `gradlew.bat` báo `'gradlew.bat' is not recognized` dù file nằm ngay đó.** Máy này đặt
+> biến hệ thống `NoDefaultCurrentDirectoryInExePath=1`, một thiết lập bảo mật khiến `cmd.exe`
+> **không chạy file từ thư mục hiện tại** nếu chỉ gõ tên trần. bubblewrap gọi `gradlew.bat`
+> trần. `build-apk.ps1` vá bằng cách **thêm thư mục `android-twa` vào `PATH`** trước khi gọi,
+> để tên trần tìm thấy qua PATH.
+
+> **6. Gradle chết vì JVM 32-bit: `Could not reserve enough space for 1572864KB object heap`.**
+> bubblewrap chỉ kèm **JDK 17 bản 32-bit**, không cấp nổi heap `-Xmx1536m`. Phải trỏ
+> `org.gradle.java.home` sang JDK 64-bit (dùng chung với backend). Nhưng **`bubblewrap update`
+> regenerate `gradle.properties` mỗi lần chạy, xoá sạch dòng vá đó** — nên không thể vá một
+> lần rồi thôi. `build-apk.ps1` ghi lại dòng đó **ngay sau `update`, trước `build`**, mỗi lần.
+
 ### Mật khẩu keystore
 
-`android-twa/android.keystore` **đã gitignore** cùng cả thư mục `android-twa/`. Mất tệp này là
-**không ký được bản cập nhật nữa** — Android từ chối cài đè khi chữ ký đổi, phải gỡ rồi cài lại
-từ đầu. Sao lưu nó ra ngoài repo, cùng chỗ với backup master key (xem `PROJECT.md` §9).
+`android-twa/android.keystore` **đã gitignore** cùng cả thư mục `android-twa/`. Mất tệp này,
+hoặc quên mật khẩu, là **không ký được bản cập nhật nữa** — Android từ chối cài đè khi chữ ký
+đổi, phải gỡ rồi cài lại từ đầu. Sao lưu nó ra ngoài repo, cùng chỗ với backup master key
+(xem `PROJECT.md` §9).
+
+> **Keystore đã tạo lại ngày 2026-08-08.** Bản đầu (bubblewrap sinh 08-07) mất mật khẩu — nó
+> chỉ tồn tại trong lúc `bubblewrap init` hỏi, không lưu đâu cả. Đã tạo keystore mới bằng
+> `keytool`, alias `android`, mật khẩu **`Demo@123`** (dùng lại mật khẩu demo của app cho dễ
+> nhớ; keystore này là artifact dev đã gitignore, không phát hành CH Play nên mức bảo mật
+> thấp). Vân tay đổi nên đã cập nhật `app/public/.well-known/assetlinks.json`. Bản keystore
+> cũ vô dụng còn giữ ở `android.keystore.bak-*` — xoá được bất cứ lúc nào.
+>
+> Mật khẩu này **không phải bí mật thật**: `Demo@123` vốn đã nằm công khai trong
+> `DevSeeder.java`. Đừng dùng lại kiểu này nếu có ngày phát hành thật.
 
 ---
 
