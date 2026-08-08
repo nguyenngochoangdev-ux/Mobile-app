@@ -28,6 +28,9 @@ với Amoy; **chi phí POL thì không** — nó còn phụ thuộc giá gas lú
 | **5 — `AUDIT` lô đầu của miền** | **81.956** | **16.391** | **Amoy** | **2026-08-06** | [`0xe965fb…0a42`](https://amoy.polygonscan.com/tx/0xe965fb7c0e1e5f8de8f329493ceefefa67c1b6970643c51faf0fbfa0878c0a42) |
 | **2 — `ATTEND` lô THỨ HAI** | **64.028** | **32.014** | **Amoy** | **2026-08-06** | [`0x9c63ad…ceb1`](https://amoy.polygonscan.com/tx/0x9c63ad9425347b765a10af88acd30664c71725fc7e5fe4a4f072ec44751dceb1) |
 | **1 — `CRED` lô THỨ HAI** | **64.004** | **64.004** | **Amoy** | **2026-08-06** | [`0xd3a630…4b2d`](https://amoy.polygonscan.com/tx/0xd3a630c48f5df9415ba30320c57672ab3c04fce2bab3de0fc3ab62d88b644b2d) |
+| **500 — `SCORE` lô đầu của miền** | **81.968** | **163,9** | **Amoy** | **2026-08-08** | [`0x4b9718…6cdc`](https://amoy.polygonscan.com/tx/0x4b9718d4f002e4b86c77567da7609f7f430ac47bd6c4856fc4dd5f0771f86cdc) |
+| **1 — `RULESET` lô đầu của miền** | **81.980** | **81.980** | **Amoy** | **2026-08-08** | [`0xcf66bb…0ee2`](https://amoy.polygonscan.com/tx/0xcf66bb7ee8aa23cfddbc43a294277af855b0559523adaa57587d71ce62540ee2) |
+| **2 — `AUDIT` lô THỨ HAI** | **64.016** | **32.008** | **Amoy** | **2026-08-08** | [`0xf569e0…675c`](https://amoy.polygonscan.com/tx/0xf569e06e3d3afe0fd5277494cadca6572bd0cf917b93fca5cfecaf5ec758675c) |
 | 1 (ghi từng bản) | 54.752 | 54.752 | Hardhat local | 2026-08-05 | — |
 | 10 | 54.752 | 5.475,2 | Hardhat local | 2026-08-05 | — |
 | 100 | 54.752 | 547,5 | Hardhat local | 2026-08-05 | — |
@@ -47,6 +50,13 @@ on-chain chỉ nhận đúng 32 byte root, nên chi phí neo **không phụ thu�
 Dòng N = 1 là đối chứng: nếu ghi từng bản ghi lên chuỗi thay vì gộp lô thì mỗi bản ghi phải
 trả trọn một giao dịch. Gộp lô 5.000 làm chi phí mỗi bản ghi giảm **4.977 lần**.
 
+> **Lô `SCORE` 500 lá (2026-08-08) là bằng chứng mạnh nhất của mục này.** Trước ngày đó, mọi
+> phép đo **trên Amoy** đều ở lô rất nhỏ (N = 1 đến 5); phát biểu "gas không phụ thuộc N" chỉ
+> dựa vào Hardhat local. Lô 500 lá tốn **81.968 gas** — bằng đúng lô `ATTEND` **4 lá**
+> (81.968). Tăng số bản ghi gấp **125 lần** không làm gas đổi một đơn vị nào.
+>
+> Ở trạng thái ổn định, chi phí quy về **64.016 / 500 = 128 gas mỗi sinh viên mỗi kỳ**.
+
 **Ba con số của cùng một phép gọi `anchor()`, đo ở ba nơi:**
 
 | Môi trường | Lô đầu của miền | Trạng thái ổn định |
@@ -59,26 +69,54 @@ trả trọn một giao dịch. Gộp lô 5.000 làm chi phí mỗi bản ghi gi
 `_batchCount` đi từ 0 sang khác 0). Con số dùng cho mọi tính toán quy mô là **~64.000**, không
 phải ~82.000.
 
-### Một dự đoán nhỏ, kiểm được, và đã đúng ở cả 5 phép đo
+### Một dự đoán nhỏ — bị số liệu mới bác, rồi sửa lại cho đúng cả 8 điểm
 
-Năm giao dịch `anchor()` trên Amoy lệch nhau **đúng bội số của 12 gas**, và bội số đó bằng
-**hiệu số ký tự trong tên miền**:
+**Mô hình lần đầu (2026-08-06), dựa trên 5 phép đo.** Các giao dịch `anchor()` lệch nhau đúng
+bội số của **12 gas**, và bội số đó bằng hiệu số ký tự trong tên miền. Lý do: tham số là
+`bytes8` **đệm `0x00` bên phải**; trong calldata byte `0x00` tốn 4 gas còn byte khác 0 tốn 16,
+chênh **12 gas mỗi byte**. Tên miền dài thêm một ký tự là bớt một byte `0x00`.
 
-| Miền | Số ký tự | Lô đầu | Lô ổn định |
-|---|---:|---:|---:|
-| `CRED` | 4 | 81.944 | 64.004 |
-| `AUDIT` | 5 | 81.956 | — |
-| `ATTEND` | 6 | 81.968 | 64.028 |
-| | | **+12/ký tự** | **+12/ký tự** |
+**Ngày 2026-08-08 mô hình đó SAI.** Miền `SCORE` có 5 ký tự nên lẽ ra bằng `AUDIT`, tức
+81.956. Đo được **81.968** — thừa đúng 12 gas.
 
-Vì sao: tham số là `bytes8`, **đệm `0x00` bên phải**. Trong calldata, byte `0x00` tốn 4 gas
-còn byte khác 0 tốn 16 — chênh **12 gas mỗi ký tự**. Tên miền dài thêm một ký tự là bớt một
-byte `0x00`.
+**Nguyên nhân: mô hình cũ bỏ sót một tham số.** Chữ ký hàm là
+`anchor(bytes8 domain, uint64 batchId, bytes32 root, uint32 leafCount)`. `leafCount` cũng nằm
+trong calldata và cũng bị đệm `0x00`, nên **số byte khác 0 của nó cũng tính tiền**:
 
-**Giá trị của mục này với báo cáo không nằm ở 12 gas** — nó nhỏ đến mức vô nghĩa về chi phí.
-Giá trị nằm ở chỗ nó là một **dự đoán định lượng từ lý thuyết EVM, kiểm được bằng số đo thật,
-và đúng chính xác ở cả năm điểm**. Nó cho thấy các con số trong chương này đến từ đo đạc có
-hiểu biết chứ không phải chép lại từ explorer.
+| `leafCount` | Byte khác 0 | Ví dụ |
+|---|---:|---|
+| 1 – 255 | 1 | mọi lô trước 08-08 |
+| 256 – 65.535 | 2 | **lô `SCORE` 500 lá** |
+
+Năm lô đầu đều có `leafCount ≤ 5` nên số hạng này là hằng số và **tàng hình**. Lô 500 lá là
+phép đo đầu tiên vượt ngưỡng 255, và nó lộ ra ngay.
+
+**Mô hình sửa lại:**
+
+```
+gas = C + 12 × (số ký tự tên miền) + 12 × (số byte khác 0 của leafCount)
+      C = 81.884 cho lô đầu của miền · C = 63.944 cho lô ổn định
+```
+
+| Miền | Ký tự | `leafCount` | Byte ≠ 0 | Dự đoán | Đo được | |
+|---|---:|---:|---:|---:|---:|---|
+| `CRED` | 4 | 1 | 1 | 81.944 | 81.944 | ✅ |
+| `AUDIT` | 5 | 5 | 1 | 81.956 | 81.956 | ✅ |
+| `ATTEND` | 6 | 4 | 1 | 81.968 | 81.968 | ✅ |
+| **`SCORE`** | 5 | **500** | **2** | **81.968** | **81.968** | ✅ |
+| **`RULESET`** | 7 | 1 | 1 | **81.980** | **81.980** | ✅ |
+| `CRED` ổn định | 4 | 1 | 1 | 64.004 | 64.004 | ✅ |
+| `ATTEND` ổn định | 6 | 2 | 1 | 64.028 | 64.028 | ✅ |
+| **`AUDIT` ổn định** | 5 | 2 | 1 | **64.016** | **64.016** | ✅ |
+
+**Khớp cả 8 phép đo, không lệch một đơn vị gas nào.** Và hiệu hai hằng số
+`81.884 − 63.944 = 17.940` ra **đúng** chi phí khởi tạo miền đã đo độc lập từ trước.
+
+**Đây mới là chỗ đáng viết vào báo cáo, chứ không phải con số 12 gas.** 12 gas nhỏ đến mức vô
+nghĩa về chi phí. Cái đáng kể là quy trình: một mô hình định lượng được đề xuất từ lý thuyết
+EVM, một phép đo mới **bác bỏ** nó, nguyên nhân được truy về tham số bị bỏ sót, mô hình sửa
+lại rồi **khớp toàn bộ 8 điểm**. Nếu bị hỏi "các con số này ở đâu ra", đây là câu trả lời tốt
+hơn mọi lời khẳng định — và **giữ nguyên đoạn kể về lần sai** thì mạnh hơn là xoá nó đi.
 
 > **Chênh lệch Amoy ↔ Hardhat local: ~9.250 gas ở trạng thái ổn định** (64.028 vs 54.788),
 > so với **6.720 gas** ở phần deploy. Hai con số khác nhau nên **không có một hằng số chung**,
@@ -422,6 +460,39 @@ $env:LOCAL_CHAIN_TEST="true"; $env:LOCAL_STATUS_LIST="0x…"
 .\scripts\test-backend.ps1 StatusListClientLocalChainTest
 ```
 
+### ✅ Thu hồi THẬT trên Amoy — 2026-08-08
+
+Đến 08-08, mọi số liệu thu hồi đều đo trên Hardhat cục bộ. Đây là lần **thu hồi thật đầu tiên
+trên mạng công khai**, nên bảng 11.4 giờ có cả cột Amoy chứ không chỉ suy từ local.
+
+| Hạng mục | Giá trị |
+|---|---|
+| Credential | `#172` — B21DCCN001, học kỳ 2026-1, 5 điểm |
+| `statusListIndex` | 541281 |
+| Gas | **54.698** |
+| Tx | [`0x2db386…652d`](https://amoy.polygonscan.com/tx/0x2db38665cbcab0ed21f35ae7ba60cdc309f3b6c1a50c879794512db81aa8652d) |
+| Trường hợp | `daDungTruocDo = false` — **ô lưu trữ chạm lần đầu** |
+
+**Đây là trường hợp ĐẮT NHẤT của bitmap, và đó là chuyện bình thường chứ không phải xui.**
+`status_list_index` được cấp **ngẫu nhiên từ pool lớn** để sự kiện `StatusChanged(index)` công
+khai không lộ thứ tự cấp phát (`PROJECT.md` §2.3). Chỉ số rải đều thì gần như mọi lần thu hồi
+đều rơi vào một word chưa ai chạm. Nói cách khác: **hệ thống cố ý chọn cấu hình đắt hơn để đổi
+lấy quyền riêng tư**, và con số 54.698 là cái giá của lựa chọn đó. Đừng trình bày nó như một
+con số tối ưu.
+
+**Đối chiếu với Hardhat local, cùng đường đi `StatusListClient`, cùng trường hợp ô mới:**
+
+| Môi trường | Gas | Chênh |
+|---|---:|---:|
+| Hardhat node cục bộ | 47.978 | — |
+| **Amoy thật** | **54.698** | **+6.720** |
+
+> Con số **6.720** này **trùng đúng** chênh lệch Amoy ↔ local đã đo ở phần **deploy** (§11.1),
+> trong khi phần `anchor()` lại chênh ~9.250. Ghi lại vì nó lặp lại ở hai phép đo độc lập,
+> nhưng **không đưa ra giải thích** — chưa có phép đo có kiểm soát nào tách được nguyên nhân,
+> và đoán bừa ở đây là đúng chỗ hội đồng sẽ hỏi tiếp. Điều nói chắc được vẫn như cũ: **Amoy
+> luôn cao hơn local, nên mọi con số local trong tài liệu này là cận dưới.**
+
 ### ⚠️ Kỳ vọng ban đầu đã SAI — và đây mới là kết quả đáng viết
 
 Bản trước của mục này viết: *"gas bitmap **không đổi** theo quy mô (lật 1 bit trong 1 slot
@@ -488,6 +559,11 @@ Diễn giải chuẩn: >68 là trên trung bình, >80 là tốt.
 | 2026-08-06 | **Gas trạng thái ổn định trên Amoy** *(lấp chỗ trống cũ)* | Lô thứ hai của `ATTEND` = **64.028**, của `CRED` = **64.004**. Chi phí khởi tạo miền = **17.940 gas**, trả một lần cho mỗi miền. Quy đổi học kỳ tính lại bằng số Amoy: **1,08 POL** thay vì 0,92 (số local cũ thấp hơn 17%) | Hoàng |
 | 2026-08-06 | **#4 — chấm 500 sinh viên (vế tự động)** | **0,68–0,90 giây** sau khi JVM ấm, 2,22 s lần đầu. `evidence_hash` của **cả 500** bản ghi tái tính được từ bản ghi điểm danh. Vế thủ công **chưa có** — cần phỏng vấn cán bộ CTSV. Ba cảnh báo phải đọc kèm: chỉ 4/500 có dữ liệu · phân bố xếp loại méo do thiếu dữ liệu · bộ quy tắc chỉ chấm được 50/100 thang điểm. Xem §11.3 | Hoàng |
 | 2026-08-06 | **`evidence_hash` + miền `SCORE`/`RULESET`** | Điểm số tái tính lại được bởi người ngoài: `evidenceHash` trả lời "chấm trên dữ liệu nào", `rulesetHash` trả lời "chấm bằng quy tắc nào". Khác EduCTX ở *loại* bằng chứng, không phải quy mô. Xem §11.9 | Hoàng |
+| 2026-08-08 | **Neo lô `SCORE` 500 lá trên Amoy** *(số liệu mạnh nhất của §11.1)* | **81.968 gas** — bằng đúng lô `ATTEND` **4 lá**. Tăng số bản ghi **125 lần**, gas không đổi một đơn vị. Trước đó phát biểu "gas không phụ thuộc N" chỉ dựa vào Hardhat local; giờ có số Amoy. Quy về **128 gas mỗi sinh viên mỗi kỳ** | Hoàng |
+| 2026-08-08 | Neo `RULESET` (81.980) và `AUDIT` lô hai (64.016) | Đủ **cả 5 miền** đã neo thật trên Amoy. Đóng việc số 3 còn lại của tuần 6 | Hoàng |
+| 2026-08-08 | **Mô hình gas bị bác rồi sửa — khớp 8/8** | Mô hình cũ "12 gas mỗi ký tự tên miền" **sai** ở lô `SCORE`: dự đoán 81.956, đo 81.968. Nguyên nhân là tham số `leafCount` bị bỏ sót — 500 cần **2 byte khác 0** thay vì 1, và mọi lô trước đều ≤ 5 lá nên số hạng này tàng hình. Mô hình sửa lại khớp **cả 8 phép đo, sai số 0 gas**; hiệu hai hằng số ra đúng 17.940 chi phí khởi tạo miền. Xem §11.1 | Hoàng |
+| 2026-08-08 | **Thu hồi THẬT đầu tiên trên Amoy** | Credential `#172`, index 541281, **54.698 gas**, ô lưu trữ chạm lần đầu — **trường hợp đắt nhất của bitmap**, đúng cái giá của việc cấp chỉ số ngẫu nhiên để bảo vệ quyền riêng tư. Cao hơn Hardhat local **6.720 gas**, trùng đúng chênh lệch đã đo ở phần deploy. Xem §11.4 | Hoàng |
+| 2026-08-08 | **Cặp bằng chứng verifier: hợp lệ vs đã thu hồi** | Cùng một tệp bundle, **không sửa một byte**, kết luận đổi từ "✓ 6/6" sang "✗ ĐÃ THU HỒI" sau giao dịch thu hồi — chứng minh trạng thái đọc từ chuỗi lúc xác minh chứ không nằm trong bundle. Giữ `#81` nguyên vẹn làm đối chứng. Bắt được một lỗi câu chữ: nhãn phép kiểm chứa phủ định làm dòng tổng kết đọc ngược nghĩa. Xem §11.11 | Hoàng |
 
 ---
 
@@ -800,3 +876,74 @@ thêm vào là một thứ họ phải tin.
    trắng xóa mà **console không báo gì**. Build đổi đuôi sang `.js` cho `dist/`. Đây là rủi ro
    triển khai thật, không riêng máy chủ thử — một trang phải chạy được "ở bất kỳ đâu, kể cả
    sau khi trường ngừng hoạt động" thì không nên phụ thuộc việc máy chủ có biết `.mjs`.
+
+---
+
+## 11.11. Cặp bằng chứng thu hồi — hợp lệ và đã thu hồi, cùng một verifier — 2026-08-08
+
+**Trạng thái:** ✅ đo trên **Amoy thật**, verifier chạy bằng `node`, **không chạm backend**.
+
+Mọi kết quả verifier trước ngày này đều là credential **hợp lệ**, hoặc bundle bị **cố ý sửa**
+để thấy nó đỏ. Chưa có lần nào verifier đỏ vì một **sự kiện thật trên chuỗi**. Mục này lấp
+đúng chỗ đó, và cho ra **cặp đối chứng** chụp được cùng lúc.
+
+### Cách dựng cặp đối chứng
+
+1. Tải bundle của `#172` **trước khi** thu hồi → chạy verifier → **6/6 hợp lệ**.
+2. Gọi `POST /api/credentials/172/revoke` → giao dịch thật lên `StatusList`, gas 54.698.
+3. Chạy lại verifier **trên đúng tệp bundle cũ, không sửa một byte nào**.
+
+Bước 3 là mấu chốt: **tệp không đổi, kết luận đổi.** Nó cho thấy trạng thái thu hồi được đọc
+**từ chuỗi lúc xác minh**, không phải từ nội dung bundle. Một bundle đã phát ra ngoài không
+thể "giữ mãi" trạng thái còn hiệu lực.
+
+### Kết quả
+
+| Bundle | Phép kiểm 1–5 | Phép kiểm 6 (thu hồi) | Kết luận |
+|---|---|---|---|
+| `#81` B21DCCN002 | ✓ ✓ ✓ ✓ ✓ | ✓ còn hiệu lực — bit 953016 chưa bật | **✓ Xác minh được đầy đủ** |
+| `#172` B21DCCN001 | ✓ ✓ ✓ ✓ ✓ | ✗ **ĐÃ THU HỒI** — bit 541281 đã bật | **✗ Không xác minh được** |
+
+**Giữ `#81` nguyên vẹn là có chủ ý.** Thu hồi nó thì mất luôn bằng chứng "hợp lệ", và còn lại
+một bảng chỉ có màu đỏ — không so sánh được với cái gì. Cặp này chụp được hai ảnh cạnh nhau,
+khác nhau **đúng một dòng**.
+
+**Năm phép kiểm đầu vẫn xanh ở bản đã thu hồi, và điều đó đúng chứ không phải lỗi.** Chữ ký
+vẫn thật, Merkle proof vẫn dẫn về root trên chuỗi, bên cấp vẫn có quyền. Thu hồi **không xoá
+lịch sử** — nó phát biểu rằng *tài liệu này từng được cấp hợp lệ nhưng nay không còn giá trị*.
+Nếu bị hỏi tại sao không đỏ hết, đây là câu trả lời, và nó là điểm mạnh của thiết kế.
+
+### Một lỗi câu chữ bắt được nhờ chính phép đo này
+
+Nhãn phép kiểm trước đây là *"Credential chưa bị thu hồi"* — một khẳng định **có phủ định
+bên trong**. Khi nó đỏ, dòng tổng kết in ra:
+
+> ✗ Không xác minh được: **Credential chưa bị thu hồi**.
+
+Câu đó đọc ngược hẳn nghĩa, và nó nằm ngay trong ảnh chụp định đưa vào báo cáo. Đã đổi nhãn
+thành **"Trạng thái thu hồi trên StatusList"** — một cụm danh từ, đọc xuôi ở cả hai chiều.
+Chỉ đổi nhãn hiển thị; `id` của phép kiểm vẫn là `revocation` và chuỗi chẩn đoán vẫn nguyên,
+nên **297/297 test verifier vẫn xanh**.
+
+Ghi lại vì bài học chung hơn: **nhãn của một phép kiểm nên là thứ được kiểm, không phải kết
+quả mong muốn.** Đặt tên theo kết quả mong muốn thì nhánh thất bại luôn đọc ngược.
+
+### Tái lập
+
+```
+# 1. Backend phải chạy kèm -BatNeo, nếu không endpoint thu hồi báo lỗi
+.\scripts\run-backend.ps1 -BatNeo
+
+# 2. Tải bundle trước khi thu hồi
+curl -H "Authorization: Bearer <token>" http://localhost:8080/api/credentials/172/bundle -o bundles/B21DCCN001-2026-1.json
+
+# 3. Xác minh (còn hiệu lực)
+cd verifier && node scripts/verify-bundle.mjs ../bundles/B21DCCN001-2026-1.json
+
+# 4. Thu hồi — KHÔNG hoàn tác được về mặt lịch sử sự kiện
+curl -X POST -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
+     -d '{"reason":"...","revoked":true}' http://localhost:8080/api/credentials/172/revoke
+
+# 5. Xác minh lại CÙNG tệp đó (đã thu hồi)
+cd verifier && node scripts/verify-bundle.mjs ../bundles/B21DCCN001-2026-1.json
+```

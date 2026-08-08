@@ -1,4 +1,4 @@
-# Chạy backend với cấu hình đọc từ .env.
+﻿# Chạy backend với cấu hình đọc từ .env.
 #
 #   .\scripts\run-backend.ps1
 #
@@ -13,6 +13,28 @@
 # LIỆU và không có gì báo động. Đã dính một lần ngày 2026-08-05.
 #
 # Cùng cách nạp biến với scripts/reset-db.ps1 — khác ở chỗ script này KHÔNG xóa dữ liệu.
+#
+# ---------------------------------------------------------------------------------------
+# -BatNeo — bật khả năng GỬI GIAO DỊCH lên Amoy
+#
+#   .\scripts\run-backend.ps1 -BatNeo
+#
+# Mặc định `drl.anchor.enabled=false`, nên backend chỉ ĐỌC chuỗi chứ không ghi. Đó là mặc
+# định đúng: chạy thường ngày không có lý do gì để tiêu POL hay để một thao tác lỡ tay ghi
+# vĩnh viễn lên chuỗi công khai.
+#
+# Nhưng endpoint THU HỒI credential (`POST /api/credentials/{id}/revoke`) thì bắt buộc phải
+# ghi, vì nguồn sự thật về thu hồi là bit trên StatusList — thứ duy nhất verifier đọc. Không
+# có cờ này thì endpoint đó trả lỗi.
+#
+# ⚠️ Bật cờ này cũng bật luôn job neo theo lịch 02:00. Đừng để backend chạy qua đêm với cờ
+# này nếu chưa muốn neo — mỗi (miền, batchId) chỉ dùng được MỘT LẦN, vĩnh viễn.
+# ---------------------------------------------------------------------------------------
+
+[CmdletBinding()]
+param(
+    [switch]$BatNeo
+)
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
@@ -36,13 +58,37 @@ foreach ($key in @('MYSQL_PORT', 'MYSQL_DATABASE', 'MYSQL_USER', 'MYSQL_PASSWORD
 }
 
 # Địa chỉ contract — backend cần để gọi web3j sau khi deploy.
+# ISSUER_PRIVATE_KEY phải có mặt kể cả khi KHÔNG bật ghi chuỗi. Toàn bộ lớp CredentialConfig
+# nằm sau @ConditionalOnExpression trên khóa này, nên thiếu nó thì không có IssuerSigner
+# (không cấp được credential) và cũng không có StatusListClient (không thu hồi được).
+# Ký credential là phép tính cục bộ, không chạm RPC, nên bật sẵn không tốn gì.
 foreach ($key in @('AMOY_RPC_URL', 'CHAIN_ID', 'ANCHOR_REGISTRY_ADDRESS',
-                   'ISSUER_REGISTRY_ADDRESS', 'STATUS_LIST_ADDRESS')) {
+                   'ISSUER_REGISTRY_ADDRESS', 'STATUS_LIST_ADDRESS',
+                   'ISSUER_PRIVATE_KEY')) {
     if ($cfg.ContainsKey($key)) { Set-Item -Path "env:$key" -Value $cfg[$key] }
+}
+
+# Mặc định TẮT ghi chuỗi. Chỉ bật khi gọi kèm -BatNeo, và phải đặt lại `false` tường minh
+# mỗi lần: biến môi trường sống sót qua các lần chạy trong cùng cửa sổ PowerShell, nên bỏ
+# dòng else đi thì một lần chạy có -BatNeo sẽ âm thầm bật cho mọi lần sau đó.
+if ($BatNeo) {
+    if (-not $cfg.ContainsKey('ANCHOR_PRIVATE_KEY') -or
+        [string]::IsNullOrWhiteSpace($cfg['ANCHOR_PRIVATE_KEY'])) {
+        throw "-BatNeo can ANCHOR_PRIVATE_KEY trong .env"
+    }
+    $env:ANCHOR_PRIVATE_KEY = $cfg['ANCHOR_PRIVATE_KEY']
+    $env:ANCHOR_ENABLED = "true"
+} else {
+    $env:ANCHOR_ENABLED = "false"
 }
 
 Write-Host "MySQL  : localhost:$($cfg['MYSQL_PORT'])/$($cfg['MYSQL_DATABASE'])" -ForegroundColor Cyan
 Write-Host "Swagger: http://localhost:8080/swagger-ui.html" -ForegroundColor Cyan
+if ($BatNeo) {
+    Write-Host "Ghi chuoi: BAT — endpoint thu hoi dung duoc, job neo 02:00 cung se chay" -ForegroundColor Yellow
+} else {
+    Write-Host "Ghi chuoi: tat (chi doc). Can thu hoi credential thi chay kem -BatNeo" -ForegroundColor DarkGray
+}
 
 Push-Location (Join-Path $root "backend")
 try {

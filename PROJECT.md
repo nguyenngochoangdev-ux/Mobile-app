@@ -726,11 +726,29 @@ Hoàn thiện 3 luồng PWA · verifier tĩnh · deploy.
 > kỳ. Đó là lỗi thật, không phải nợ thẩm mỹ, vì credential ký rồi neo vĩnh viễn. Quy tắc chung
 > đã viết thành §5.1.
 >
+> ## ✅ ĐỦ CẢ NĂM MIỀN ĐÃ NEO THẬT — 2026-08-08
+>
+> Lô `SCORE` **500 lá** (81.968 gas), `RULESET` (81.980), `AUDIT` lô hai (64.016). Từ đây
+> không còn miền neo nào chỉ tồn tại trên giấy.
+>
+> Lô 500 lá là **số liệu mạnh nhất của chương 11**: nó tốn đúng bằng lô `ATTEND` 4 lá. Tăng
+> số bản ghi 125 lần, gas không đổi một đơn vị. Trước đó phát biểu "gas không phụ thuộc N"
+> chỉ dựa vào Hardhat local.
+>
+> Số liệu này cũng **bác bỏ mô hình gas** đang ghi trong `docs/measurements.md`, và mô hình
+> sửa lại thì khớp cả 8 phép đo với sai số 0 gas. Giữ nguyên đoạn kể về lần sai đó trong báo
+> cáo — nó mạnh hơn một bảng số chỉ toàn kết quả đúng.
+>
+> ## ✅ THU HỒI THẬT + CẶP BẰNG CHỨNG VERIFIER — 2026-08-08
+>
+> Credential `#172` thu hồi thật trên Amoy (54.698 gas). Chạy lại verifier trên **đúng tệp
+> bundle cũ, không sửa một byte**: kết luận đổi từ "✓ 6/6" sang "✗ ĐÃ THU HỒI". Giữ `#81`
+> nguyên vẹn nên có **hai ảnh đối chứng** khác nhau đúng một dòng.
+>
 > ❌ **Còn lại của tuần 6:**
 > 1. **Quay video end-to-end** — người dùng làm, không code hộ được.
-> 2. Deploy verifier lên GitHub Pages / Vercel.
-> 3. Neo lô `SCORE`/`RULESET` thật (giao dịch ghi).
-> 4. Thu hồi thật một credential trên Amoy — để có ảnh verifier báo "ĐÃ THU HỒI".
+> 2. Deploy verifier — workflow đã viết và push, còn **bật Pages bằng tay**:
+>    Settings → Pages → Source: **GitHub Actions**.
 
 ### Tuần 7 — Đo đạc + báo cáo (KHÓA CỨNG)
 Bảng gas · threat model · benchmark thời gian · khảo sát SUS nếu kịp · bản nháp báo cáo hoàn chỉnh.

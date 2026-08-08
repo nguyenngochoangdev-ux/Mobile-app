@@ -130,7 +130,7 @@ export async function verifyBundle(bundle, trustedChain, reader = null) {
       'bỏ qua — chạy ở chế độ offline', true));
     checks.push(check('issuer', 'Bên cấp còn quyền trong IssuerRegistry', false,
       'bỏ qua — chạy ở chế độ offline', true));
-    checks.push(check('revocation', 'Credential chưa bị thu hồi', false,
+    checks.push(check('revocation', 'Trạng thái thu hồi trên StatusList', false,
       'bỏ qua — chạy ở chế độ offline', true));
     return finish(checks, reader);
   }
@@ -175,12 +175,12 @@ export async function verifyBundle(bundle, trustedChain, reader = null) {
   try {
     const index = bundle.credential.payload.statusListIndex;
     const revoked = await reader.isRevoked(index);
-    add(check('revocation', 'Credential chưa bị thu hồi', !revoked,
+    add(check('revocation', 'Trạng thái thu hồi trên StatusList', !revoked,
       revoked
         ? `ĐÃ THU HỒI — bit ${index} trên StatusList đã bật`
         : `còn hiệu lực — bit ${index} chưa bật`));
   } catch (e) {
-    add(check('revocation', 'Credential chưa bị thu hồi', false,
+    add(check('revocation', 'Trạng thái thu hồi trên StatusList', false,
       `không đọc được chuỗi: ${e.message}`));
   }
 
